@@ -4,7 +4,7 @@
 
 @section('content')
     @php
-        // مجموعات hispa (ReportsHub) ببنودها وترتيبها، وكل بند رابط صفحته في ihsa.
+        // مجموعات hispa (ReportsHub) ببنودها وترتيبها، وكل بند رابط صفحته في hawat.
         $report = fn (string $key) => [route('panel.owner.reports.show', $key), $reports[$key]['hub'] ?? $reports[$key]['title']];
         $sections = [
             ['title' => 'تقارير تشغيلية', 'icon' => 'clipboard', 'tone' => 'primary', 'items' => [

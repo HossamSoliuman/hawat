@@ -1,6 +1,6 @@
-# حوات إحصاء — منصّة المصايد البحرية (Laravel)
+# حوات — منصّة المصايد البحرية (Laravel)
 
-تطبيق Laravel واحد على مضيف واحد (`hawat.sa`، ومحليًا `ihsa.test`) فوق قاعدة بيانات واحدة.
+تطبيق Laravel واحد على مضيف واحد (`hawat.sa`، ومحليًا `hawat.test`) فوق قاعدة بيانات واحدة.
 بوابة المعلومات — تحرير البيانات الأساسية (Master Data) عبر عشرين تبويبًا مع سجل عمليات —
 نصفُ "إدارة النظام" تحت `/subadmin`، وكانت قبلًا على مضيفها `info.hawat.sa`.
 
@@ -42,7 +42,7 @@ php artisan key:generate
 php artisan migrate --seed
 ```
 
-ثم اضبط `APP_URL=http://ihsa.test` في `.env`.
+ثم اضبط `APP_URL=http://hawat.test` في `.env`.
 
 ### الدخول إلى إدارة النظام
 
@@ -184,11 +184,11 @@ php artisan test
 الدفع إلى `main` يشغّل `.github/workflows/deploy.yml` الذي ينفّذ على الخادم:
 
 ```bash
-cd /www/wwwroot/ihsa
+cd /www/wwwroot/hawat
 git pull --ff-only origin main
 php artisan migrate --force
 php artisan optimize
 ```
 
-الموقع `hawat.sa` جذره `/www/wwwroot/ihsa/public`. وموقع `info.hawat.sa` باقٍ في
+الموقع `hawat.sa` جذره `/www/wwwroot/hawat/public`. وموقع `info.hawat.sa` باقٍ في
 aaPanel للتحويل وحده: ملف إعادة كتابته يردّ `301` إلى `https://hawat.sa/subadmin/…`.

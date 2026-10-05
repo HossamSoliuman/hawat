@@ -19,7 +19,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 /**
- * إغلاق الشهر — MonthClosingService في hispa على بيانات ihsa:
+ * إغلاق الشهر — MonthClosingService في hispa على بيانات hawat:
  *
  * - معاينة ثم إغلاق: أرقام كل قارب من `CrewPool` (الإيراد، المصروفات،
  *   الإهلاك ومؤجَّله الداخل والخارج، الصافي، نصيب المالك والطاقم)، وما لا
