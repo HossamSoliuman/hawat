@@ -23,7 +23,7 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'file-check'])</div>
             <div>
                 <h1>الوثائق</h1>
-                <p>وثائق القوارب والطاقم بتواريخ انتهائها — المنتهية وما ينتهي خلال {{ \App\Models\FleetDocument::EXPIRING_DAYS }} يومًا تظهر في تنبيهات الرئيسة</p>
+                <p>وثائق القوارب والطاقم بتواريخ انتهائها — المنتهية وما ينتهي خلال {{ \App\Models\FleetDocument::EXPIRING_DAYS }} يومًا تظهر في تنبيهات الرئيسية</p>
             </div>
         </div>
         <div class="actions">
