@@ -156,7 +156,7 @@ class CaptainApiTest extends TestCase
 
         // 3. العد من صفحة الوزارة → الكابتن يُبلَّغ "الرحلة مكتملة".
         $this->app['auth']->forgetGuards();
-        $this->post("/stats/field-statistics/{$trip->id}/record", ['actual_weight_kg' => 138, 'statistics_officer' => 'محمد العوامي'])
+        $this->post(route('stats.field-statistics.record', $trip->id), ['actual_weight_kg' => 138, 'statistics_officer' => 'محمد العوامي'])
             ->assertRedirect(route('stats.field-statistics'));
 
         $this->as($this->captain)->getJson("/api/v1/captain/trips/{$trip->id}")

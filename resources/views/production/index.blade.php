@@ -29,7 +29,7 @@
                 @endforeach
             </select>
         </label>
-        <a href="{{ route('gov.production') }}" class="btn btn-outline">إعادة تعيين</a>
+        <a href="{{ route('screens.production') }}" class="btn btn-outline">إعادة تعيين</a>
     </form>
 
     <div class="stat-grid cols-6" style="margin-bottom:1.25rem">

@@ -1,25 +1,29 @@
 # حوات — منصّة المصايد البحرية (Laravel)
 
-تطبيق Laravel واحد على مضيف واحد (`hawat.sa`، ومحليًا `hawat.test`) فوق قاعدة بيانات واحدة.
-بوابة المعلومات — تحرير البيانات الأساسية (Master Data) عبر عشرين تبويبًا مع سجل عمليات —
-نصفُ "إدارة النظام" تحت `/subadmin`، وكانت قبلًا على مضيفها `info.hawat.sa`.
+تطبيق Laravel واحد فوق قاعدة بيانات واحدة، يخدم **منتجين على مضيفين** (محليًا
+`hawat.test` و`gov.hawat.test`). المضيفان يُشتقّان من `APP_URL` في `config/hawat.php`
+(`domain` و`gov_domain`)، ويُضبطان صراحةً بـ `APP_DOMAIN` و`GOV_DOMAIN` عند الحاجة:
 
-ولوحة الوزارة نفسها مقسومة إلى **خمس بوابات** على النطاق الرئيسي، تُختار من صفحة `/`
-ويحدّدها `App\Support\Nav` من اسم المسار — والتبويب الواحد يظهر في قائمة بوابته وحدها:
+| المضيف | ما عليه |
+|---|---|
+| `hawat.sa` | صفحة الهبوط `/`، وتطبيق حوات تحت `/admin` (دخوله `/admin/login`)، والتقديم للعدّادين `/counter/apply`، والفاتورة الموقّعة، وواجهة التطبيق `/api/v1` وتوثيقها `/api/docs` |
+| `gov.hawat.sa` | بوابات الوزارة الثلاث، وصناديقها على `/` |
+
+وبوابات الوزارة يحدّدها `App\Support\Nav` من اسم المسار — والتبويب الواحد يظهر في
+قائمة بوابته وحدها:
 
 | البادئة | البوابة | القائمة |
 |---|---|---|
-| `/gov` | لوحة الحكومة | `hawat.nav_gov` |
-| `/stats` | قسم الإحصاء | `hawat.nav_stats` |
-| `/subadmin` | قسم الإدارة الفرعية | `hawat.nav_subadmin` |
-| `/services` | قسم الخدمات والتراخيص | `hawat.nav_services` |
-| `/admin` | المنصة التشغيلية | `hawat.nav` |
+| `/stats` | الإحصاء | `hawat.nav_stats` |
+| `/screens` | شاشة العرض (تبويب في الإحصاء) | `hawat.nav_screens` |
+| `/services` | الخدمات والتراخيص | `hawat.nav_services` |
+| `/subadmin` | إدارة النظام مع بوابة المعلومات (دخولها `/login`) | `hawat.nav_subadmin` |
 
 نقل لوحة بين البوابات يستلزم `Route::permanentRedirect` من موضعها القديم — يحرس ذلك
-`tests/Feature/PortalSplitTest.php`.
-
-وصفحة `/sections` تعرض ستّة صناديق: الخمسة أعلاه، ثم بوابة المعلومات على مضيفها
-المستقل — وهي وحدها تحمل علامة "دخول" لأنها الوحيدة خلف تسجيل دخول.
+`tests/Feature/PortalSplitTest.php`. وما كان من بوابات الوزارة على `hawat.sa`
+(`/sections`، `/stats`، `/gov`، `/services`، `/subadmin`، `/login`، `/info`) يُحوَّل
+دائمًا إلى `gov.hawat.sa` بالمسار نفسه، ومضيف `info.hawat.sa` القديم إلى موضع صفحته
+في `/subadmin`، وأي مضيف آخر يصل التطبيق (كـ `www.`) إلى `hawat.sa`.
 
 ---
 
@@ -42,13 +46,14 @@ php artisan key:generate
 php artisan migrate --seed
 ```
 
-ثم اضبط `APP_URL=http://hawat.test` في `.env`.
+ثم اضبط `APP_URL=http://hawat.test` في `.env`، واربط مضيف الوزارة في Herd من مجلد
+المشروع: `herd link gov.hawat` (يفتح `http://gov.hawat.test`).
 
 ### الدخول إلى إدارة النظام
 
 `/subadmin` كلّه خلف تسجيل دخول — لوحة الوزارة عرضٌ وتحليل، أمّا هذه فتحرّر البيانات
 الأساسية وتكتب في سجل العمليات، فلكلّ سطرٍ فيه صاحبٌ معروف. صفحة الدخول على
-`/login`، والخروج `POST /logout` من ذيل القائمة الجانبية.
+`gov.hawat.sa/login`، والخروج `POST /logout` من ذيل القائمة الجانبية.
 
 `UserSeeder` يبذر خمسة حسابات ببُرُدٍ هي نفسها مفاتيح جدول الصلاحيات
 (`user_permissions`) الذي يبذره `SystemSeeder` — فالدور يُقرأ من هناك لا من جدول
@@ -72,8 +77,9 @@ php artisan migrate --seed
 
 `/subadmin` رئيسة القسم: نظرة عامة ببطاقة لكل صفحة وعدد سجلاتها. تبويبات البوابة
 على `/subadmin/{tab}` بجانب لوحات القسم الثابتة (`/subadmin/audit-log`…)، والقيد
-`whereIn('tab', …)` يمنعها من ابتلاع تلك اللوحات. الروابط القديمة `/info/admin/{tab}`
-تُحوَّل دائمًا، ومضيف `info.hawat.sa` يُحوَّل في nginx إلى المسار نفسه.
+`whereIn('tab', …)` يمنعها من ابتلاع تلك اللوحات. الروابط القديمة
+`hawat.sa/info/admin/{tab}` ومضيف `info.hawat.sa` كلّه يحوّلها التطبيق نفسه دائمًا إلى
+`gov.hawat.sa/subadmin/{tab}`.
 
 ---
 
@@ -190,5 +196,7 @@ php artisan migrate --force
 php artisan optimize
 ```
 
-الموقع `hawat.sa` جذره `/www/wwwroot/hawat/public`. وموقع `info.hawat.sa` باقٍ في
-aaPanel للتحويل وحده: ملف إعادة كتابته يردّ `301` إلى `https://hawat.sa/subadmin/…`.
+الموقع `hawat.sa` جذره `/www/wwwroot/hawat/public`، ويصل `gov.hawat.sa` (ومعه
+`info.hawat.sa` القديم) الجذرَ نفسه بإعادة كتابة Laravel نفسها
+(`try_files $uri $uri/ /index.php?$query_string;`) وبشهادة SSL تشملهما: التطبيق يختار
+ما يقدّمه من اسم المضيف، والتحويلات كلها فيه لا في nginx.

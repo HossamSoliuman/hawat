@@ -98,6 +98,7 @@ use App\Http\Controllers\SupportTicketController;
 use App\Http\Controllers\SustainabilityController;
 use App\Http\Controllers\TripController;
 use App\Services\Owner\OwnerReports;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -121,12 +122,12 @@ $infoPortal = function (): void {
 };
 
 /*
- * شاشة العرض — لوحات القاعة تحت البادئة /gov، وهي تبويب واحد في قائمة الإحصاء
- * (مربّعاتها من config/hawat.php → nav_gov). صفحاتها لم تعد تُقدَّم من المسارات العليا.
+ * شاشة العرض — لوحات القاعة تحت البادئة /screens (كانت /gov)، وهي تبويب واحد في
+ * قائمة الإحصاء (مربّعاتها من config/hawat.php → nav_screens).
  */
-$govDashboard = function (): void {
+$screens = function (): void {
     // الرئيسة شاشة اختيار بمربّعات كبيرة (تُعرض على شاشة قاعة)، ولوحة المؤشرات
-    // التي كانت عليها انتقلت إلى /gov/overview لتُفتح من مربّعها بملء الشاشة.
+    // التي كانت عليها انتقلت إلى /screens/overview لتُفتح من مربّعها بملء الشاشة.
     Route::get('/', [DashboardController::class, 'screens'])->name('home');
     Route::get('/overview', [DashboardController::class, 'index'])->name('overview');
     Route::get('/sea-map', [SeaMapController::class, 'index'])->name('sea-map');
@@ -604,32 +605,30 @@ $adminPanel = function () use ($operationsConsole): void {
 };
 
 /*
- * البوابات تتشارك النطاق الرئيسي: صفحة اختيار على "/sections"، ثم الإحصاء تحت
- * /stats ومعه شاشة العرض تحت /gov، والخدمات والتراخيص تحت /services، وإدارة
- * النظام تحت /subadmin (ونصفها الآخر بوابة المعلومات)، وتطبيق حوات تحت /admin.
+ * عنوان مطلق على مضيف بوابات الوزارة بمخطّط الطلب نفسه — للتحويل إليه من مضيف آخر.
  */
-$governmentPortal = function () use ($govDashboard, $statisticsSection, $subAdministration, $infoPortal, $servicesSection, $adminPanel): void {
-    /*
-     * الجذر صفحة الهبوط العامة (التعريف بحوات ومسار الصيد والتواصل)؛ صفحة اختيار
-     * البوابات تبقى متاحة على /sections لمن يعرف مسارها.
-     */
-    Route::view('/', 'landing')->name('landing');
-    Route::post('/register-request', [RegistrationRequestController::class, 'store'])->middleware('throttle:5,1')->name('landing.register');
+$govUrl = fn (Request $request, string $path): string => $request->getScheme().'://'.config('hawat.gov_domain').$path;
 
-    // التقديم لوظيفة عدّاد في جولات شركات التشغيل، والمتابعة بمفتاح الطلب.
-    Route::get('/counter/apply', [CounterApplicationController::class, 'create'])->name('counter-apply');
-    Route::post('/counter/apply', [CounterApplicationController::class, 'store'])->middleware('throttle:5,1')->name('counter-apply.store');
-    Route::get('/counter/apply/{token}', [CounterApplicationController::class, 'show'])->name('counter-apply.show');
-    Route::post('/counter/apply/{token}/verify', [CounterApplicationController::class, 'verify'])->middleware('throttle:10,1')->name('counter-apply.verify');
-    Route::post('/counter/apply/{token}/resend', [CounterApplicationController::class, 'resend'])->middleware('throttle:3,1')->name('counter-apply.resend');
-    Route::post('/counter/apply/{token}/withdraw', [CounterApplicationController::class, 'withdraw'])->name('counter-apply.withdraw');
+/*
+ * موضع صفحة من بوابة المعلومات القديمة في إدارة النظام: كانت على مضيفها
+ * (info.hawat.sa) ثم تحت /info، تبويباتها تحت admin/ ودخولها على login.
+ */
+$fromInfoPortal = fn (Request $request, ?string $path = null) => redirect()->away($govUrl($request, match (true) {
+    $path === 'login' => '/login',
+    str_starts_with((string) $path, 'admin/') => '/subadmin/'.substr($path, strlen('admin/')),
+    default => '/subadmin',
+}), 301);
 
-    Route::view('/sections', 'portal')->name('portal');
+/*
+ * بوابات الوزارة الثلاث على مضيفها (gov.hawat.sa): صناديقها على "/"، ثم الإحصاء
+ * تحت /stats ومعه شاشة العرض تحت /screens، والخدمات والتراخيص تحت /services،
+ * وإدارة النظام تحت /subadmin (ونصفها الآخر بوابة المعلومات) بدخولها على /login.
+ */
+$ministrySite = function () use ($screens, $statisticsSection, $subAdministration, $infoPortal, $servicesSection): void {
+    // صفحة اختيار البوابات — كانت على /sections في النطاق الرئيسي ومعها صندوق التطبيق.
+    Route::view('/', 'portal')->name('portal');
 
-    // الفاتورة المطبوعة برابط موقّع — يفتحها التطبيق ويشاركها بلا دخول (Sale::invoiceUrl).
-    Route::get('/invoices/{sale}', [InvoiceController::class, 'show'])->middleware('signed')->name('invoices.show');
-
-    Route::prefix('gov')->name('gov.')->group($govDashboard);
+    Route::prefix('screens')->name('screens.')->group($screens);
 
     Route::prefix('stats')->name('stats.')->group($statisticsSection);
 
@@ -651,22 +650,10 @@ $governmentPortal = function () use ($govDashboard, $statisticsSection, $subAdmi
 
     Route::prefix('services')->name('services.')->group($servicesSection);
 
-    Route::prefix('admin')->group($adminPanel);
-
-    /*
-     * توثيق واجهة التطبيق: مواصفة OpenAPI من docs/api وعارض Swagger UI عليها.
-     * صفحتا ويب لا مساري API — فالعارض HTML والمواصفة ملف ثابت.
-     */
-    Route::view('/api/docs', 'api.docs')->name('api.docs');
-    Route::get('/api/openapi.yaml', fn () => response(file_get_contents(base_path('docs/api/openapi.yaml')), 200, ['Content-Type' => 'application/yaml; charset=utf-8']))->name('api.openapi');
-
     /*
      * مواضع اللوحات قبل استقلال أقسام الإحصاء والإدارة الفرعية والخدمات
      * والتراخيص ببواباتها. التحويل دائم حفاظًا على الروابط المحفوظة والمُرسلة،
      * وليست مسارات مكرّرة: لا شيء يُقدَّم منها.
-     *
-     * تحويلات /admin/* القديمة أُسقطت: صار /admin لوحة الإدارة ومساراتها
-     * (users، settings، markets…) لها، والتحويل الدائم يعلق في المتصفح.
      */
     foreach ([
         '/gov/statistics' => '/stats',
@@ -689,6 +676,9 @@ $governmentPortal = function () use ($govDashboard, $statisticsSection, $subAdmi
         Route::permanentRedirect($vacated, $destination);
     }
 
+    // وما بقي تحت /gov لوحاتُ القاعة نفسها، وقد صارت تحت /screens.
+    Route::permanentRedirect('/gov/{screen?}', '/screens/{screen?}');
+
     /*
      * صفحة المستخدمين في /subadmin كانت نسخة للعرض فقط من تبويب بوابة المعلومات
      * الذي يحرّرهم، فبقي التبويب وحده. وتبويبات سقطت من البوابة لأن لصفحتها
@@ -697,13 +687,69 @@ $governmentPortal = function () use ($govDashboard, $statisticsSection, $subAdmi
     foreach (['/subadmin/users' => 'admin.tab', '/subadmin/licenses' => 'services.season-licenses', '/subadmin/audit' => 'subadmin.audit-log'] as $vacated => $destination) {
         Route::get($vacated, fn () => redirect()->route($destination, $destination === 'admin.tab' ? 'permissions' : [], 301));
     }
-
-    /*
-     * البوابة كانت على مضيف مستقل (info.hawat.sa) ثم تحت /info. مضيفها القديم
-     * يُحوَّل في nginx، وهذه بقايا البادئة.
-     */
-    Route::permanentRedirect('/info', '/subadmin');
-    Route::get('/info/admin/{path}', fn (string $path) => redirect('/subadmin/'.$path, 301))->where('path', '.*');
 };
 
-$governmentPortal();
+/*
+ * النطاق الرئيسي (hawat.sa): صفحة الهبوط العامة والتسجيل منها، والتقديم لوظيفة
+ * عدّاد، والفاتورة الموقّعة، وتطبيق حوات تحت /admin مع توثيق واجهته.
+ */
+$mainSite = function () use ($adminPanel, $govUrl, $fromInfoPortal): void {
+    // الجذر صفحة الهبوط العامة: التعريف بحوات ومسار الصيد والتواصل.
+    Route::view('/', 'landing')->name('landing');
+    Route::post('/register-request', [RegistrationRequestController::class, 'store'])->middleware('throttle:5,1')->name('landing.register');
+
+    // التقديم لوظيفة عدّاد في جولات شركات التشغيل، والمتابعة بمفتاح الطلب.
+    Route::get('/counter/apply', [CounterApplicationController::class, 'create'])->name('counter-apply');
+    Route::post('/counter/apply', [CounterApplicationController::class, 'store'])->middleware('throttle:5,1')->name('counter-apply.store');
+    Route::get('/counter/apply/{token}', [CounterApplicationController::class, 'show'])->name('counter-apply.show');
+    Route::post('/counter/apply/{token}/verify', [CounterApplicationController::class, 'verify'])->middleware('throttle:10,1')->name('counter-apply.verify');
+    Route::post('/counter/apply/{token}/resend', [CounterApplicationController::class, 'resend'])->middleware('throttle:3,1')->name('counter-apply.resend');
+    Route::post('/counter/apply/{token}/withdraw', [CounterApplicationController::class, 'withdraw'])->name('counter-apply.withdraw');
+
+    // الفاتورة المطبوعة برابط موقّع — يفتحها التطبيق ويشاركها بلا دخول (Sale::invoiceUrl).
+    Route::get('/invoices/{sale}', [InvoiceController::class, 'show'])->middleware('signed')->name('invoices.show');
+
+    Route::prefix('admin')->group($adminPanel);
+
+    /*
+     * توثيق واجهة التطبيق: مواصفة OpenAPI من docs/api وعارض Swagger UI عليها.
+     * صفحتا ويب لا مساري API — فالعارض HTML والمواصفة ملف ثابت.
+     */
+    Route::view('/api/docs', 'api.docs')->name('api.docs');
+    Route::get('/api/openapi.yaml', fn () => response(file_get_contents(base_path('docs/api/openapi.yaml')), 200, ['Content-Type' => 'application/yaml; charset=utf-8']))->name('api.openapi');
+
+    /*
+     * بوابات الوزارة كانت على هذا النطاق: تُحوَّل دائمًا إلى مضيفها بالمسار
+     * والاستعلام نفسيهما، وصفحة اختيارها /sections إلى جذره.
+     *
+     * تحويلات /admin/* القديمة أُسقطت: صار /admin لوحة تطبيق حوات ومساراتها
+     * (users، settings، markets…) لها، والتحويل الدائم يعلق في المتصفح.
+     */
+    $sameOnGov = fn (Request $request) => redirect()->away($govUrl($request, $request->getRequestUri()), 301);
+
+    foreach (['stats', 'gov', 'services', 'subadmin'] as $prefix) {
+        Route::get("/{$prefix}/{path?}", $sameOnGov)->where('path', '.*');
+    }
+    Route::get('/login', $sameOnGov);
+    Route::get('/sections', fn (Request $request) => redirect()->away($govUrl($request, '/'), 301));
+    Route::get('/info/{path?}', $fromInfoPortal)->where('path', '.*');
+};
+
+Route::domain(config('hawat.gov_domain'))->group($ministrySite);
+
+Route::domain(config('hawat.domain'))->group($mainSite);
+
+// مضيف بوابة المعلومات القديم: كل صفحة منه إلى موضعها في إدارة النظام.
+Route::domain('info.'.config('hawat.domain'))->group(function () use ($fromInfoPortal): void {
+    Route::get('/{path?}', $fromInfoPortal)->where('path', '.*');
+});
+
+/*
+ * مضيف غير هؤلاء يصل التطبيق (www. أو عنوان الخادم) يُحوَّل إلى النطاق الرئيسي
+ * بالمسار نفسه. وعلى المضيفَين أنفسهما المسار الذي لا يطابق شيئًا 404.
+ */
+Route::fallback(function (Request $request) {
+    abort_if(in_array($request->getHost(), [config('hawat.domain'), config('hawat.gov_domain')], true), 404);
+
+    return redirect()->away($request->getScheme().'://'.config('hawat.domain').$request->getRequestUri(), 301);
+});

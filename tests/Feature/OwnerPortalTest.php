@@ -142,7 +142,7 @@ class OwnerPortalTest extends TestCase
         $this->asOwner()->get(route('panel.owner.sales.create', ['trip' => $trip->id]))->assertOk()->assertSee('غير متاح للبيع');
 
         // الوزارة تعدّ من الإحصاء الميداني.
-        $this->post("/stats/field-statistics/{$trip->id}/record", ['actual_weight_kg' => 78])->assertRedirect();
+        $this->post(route('stats.field-statistics.record', $trip->id), ['actual_weight_kg' => 78])->assertRedirect();
         $this->assertSame(Trip::SALE_OPEN, $trip->fresh()->sale_status);
 
         $this->asOwner()->get(route('panel.owner.trips.show', $trip))->assertOk()->assertSee('بيع مصيد لزبون')->assertSee('اكتمل العد وجاهزة للبيع');

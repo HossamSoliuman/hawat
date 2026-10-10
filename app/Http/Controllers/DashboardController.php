@@ -14,8 +14,8 @@ use Illuminate\View\View;
 class DashboardController extends Controller
 {
     /**
-     * شاشة اختيار لوحة الحكومة: مربّعات تبويبات القائمة الجانبية، بلا بيانات —
-     * تُبنى من config/hawat.php → nav_gov داخل العرض نفسه.
+     * شاشة اختيار لوحات القاعة: مربّعات تبويبات القائمة الجانبية، بلا بيانات —
+     * تُبنى من config/hawat.php → nav_screens داخل العرض نفسه.
      */
     public function screens(): View
     {

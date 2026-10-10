@@ -23,6 +23,7 @@ use App\Models\UserPermission;
 use App\Support\AlertGenerator;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
+use Tests\Concerns\OnGovHost;
 use Tests\TestCase;
 
 /**
@@ -35,6 +36,7 @@ use Tests\TestCase;
  */
 class SubAdministrationSectionTest extends TestCase
 {
+    use OnGovHost;
     use RefreshDatabase;
 
     private OrgPosition $directorate;

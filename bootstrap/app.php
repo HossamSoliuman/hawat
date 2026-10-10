@@ -28,10 +28,10 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->api(prepend: [ForceJsonResponse::class]);
 
         /*
-         * صفحتا دخول: إدارة النظام — بوابة المعلومات على مضيفها (admin.*) وقسمها
-         * على النطاق الرئيسي (subadmin.*) — ثم تطبيق حوات على /admin. الزائر
-         * يُرسَل إلى صفحة الموضع الذي طرقه، والداخل الذي يطرق صفحة دخول يُعاد
-         * إلى رئيسة موضعها.
+         * صفحتا دخول على مضيفين: إدارة النظام بنصفيها (admin.* و subadmin.*) على
+         * /login في مضيف الوزارة، وتطبيق حوات على /admin/login في النطاق الرئيسي.
+         * الزائر يُرسَل إلى صفحة الموضع الذي طرقه، والداخل الذي يطرق صفحة دخول
+         * يُعاد إلى رئيسة موضعها.
          */
         $middleware->redirectGuestsTo(fn (Request $request) => Str::startsWith((string) $request->route()?->getName(), ['admin.', 'subadmin.'])
             ? route('login')

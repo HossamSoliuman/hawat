@@ -13,6 +13,7 @@ use App\Models\Region;
 use App\Models\Species;
 use App\Models\Trip;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\OnGovHost;
 use Tests\TestCase;
 
 /**
@@ -24,6 +25,7 @@ use Tests\TestCase;
  */
 class StatisticsSectionTest extends TestCase
 {
+    use OnGovHost;
     use RefreshDatabase;
 
     private Port $gulfPort;

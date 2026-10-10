@@ -9,10 +9,11 @@ use Illuminate\Support\Facades\Route;
 /**
  * يحدّد البوابة النشطة داخل لوحة الوزارة وقائمتها الجانبية.
  *
- * أربع بوابات تتشارك التخطيط نفسه: قسم الإحصاء تحت /stats ومعه شاشة العرض تحت
- * /gov، وقسم الخدمات والتراخيص تحت /services، وإدارة النظام ببوابة المعلومات
- * تحت /subadmin، وتطبيق حوات تحت /admin. التمييز من اسم المسار
- * لا من المسار نفسه: مسارات البوابات الثلاث الأولى تحمل بادئاتها، ومسارات
+ * أربع بوابات تتشارك التخطيط نفسه: بوابات الوزارة الثلاث على مضيفها
+ * (config/hawat.php → gov_domain) — قسم الإحصاء تحت /stats ومعه شاشة العرض تحت
+ * /screens، وقسم الخدمات والتراخيص تحت /services، وإدارة النظام ببوابة المعلومات
+ * تحت /subadmin — ثم تطبيق حوات على النطاق الرئيسي تحت /admin. التمييز من اسم
+ * المسار لا من المسار نفسه: مسارات بوابات الوزارة تحمل بادئاتها، ومسارات
  * تطبيق حوات إمّا بالبادئة panel. أو بلا بادئة (مركز العمليات).
  *
  * تطبيق حوات خلف دخوله وقائمته تتبدّل مع دور المستخدم (config/hawat.php →
@@ -29,7 +30,7 @@ class Nav
     public const OPS = 'ops';
 
     /**
-     * مفتاح كل بوابة ومصدر قائمتها، بترتيب صفحة /sections. تطبيق حوات آخرها
+     * مفتاح كل بوابة ومصدر قائمتها، بترتيب عرضها. تطبيق حوات آخرها
      * لأنه الافتراضي: يلتقط كل مسار لم يطابق بادئة قبله، وقائمته تُبنى في
      * panelSections() لا تُقرأ من مفتاح واحد.
      */
@@ -41,11 +42,11 @@ class Nav
     ];
 
     /**
-     * بادئات أسماء المسارات لكل بوابة. شاشة العرض (gov.) من الإحصاء، وبوابة
+     * بادئات أسماء المسارات لكل بوابة. شاشة العرض (screens.) من الإحصاء، وبوابة
      * المعلومات (admin.) من إدارة النظام.
      */
     private const PREFIXES = [
-        'gov.' => self::STATS,
+        'screens.' => self::STATS,
         'stats.' => self::STATS,
         'services.' => self::SERVICES,
         'subadmin.' => self::SUBADMIN,
@@ -89,26 +90,11 @@ class Nav
     }
 
     /**
-     * البوابات الأخرى غير النشطة.
-     *
-     * @return array<int, array{label: string, icon: string, home: string}>
-     */
-    public static function otherPortals(): array
-    {
-        $active = self::portalKey();
-
-        return array_map(
-            fn (string $key) => self::portal($key),
-            array_values(array_filter(self::keys(), fn (string $key) => $key !== $active)),
-        );
-    }
-
-    /**
-     * هل الطلب على لوحة من لوحات شاشة العرض (/gov)؟
+     * هل الطلب على لوحة من لوحات شاشة العرض (/screens)؟
      */
     public static function onScreens(): bool
     {
-        return str_starts_with(Route::currentRouteName() ?? '', 'gov.');
+        return str_starts_with(Route::currentRouteName() ?? '', 'screens.');
     }
 
     /**
@@ -128,15 +114,15 @@ class Nav
      */
     public static function screenHome(): string
     {
-        return self::onScreens() ? 'gov.home' : self::portal()['home'];
+        return self::onScreens() ? 'screens.home' : self::portal()['home'];
     }
 
     /**
-     * لوحات شاشة العرض — مربّعات شاشة الاختيار على /gov.
+     * لوحات شاشة العرض — مربّعات شاشة الاختيار على /screens.
      */
     public static function screens(): array
     {
-        return config('hawat.nav_gov');
+        return config('hawat.nav_screens');
     }
 
     /**
@@ -204,8 +190,8 @@ class Nav
     }
 
     /**
-     * دور التطبيق الذي تُبنى عليه قائمة تطبيق حوات. الزائر (كصفحة اختيار
-     * البوابات) يرى قائمة المدير العام لأنها الأشمل.
+     * دور التطبيق الذي تُبنى عليه قائمة تطبيق حوات. الزائر يرى قائمة المدير
+     * العام لأنها الأشمل.
      */
     public static function panelRole(): string
     {

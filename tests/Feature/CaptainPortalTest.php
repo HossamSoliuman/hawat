@@ -144,13 +144,13 @@ class CaptainPortalTest extends TestCase
             ->assertSessionHasErrors('status');
 
         // 3. الوزارة تعدّ من صفحتها → الكابتن يُبلَّغ بالاكتمال والمالك بالعد.
-        $this->post("/stats/field-statistics/{$trip->id}/record", ['actual_weight_kg' => 138, 'statistics_officer' => 'محمد العوامي'])
+        $this->post(route('stats.field-statistics.record', $trip->id), ['actual_weight_kg' => 138, 'statistics_officer' => 'محمد العوامي'])
             ->assertRedirect(route('stats.field-statistics'));
         $this->assertDatabaseHas('app_notifications', ['user_id' => $this->captain->id, 'trip_id' => $trip->id, 'title' => 'الرحلة مكتملة']);
         $this->assertDatabaseHas('app_notifications', ['user_id' => $this->owner->id, 'trip_id' => $trip->id, 'title' => 'اكتمل العد']);
 
         // إعادة العد لا تكرّر الإشعار.
-        $this->post("/stats/field-statistics/{$trip->id}/record", ['actual_weight_kg' => 139, 'statistics_officer' => 'محمد العوامي']);
+        $this->post(route('stats.field-statistics.record', $trip->id), ['actual_weight_kg' => 139, 'statistics_officer' => 'محمد العوامي']);
         $this->assertSame(1, AppNotification::forUser($this->captain)->where('title', 'الرحلة مكتملة')->count());
 
         // صفحة الرحلة تعرض المخرجات معلنةً ومعدودة، وسجل الصيد يجمعها.

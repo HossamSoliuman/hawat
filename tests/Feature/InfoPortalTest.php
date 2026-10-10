@@ -7,6 +7,7 @@ use App\Models\Port;
 use App\Models\Region;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\OnGovHost;
 use Tests\TestCase;
 
 /**
@@ -17,6 +18,7 @@ use Tests\TestCase;
  */
 class InfoPortalTest extends TestCase
 {
+    use OnGovHost;
     use RefreshDatabase;
 
     private const PORTAL = '/subadmin';
@@ -63,10 +65,17 @@ class InfoPortalTest extends TestCase
         $this->get(self::PORTAL.'/org-structure')->assertOk();
     }
 
-    public function test_the_old_host_paths_redirect_into_the_prefix(): void
+    public function test_the_old_host_and_prefix_redirect_into_the_prefix(): void
     {
-        $this->get('/info')->assertMovedPermanently()->assertRedirect('/subadmin');
-        $this->get('/info/admin/geo')->assertMovedPermanently()->assertRedirect('/subadmin/geo');
+        // البوابة كانت تحت /info في النطاق الرئيسي، وقبلها على مضيفها info.
+        $this->get($this->mainUrl('/info'))->assertMovedPermanently()->assertRedirect($this->govUrl('/subadmin'));
+        $this->get($this->mainUrl('/info/admin/geo'))->assertMovedPermanently()->assertRedirect($this->govUrl('/subadmin/geo'));
+
+        $oldHost = 'http://info.'.config('hawat.domain');
+
+        $this->get($oldHost)->assertMovedPermanently()->assertRedirect($this->govUrl('/subadmin'));
+        $this->get($oldHost.'/admin/geo')->assertMovedPermanently()->assertRedirect($this->govUrl('/subadmin/geo'));
+        $this->get($oldHost.'/login')->assertMovedPermanently()->assertRedirect($this->govUrl('/login'));
     }
 
     public function test_a_search_narrows_the_records(): void

@@ -16,7 +16,7 @@
             </div>
         </div>
         <div class="actions">
-            <a href="{{ route('gov.sea-map') }}" class="btn btn-outline">@include('partials.icon', ['name' => 'map']) عرض على الخريطة</a>
+            <a href="{{ route('screens.sea-map') }}" class="btn btn-outline">@include('partials.icon', ['name' => 'map']) عرض على الخريطة</a>
         </div>
     </div>
 

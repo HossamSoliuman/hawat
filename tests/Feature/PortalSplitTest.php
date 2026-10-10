@@ -10,11 +10,13 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 /**
- * أربع بوابات في منتجين على النطاق الرئيسي: الإحصاء تحت /stats ومعه شاشة العرض
- * تحت /gov، والخدمات والتراخيص تحت /services، وإدارة النظام تحت /subadmin مع
- * بوابة المعلومات على مضيفها، وتطبيق حوات تحت /admin. هذه الاختبارات تحرس الحدّ
- * بينها — أن كل صفحة تُقدَّم من موضعها فقط، وأن القائمة الجانبية تتبدّل مع
- * البوابة، وهما ما ينكسر بصمت عند إضافة مسار في المكان الخطأ.
+ * أربع بوابات في منتجين على مضيفين: بوابات الوزارة الثلاث على مضيفها
+ * (gov_domain) — الإحصاء تحت /stats ومعه شاشة العرض تحت /screens، والخدمات
+ * والتراخيص تحت /services، وإدارة النظام تحت /subadmin مع بوابة المعلومات — ثم
+ * تطبيق حوات على النطاق الرئيسي تحت /admin. هذه الاختبارات تحرس الحدّ بينها:
+ * أن كل صفحة تُقدَّم من مضيفها وموضعها فقط، وأن المواضع القديمة تُحوَّل، وأن
+ * القائمة الجانبية تتبدّل مع البوابة — وكلها ينكسر بصمت عند إضافة مسار في
+ * المكان الخطأ.
  *
  * إدارة النظام وتطبيق حوات خلف الدخول، فصفحاتهما تُطلب هنا بمستخدم داخل.
  */
@@ -28,22 +30,22 @@ class PortalSplitTest extends TestCase
     }
 
     /** لوحات شاشة العرض — تبويب واحد في قائمة الإحصاء. */
-    public static function govPages(): array
+    public static function screenPages(): array
     {
         return [
-            ['/gov'],
-            ['/gov/overview'],
-            ['/gov/sea-map'],
-            ['/gov/production'],
-            ['/gov/ports-compare'],
-            ['/gov/sustainability'],
+            ['/screens'],
+            ['/screens/overview'],
+            ['/screens/sea-map'],
+            ['/screens/production'],
+            ['/screens/ports-compare'],
+            ['/screens/sustainability'],
         ];
     }
 
-    #[DataProvider('govPages')]
-    public function test_a_wall_screen_answers_under_the_gov_prefix(string $url): void
+    #[DataProvider('screenPages')]
+    public function test_a_wall_screen_answers_under_the_screens_prefix(string $path): void
     {
-        $this->get($url)->assertOk();
+        $this->get($this->govUrl($path))->assertOk();
     }
 
     /** المسارات التي تُقدَّم من قسم الإحصاء تحت /stats. */
@@ -70,9 +72,9 @@ class PortalSplitTest extends TestCase
     }
 
     #[DataProvider('statisticsPages')]
-    public function test_a_statistics_page_answers_under_the_stats_prefix(string $url): void
+    public function test_a_statistics_page_answers_under_the_stats_prefix(string $path): void
     {
-        $this->get($url)->assertOk();
+        $this->get($this->govUrl($path))->assertOk();
     }
 
     /**
@@ -98,18 +100,18 @@ class PortalSplitTest extends TestCase
     }
 
     #[DataProvider('opsPages')]
-    public function test_an_operations_page_answers_under_the_admin_prefix(string $url): void
+    public function test_an_operations_page_answers_under_the_admin_prefix(string $path): void
     {
-        $this->asSuperAdmin()->get($url)->assertOk();
+        $this->asSuperAdmin()->get($this->mainUrl($path))->assertOk();
     }
 
     #[DataProvider('opsPages')]
-    public function test_an_operations_page_is_behind_the_panel_login(string $url): void
+    public function test_an_operations_page_is_behind_the_panel_login(string $path): void
     {
-        $this->get($url)->assertRedirect(route('panel.login'));
+        $this->get($this->mainUrl($path))->assertRedirect(route('panel.login'));
     }
 
-    /** لوحات إدارة النظام على النطاق الرئيسي تحت /subadmin. */
+    /** لوحات إدارة النظام تحت /subadmin. */
     public static function subAdministrationPages(): array
     {
         return [
@@ -124,16 +126,16 @@ class PortalSplitTest extends TestCase
     }
 
     #[DataProvider('subAdministrationPages')]
-    public function test_a_system_administration_page_answers_under_its_prefix(string $url): void
+    public function test_a_system_administration_page_answers_under_its_prefix(string $path): void
     {
-        $this->actingAs(User::factory()->create())->get($url)->assertOk();
+        $this->actingAs(User::factory()->create())->get($this->govUrl($path))->assertOk();
     }
 
     #[DataProvider('subAdministrationPages')]
-    public function test_a_system_administration_page_is_behind_the_info_portal_login(string $url): void
+    public function test_a_system_administration_page_is_behind_the_info_portal_login(string $path): void
     {
-        // دخول واحد لنصفَي إدارة النظام: صفحة دخول بوابة المعلومات، لا دخول التطبيق.
-        $this->get($url)->assertRedirect(route('login'));
+        // دخول واحد لنصفَي إدارة النظام على مضيف الوزارة، لا دخول التطبيق.
+        $this->get($this->govUrl($path))->assertRedirect($this->govUrl('/login'));
     }
 
     /** المسارات التي تُقدَّم من قسم الخدمات والتراخيص تحت /services. */
@@ -151,12 +153,12 @@ class PortalSplitTest extends TestCase
     }
 
     #[DataProvider('servicesPages')]
-    public function test_a_services_page_answers_under_its_prefix(string $url): void
+    public function test_a_services_page_answers_under_its_prefix(string $path): void
     {
-        $this->get($url)->assertOk();
+        $this->get($this->govUrl($path))->assertOk();
     }
 
-    /** المواضع التي كانت تُقدَّم منها هذه الصفحات قبل النقل. */
+    /** المواضع التي كانت تُقدَّم منها هذه الصفحات قبل نقلها تحت بادئات. */
     public static function vacatedPaths(): array
     {
         return [
@@ -166,12 +168,13 @@ class PortalSplitTest extends TestCase
     }
 
     #[DataProvider('vacatedPaths')]
-    public function test_a_moved_page_no_longer_answers_at_its_old_path(string $url): void
+    public function test_a_moved_page_no_longer_answers_at_its_old_path(string $path): void
     {
-        $this->get($url)->assertNotFound();
+        $this->get($this->mainUrl($path))->assertNotFound();
+        $this->get($this->govUrl($path))->assertNotFound();
     }
 
-    /** مواضع اللوحات قبل نقلها، ووجهة كل منها. */
+    /** مواضع اللوحات على مضيف الوزارة قبل نقلها، ووجهة كل منها. */
     public static function sectionRedirects(): array
     {
         return [
@@ -184,6 +187,10 @@ class PortalSplitTest extends TestCase
             ['/services/fisher-services', '/services'],
             ['/gov/compliance', '/services/compliance'],
             ['/services/staff-management', '/subadmin/staff-management'],
+            // لوحات القاعة نفسها انتقلت من /gov إلى /screens.
+            ['/gov', '/screens'],
+            ['/gov/overview', '/screens/overview'],
+            ['/gov/sea-map', '/screens/sea-map'],
         ];
     }
 
@@ -191,59 +198,96 @@ class PortalSplitTest extends TestCase
     public function test_a_moved_page_redirects_from_where_it_used_to_live(string $old, string $new): void
     {
         // الروابط المحفوظة قبل النقل تبقى عاملة، ولا تُقدَّم الصفحة من موضعين.
-        $this->get($old)->assertMovedPermanently()->assertRedirect($new);
+        $this->get($this->govUrl($old))->assertMovedPermanently()->assertRedirect($this->govUrl($new));
     }
 
     public function test_the_old_users_page_redirects_to_the_one_that_edits_them(): void
     {
         // صفحة /subadmin/users كانت نسخة للعرض فقط من تبويب بوابة المعلومات.
-        $this->get('/subadmin/users')->assertMovedPermanently()->assertRedirect(route('admin.tab', 'permissions'));
+        $this->get($this->govUrl('/subadmin/users'))->assertMovedPermanently()->assertRedirect(route('admin.tab', 'permissions'));
     }
 
-    public function test_the_sections_page_offers_four_portals_in_two_products(): void
+    /** ما كان من بوابات الوزارة على النطاق الرئيسي، ووجهته على مضيفها. */
+    public static function mainHostLeftovers(): array
     {
-        $this->get('/sections')
+        return [
+            ['/sections', '/'],
+            ['/login', '/login'],
+            ['/stats', '/stats'],
+            ['/stats/reports?year=2026', '/stats/reports?year=2026'],
+            ['/services/support', '/services/support'],
+            ['/subadmin/geo', '/subadmin/geo'],
+            ['/gov/sea-map', '/gov/sea-map'],
+        ];
+    }
+
+    #[DataProvider('mainHostLeftovers')]
+    public function test_a_ministry_page_on_the_main_domain_moves_to_the_ministry_host(string $old, string $new): void
+    {
+        $this->get($this->mainUrl($old))->assertMovedPermanently()->assertRedirect($this->govUrl($new));
+    }
+
+    public function test_each_host_serves_only_its_own_product(): void
+    {
+        // جذر النطاق الرئيسي صفحة الهبوط، وجذر مضيف الوزارة صناديق بواباتها.
+        $this->get($this->mainUrl('/'))->assertOk()->assertSee(route('landing.register'), false);
+        $this->get($this->govUrl('/'))->assertOk()->assertDontSee(route('landing.register'), false);
+
+        // تطبيق حوات وصفحاته العامة لا تُقدَّم من مضيف الوزارة.
+        foreach (['/admin', '/admin/login', '/counter/apply', '/api/docs'] as $path) {
+            $this->get($this->govUrl($path))->assertNotFound();
+        }
+    }
+
+    public function test_another_host_is_sent_to_the_main_domain(): void
+    {
+        // www. أو عنوان الخادم: المسار نفسه على النطاق الرئيسي.
+        $this->get('http://www.'.config('hawat.domain').'/admin/login?x=1')
+            ->assertMovedPermanently()
+            ->assertRedirect($this->mainUrl('/admin/login?x=1'));
+    }
+
+    public function test_the_ministry_host_offers_its_three_portals_and_not_the_app(): void
+    {
+        $this->get($this->govUrl('/'))
             ->assertOk()
-            ->assertSeeInOrder(['الوزارة', 'الإحصاء', 'الخدمات والتراخيص', 'إدارة النظام', 'تطبيق حوات'], false)
+            ->assertSeeInOrder(['الإحصاء', 'الخدمات والتراخيص', 'إدارة النظام'], false)
             ->assertSee('href="'.route('stats.executive-briefing').'"', false)
             ->assertSee('href="'.route('services.fisher-services').'"', false)
             ->assertSee('href="'.route('admin.index').'"', false)
-            ->assertSee('href="'.route('panel.home').'"', false)
-            // صندوق التطبيق يصفه بأدواره لا بقائمة دور واحد.
-            ->assertSeeInOrder(['المالك', 'الكابتن', 'العدّاد', 'الدلال', 'التاجر'], false)
-            // البوابات التي طُويت لا صندوق لها.
-            ->assertDontSee('التفاعلية', false)
-            ->assertDontSee('الإدارات', false)
-            ->assertDontSee('href="'.route('gov.home').'"', false);
+            // تطبيق حوات على النطاق الرئيسي، فلا صندوق له هنا.
+            ->assertDontSee('تطبيق حوات', false)
+            ->assertDontSee(route('panel.home'), false)
+            ->assertDontSee('href="'.route('screens.home').'"', false);
     }
 
     public function test_each_portal_renders_its_own_sidebar(): void
     {
         // كل صفحة ترى روابط بوابتها ولا ترى روابط غيرها. شاشة العرض من الإحصاء،
         // وتُفتح على وضع العرض بلا قائمة جانبية، فنطلبها بتخطيطها الكامل.
-        $this->get('/gov/production?screen=0')
+        $this->get($this->govUrl('/screens/production?screen=0'))
             ->assertSee(route('stats.field-statistics'), false)
             ->assertDontSee(route('trips'), false)
             ->assertDontSee(route('services.support'), false);
 
-        $this->get('/stats/field-statistics')
+        $this->get($this->govUrl('/stats/field-statistics'))
             ->assertSee(route('stats.reports'), false)
-            ->assertSee(route('gov.home'), false)
+            ->assertSee(route('screens.home'), false)
             ->assertDontSee(route('trips'), false);
 
-        $this->get('/services')
+        $this->get($this->govUrl('/services'))
             ->assertSee(route('services.support'), false)
             ->assertDontSee(route('trips'), false)
             ->assertDontSee(route('stats.field-statistics'), false)
             ->assertDontSee(route('subadmin.staff-management'), false);
 
-        $this->asSuperAdmin()->get('/admin/trips')
+        $this->asSuperAdmin()->get($this->mainUrl('/admin/trips'))
             ->assertSee(route('bycatch'), false)
             ->assertSee(route('panel.users'), false)
-            ->assertDontSee(route('gov.production'), false)
+            ->assertDontSee(route('screens.production'), false)
             ->assertDontSee(route('stats.field-statistics'), false);
 
-        $this->get('/subadmin/org-structure')
+        $this->get($this->govUrl('/subadmin/org-structure'))
             ->assertSee(route('subadmin.audit-log'), false)
             ->assertSee(route('subadmin.staff-management'), false)
             ->assertDontSee(route('trips'), false)
@@ -253,22 +297,22 @@ class PortalSplitTest extends TestCase
     public function test_master_data_is_left_to_system_administration(): void
     {
         // البيانات الأساسية موضعها إدارة النظام وحدها، فلا تعرضها قائمة المدير العام.
-        $response = $this->asSuperAdmin()->get('/admin/trips')->assertOk();
+        $response = $this->asSuperAdmin()->get($this->mainUrl('/admin/trips'))->assertOk();
 
         foreach (['regions', 'governorates', 'species', 'fishing-seasons', 'boats', 'fishers', 'ports', 'fishing-sites'] as $route) {
             $response->assertDontSee('href="'.route($route).'"', false);
         }
 
-        $this->get('/subadmin/settings')
+        $this->get($this->govUrl('/subadmin/settings'))
             ->assertSee(route('admin.tab', 'geo'), false)
             ->assertSee(route('admin.tab', 'fleet'), false)
             ->assertSee(route('admin.tab', 'seasons'), false);
     }
 
-    public function test_system_administration_shows_one_menu_on_both_hosts(): void
+    public function test_system_administration_shows_one_menu_for_both_halves(): void
     {
-        // نصفا إدارة النظام قائمة واحدة: لوحات /subadmin في بوابة المعلومات،
-        // وتبويباتها في /subadmin.
+        // نصفا إدارة النظام قائمة واحدة: لوحات القسم في تبويبات بوابة المعلومات،
+        // وتبويباتها في لوحات القسم.
         $this->actingAs(User::factory()->create());
 
         $this->get(route('admin.tab', 'geo'))

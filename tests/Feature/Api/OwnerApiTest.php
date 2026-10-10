@@ -225,7 +225,7 @@ class OwnerApiTest extends TestCase
 
         // 4. الوزارة تسجّل الإحصاء من صفحتها → يُفتح البيع ويدخل المخزون.
         $this->app['auth']->forgetGuards();
-        $this->post("/stats/field-statistics/{$trip['id']}/record", ['actual_weight_kg' => 158, 'statistics_officer' => 'محمد العوامي'])
+        $this->post(route('stats.field-statistics.record', $trip['id']), ['actual_weight_kg' => 158, 'statistics_officer' => 'محمد العوامي'])
             ->assertRedirect(route('stats.field-statistics'));
 
         $model = Trip::find($trip['id']);

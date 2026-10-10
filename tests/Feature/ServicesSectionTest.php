@@ -12,6 +12,7 @@ use App\Models\Region;
 use App\Models\SupportTicket;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\OnGovHost;
 use Tests\TestCase;
 
 /**
@@ -23,6 +24,7 @@ use Tests\TestCase;
  */
 class ServicesSectionTest extends TestCase
 {
+    use OnGovHost;
     use RefreshDatabase;
 
     private Port $qatif;

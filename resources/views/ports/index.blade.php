@@ -12,7 +12,7 @@
             </div>
         </div>
         <div class="actions">
-            <a href="{{ route('gov.ports-compare') }}" class="btn btn-outline">@include('partials.icon', ['name' => 'bar-chart']) مقارنة الموانئ</a>
+            <a href="{{ route('screens.ports-compare') }}" class="btn btn-outline">@include('partials.icon', ['name' => 'bar-chart']) مقارنة الموانئ</a>
         </div>
     </div>
 
