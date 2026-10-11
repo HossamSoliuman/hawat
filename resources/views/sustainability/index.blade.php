@@ -12,7 +12,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'leaf'])</div>
             <div>
                 <h1>الاستدامة</h1>
-                <p>حالة المخزون السمكي، ضغط الصيد على المواقع، والصيد العرضي</p>
             </div>
         </div>
     </div>

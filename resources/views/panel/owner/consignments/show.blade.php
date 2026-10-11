@@ -8,7 +8,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'send'])</div>
             <div>
                 <h1 class="num">{{ $consignment->consignment_number }}</h1>
-                <p>إلى {{ $consignment->dalal?->name }} — {{ $consignment->sent_at?->format('Y-m-d H:i') }}</p>
             </div>
         </div>
         <div class="actions">

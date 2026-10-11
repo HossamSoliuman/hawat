@@ -8,7 +8,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'receipt'])</div>
             <div>
                 <h1>المصروفات</h1>
-                <p>سندات المصروفات التشغيلية والحكومية والعامة، والصيانة المكتملة تُرحَّل إليها تلقائيًا</p>
             </div>
         </div>
         <div class="actions">
@@ -29,7 +28,7 @@
 
     @if ($byGroup->isNotEmpty())
         <div class="card" style="margin-bottom:1.25rem">
-            @include('partials.section-head', ['icon' => 'layers', 'title' => 'حسب المجموعة', 'note' => 'ضمن التصفية الحالية — الضريبة '.number_format($totals->vat, 2).' ر.س'])
+            @include('partials.section-head', ['icon' => 'layers', 'title' => 'حسب المجموعة'])
             <div style="display:grid;gap:.6rem">
                 @foreach ($byGroup as $g)
                     @php $share = $totals->total > 0 ? $g->total / $totals->total * 100 : 0; @endphp

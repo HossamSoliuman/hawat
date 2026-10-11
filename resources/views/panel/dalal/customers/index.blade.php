@@ -8,7 +8,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'handshake'])</div>
             <div>
                 <h1>العملاء</h1>
-                <p>إضافة وتعديل وإدارة بيانات عملائك — القائمة التي تختار منها عند البيع</p>
             </div>
         </div>
         <div class="actions">

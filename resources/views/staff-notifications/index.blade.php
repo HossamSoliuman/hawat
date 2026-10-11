@@ -17,7 +17,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'bell-ring'])</div>
             <div>
                 <h1>التنبيهات الإدارية</h1>
-                <p>إشعارات تصل فور وصول طلب يحتاج توقيعًا أو اعتمادًا إداريًا</p>
             </div>
         </div>
         <div class="actions">

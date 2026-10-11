@@ -13,7 +13,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'user-cog'])</div>
             <div>
                 <h1>إدارة الموظفين</h1>
-                <p>إسناد كل موظف لقسمه، وتخويله بالخدمات، وضبط صلاحياته، وتتبّع ما أُسند إليه</p>
             </div>
         </div>
         <div class="actions">

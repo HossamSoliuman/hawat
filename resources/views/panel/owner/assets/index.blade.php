@@ -8,7 +8,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'archive'])</div>
             <div>
                 <h1>الأصول والإهلاك</h1>
-                <p>سجل الأصول بإهلاك القسط الثابت شهريًا: (التكلفة − الخردة) ÷ العمر ÷ 12 من شهر الشراء</p>
             </div>
         </div>
         <div class="actions">

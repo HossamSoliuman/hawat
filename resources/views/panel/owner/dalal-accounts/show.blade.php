@@ -8,7 +8,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'calculator'])</div>
             <div>
                 <h1>كشف حساب {{ $dalal->name }}</h1>
-                <p>فواتيره من مصيدك (صافيها لك) ودفعاته (ما استلمته) بالتاريخ، والرصيد بعد كل حركة</p>
             </div>
         </div>
         <div class="actions">

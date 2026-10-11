@@ -8,7 +8,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'settings'])</div>
             <div>
                 <h1>الإعدادات</h1>
-                <p>إعدادات النظام العامة والتكامل — وما يُحرَّر منها هنا هو تفضيلات الإشعارات</p>
             </div>
         </div>
     </div>

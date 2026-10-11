@@ -24,7 +24,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'layout-dashboard'])</div>
             <div>
                 <h1>المدير العام</h1>
-                <p>حال الأسطول والرحلات والمصيد والمبيعات على مستوى النظام كله</p>
             </div>
         </div>
         <div class="actions">
@@ -43,28 +42,28 @@
 
     <div class="grid-2" style="margin-bottom:1.25rem">
         <div class="card">
-            @include('partials.section-head', ['icon' => 'fish', 'title' => 'المصيد المعدود', 'note' => 'آخر ستة أشهر — كجم'])
+            @include('partials.section-head', ['icon' => 'fish', 'title' => 'المصيد المعدود'])
             <div class="chart-wrap"><canvas id="catchChart"></canvas></div>
         </div>
         <div class="card">
-            @include('partials.section-head', ['icon' => 'coins', 'title' => 'إيرادات البيع', 'note' => 'آخر ستة أشهر — ر.س'])
+            @include('partials.section-head', ['icon' => 'coins', 'title' => 'إيرادات البيع'])
             <div class="chart-wrap"><canvas id="salesChart"></canvas></div>
         </div>
     </div>
 
     <div class="grid-2" style="margin-bottom:1.25rem">
         <div class="card">
-            @include('partials.section-head', ['icon' => 'activity', 'title' => 'الرحلات حسب الحالة', 'note' => 'كل الرحلات'])
+            @include('partials.section-head', ['icon' => 'activity', 'title' => 'الرحلات حسب الحالة'])
             <div class="chart-wrap"><canvas id="statusChart"></canvas></div>
         </div>
         <div class="card">
-            @include('partials.section-head', ['icon' => 'fish', 'title' => 'الأصناف الأعلى مصيدًا', 'note' => 'إجمالي المسجّل — كجم'])
+            @include('partials.section-head', ['icon' => 'fish', 'title' => 'الأصناف الأعلى مصيدًا'])
             <div class="chart-wrap"><canvas id="speciesChart"></canvas></div>
         </div>
     </div>
 
     <div class="card">
-        @include('partials.section-head', ['icon' => 'route', 'title' => 'الرحلات النشطة', 'note' => 'من الانطلاق حتى البيع'])
+        @include('partials.section-head', ['icon' => 'route', 'title' => 'الرحلات النشطة'])
         <div class="table-card" style="border:0">
             <table class="data-table">
                 <thead><tr><th>الرحلة</th><th>القارب</th><th>المالك</th><th>الكابتن</th><th>الحالة</th></tr></thead>

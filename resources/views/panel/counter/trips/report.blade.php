@@ -8,7 +8,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'file-text'])</div>
             <div>
                 <h1>تقرير مفصّل للرحلة <span class="num">{{ $trip->trip_number }}</span></h1>
-                <p>الرحلة وطاقمها ومركبها ورخصتها وتفاصيل مصيدها صنفًا صنفًا</p>
             </div>
         </div>
         <div class="actions">
@@ -43,7 +42,7 @@
     </div>
 
     <div class="card">
-        @include('partials.section-head', ['icon' => 'fish', 'title' => 'تفاصيل المصيد', 'note' => $totals['species'].' أصناف'])
+        @include('partials.section-head', ['icon' => 'fish', 'title' => 'تفاصيل المصيد'])
         <div class="table-card" style="border:0">
             <table class="data-table">
                 <thead>

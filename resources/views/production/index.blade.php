@@ -8,7 +8,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'fish'])</div>
             <div>
                 <h1>الإنتاج السمكي</h1>
-                <p>تحليل الإنتاج حسب الفترة، المنطقة، الميناء، والنوع</p>
             </div>
         </div>
     </div>

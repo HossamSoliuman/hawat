@@ -8,7 +8,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'send'])</div>
             <div>
                 <h1>الإرسال للدلال</h1>
-                <p>شحنات المصيد التي أرسلتها إلى مخزون الدلالين ليبيعوها لحسابك</p>
             </div>
         </div>
         <div class="actions">

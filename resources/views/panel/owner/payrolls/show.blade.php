@@ -15,7 +15,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'calculator'])</div>
             <div>
                 <h1>مسير {{ $payroll->boat_name }} — {{ $payroll->period_label }}</h1>
-                <p><span class="num">{{ $payroll->payroll_number }}</span> · {{ $payroll->paymentStatus?->name }} · {{ $closed ? 'الشهر مُغلق — الأرقام مجمَّدة والسداد متاح' : ($unpaid->isEmpty() ? 'مُسدَّد ومجمَّد' : 'يُعاد حسابه عند كل فتح حتى يُسدَّد') }}</p>
             </div>
         </div>
         <div class="actions">

@@ -8,7 +8,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'clipboard-check'])</div>
             <div>
                 <h1>فحوصات القوارب</h1>
-                <p>فحص السلامة وصلاحية الإبحار لكل قارب — آخر فحص يحدد موعد الفحص القادم (بعد سنة إلا عشرة أيام ما لم يُحدَّد)</p>
             </div>
         </div>
         <div class="actions">
@@ -20,7 +19,7 @@
     @if ($errors->any())<div class="flash-error">{{ $errors->first() }}</div>@endif
 
     <div class="card" style="margin-bottom:1.25rem">
-        @include('partials.section-head', ['icon' => 'ship', 'title' => 'موقف الأسطول', 'note' => 'آخر فحص والموعد القادم لكل قارب'])
+        @include('partials.section-head', ['icon' => 'ship', 'title' => 'موقف الأسطول'])
         <div class="table-card" style="border:0">
             <table class="data-table">
                 <thead><tr><th>القارب</th><th>آخر فحص</th><th>النتيجة</th><th>الفحص القادم</th><th>الموقف</th></tr></thead>

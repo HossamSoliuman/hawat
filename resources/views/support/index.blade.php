@@ -27,7 +27,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'life-buoy'])</div>
             <div>
                 <h1>الدعم الفني</h1>
-                <p>قناة تواصل داخلية لتقديم المشاكل التقنية والاستفسارات وطلبات التعديل لمسؤولي النظام</p>
             </div>
         </div>
         <div class="actions">

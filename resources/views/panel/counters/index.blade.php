@@ -8,7 +8,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'clipboard-check'])</div>
             <div>
                 <h1>العدّادون</h1>
-                <p>عدّادو الوزارة وعدّادو شركات التشغيل — توقف أيًّا منهم أو تنقله، وإيقافك لا ترفعه الشركة</p>
             </div>
         </div>
         <div class="actions">

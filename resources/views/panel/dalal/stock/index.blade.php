@@ -8,7 +8,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'archive'])</div>
             <div>
                 <h1>مخزون الدلال</h1>
-                <p>ما أرسله الملاك إليك ولم يُبع بعد — مجمّعًا حسب المالك ثم رحلة رحلة</p>
             </div>
         </div>
         <div class="actions">
@@ -28,7 +27,7 @@
 
     @forelse ($owners as $group)
         <div class="card" style="margin-bottom:1rem">
-            @include('partials.section-head', ['icon' => 'user', 'title' => $group['owner'], 'note' => 'عدد الأسماك '.$group['species_count'].'، الوزن '.number_format($group['total_kg'], 1).' كجم'])
+            @include('partials.section-head', ['icon' => 'user', 'title' => $group['owner']])
             <div class="table-card" style="border:0">
                 <table class="data-table">
                     <thead><tr><th>الصنف</th><th>الاسم العلمي</th><th>الرحلة</th><th>القارب</th><th>تاريخ الإضافة</th><th style="text-align:left">وزن الصنف</th></tr></thead>
@@ -55,7 +54,7 @@
     @endforelse
 
     <div class="card">
-        @include('partials.section-head', ['icon' => 'send', 'title' => 'الإرسالات الواردة', 'note' => number_format($summary['consignments_count']).' إرسالية'])
+        @include('partials.section-head', ['icon' => 'send', 'title' => 'الإرسالات الواردة'])
         <div class="table-card" style="border:0">
             <table class="data-table">
                 <thead><tr><th>الرقم</th><th>المالك</th><th>الرحلة</th><th>الأصناف</th><th>الوزن</th><th>التاريخ</th></tr></thead>

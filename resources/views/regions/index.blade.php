@@ -8,7 +8,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'map'])</div>
             <div>
                 <h1>المناطق</h1>
-                <p>إدارة المناطق الإدارية الساحلية وبياناتها الإجمالية</p>
             </div>
         </div>
         <div class="actions">

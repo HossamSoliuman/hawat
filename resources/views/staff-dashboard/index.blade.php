@@ -17,7 +17,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'shield-check'])</div>
             <div>
                 <h1>لوحة الموظف</h1>
-                <p>ما ينتظر كل موظف من طلبات — محدودًا بصلاحياته وبتخويله الوظيفي ونطاقه الجغرافي</p>
             </div>
         </div>
         <form method="GET" class="actions">

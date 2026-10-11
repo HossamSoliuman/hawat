@@ -14,7 +14,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'route'])</div>
             <div>
                 <h1>الرحلات</h1>
-                <p>أنشئ الرحلة وأسندها لكابتن؛ يبدؤها من التطبيق ويرسل مصيدها، ويعدّه العدّاد، ثم تبيعه من هنا</p>
             </div>
         </div>
         <div class="actions">

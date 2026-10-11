@@ -24,7 +24,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'user-check'])</div>
             <div>
                 <h1>طلبات التسجيل</h1>
-                <p>ملاك القوارب والدلالون الذين سجّلوا من صفحة حوات — يُنشأ الحساب عند الاعتماد</p>
             </div>
         </div>
     </div>

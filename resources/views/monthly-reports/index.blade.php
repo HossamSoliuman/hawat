@@ -69,7 +69,7 @@
         </form>
     </div>
 
-    @include('partials.section-head', ['icon' => 'gauge', 'title' => 'إجماليات الفترة', 'note' => $report['period_label']])
+    @include('partials.section-head', ['icon' => 'gauge', 'title' => 'إجماليات الفترة'])
 
     <div class="stat-grid cols-5">
         @include('partials.stat-card', ['label' => 'إجمالي المصيد', 'value' => number_format($totals['catch_kg'], 1), 'unit' => 'كجم', 'icon' => 'fish', 'tone' => 'primary'])

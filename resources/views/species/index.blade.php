@@ -13,7 +13,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'fish'])</div>
             <div>
                 <h1>الأنواع السمكية</h1>
-                <p>الأنواع المصادة، تصنيفها، مواسمها، وحالة المخزون</p>
             </div>
         </div>
         <div class="actions">

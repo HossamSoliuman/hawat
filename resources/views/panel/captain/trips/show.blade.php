@@ -12,7 +12,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'route'])</div>
             <div>
                 <h1 class="num">{{ $trip->trip_number }}</h1>
-                <p>{{ $trip->boat?->name }} — {{ $trip->departurePort?->name }} — المالك: {{ $trip->owner?->name ?? '—' }}</p>
             </div>
         </div>
         <div class="actions">
@@ -68,7 +67,7 @@
         </div>
 
         <div class="card">
-            @include('partials.section-head', ['icon' => 'fish', 'title' => 'مخرجات المصيد', 'note' => $trip->catchRecords->isNotEmpty() ? $trip->catchRecords->count().' أصناف — '.number_format((float) $trip->captain_input_kg, 1).' كجم' : null])
+            @include('partials.section-head', ['icon' => 'fish', 'title' => 'مخرجات المصيد'])
             @if ($trip->catchRecords->isNotEmpty())
                 <div class="table-card" style="border:0">
                     <table class="data-table">

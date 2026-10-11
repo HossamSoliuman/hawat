@@ -8,7 +8,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'coins'])</div>
             <div>
                 <h1>إضافة عملية بيع</h1>
-                <p>من مخزونك — المتاح {{ number_format($species->sum('available_kg'), 1) }} كجم في {{ $species->count() }} صنف</p>
             </div>
         </div>
         <div class="actions">
@@ -40,7 +39,7 @@
                 </label>
             </div>
 
-            @include('partials.section-head', ['icon' => 'fish', 'title' => 'الأصناف', 'note' => 'الدفعة اختيارية — بلا دفعة يُصرف من أقدم ما استلمته من الصنف'])
+            @include('partials.section-head', ['icon' => 'fish', 'title' => 'الأصناف'])
             <table class="data-table lines-table" style="margin-bottom:.75rem">
                 <thead>
                     <tr>

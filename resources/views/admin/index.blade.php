@@ -19,7 +19,6 @@
                     @endif
                 </p>
                 <h1>{{ $definition['label'] }}</h1>
-                <p class="en" dir="ltr" style="text-align:right">{{ $definition['label_en'] }}</p>
             </div>
         </div>
     </div>

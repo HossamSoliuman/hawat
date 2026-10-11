@@ -8,7 +8,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'hammer'])</div>
             <div>
                 <h1>صيانة القوارب</h1>
-                <p>مواعيد الصيانة والفحص وتكلفتها لكل قارب — الصيانة المكتملة تُرحَّل تكلفتها إلى المصروفات</p>
             </div>
         </div>
         <div class="actions">

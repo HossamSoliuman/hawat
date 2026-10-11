@@ -8,7 +8,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'clipboard-check'])</div>
             <div>
                 <h1>طابور العد</h1>
-                <p>{{ $port ? 'رحلات '.$port->name.' — ما عاد بمصيده يُستلم ثم يُعدّ ويؤكَّد' : 'لم يُسند إليك ميناء بعد — راجع الإدارة' }}</p>
             </div>
         </div>
     </div>

@@ -24,7 +24,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'git-branch'])</div>
             <div>
                 <h1>الهيكل التنظيمي لقطاع الثروة السمكية</h1>
-                <p>المناصب والصلاحيات وربطها بأدوار النظام والنطاق الجغرافي</p>
             </div>
         </div>
         <div class="actions">

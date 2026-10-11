@@ -8,7 +8,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'file-text'])</div>
             <div>
                 <h1 class="num">فاتورة {{ $sale->invoice_number }}</h1>
-                <p>{{ $sale->customer?->name ?? 'بلا زبون محدد' }} — {{ $sale->sold_at?->format('Y-m-d H:i') }}</p>
             </div>
         </div>
         <div class="actions">

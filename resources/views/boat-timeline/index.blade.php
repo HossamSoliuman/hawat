@@ -8,7 +8,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'clock'])</div>
             <div>
                 <h1>الجدول الزمني للقارب</h1>
-                <p>تتبع رحلات قارب واحد زمنياً مع مصيده وحالة كل رحلة</p>
             </div>
         </div>
     </div>

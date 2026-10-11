@@ -8,7 +8,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'file-text'])</div>
             <div>
                 <h1 class="num">تفاصيل عملية البيع {{ $sale->invoice_number }}</h1>
-                <p>{{ $sale->customer?->name ?? 'بلا زبون محدد' }} — {{ $sale->sold_at?->format('Y-m-d H:i') }}</p>
             </div>
         </div>
         <div class="actions">
@@ -62,7 +61,7 @@
 
     @if ($sale->reviews->isNotEmpty())
         <div class="card" style="margin-bottom:1.25rem">
-            @include('partials.section-head', ['icon' => 'check-circle', 'title' => 'مراجعة الملاك', 'note' => 'كل مالك يراجع سطور مصيده في الفاتورة — ردّك على الرفض يعيدها إلى مراجعته'])
+            @include('partials.section-head', ['icon' => 'check-circle', 'title' => 'مراجعة الملاك'])
             <div class="table-card" style="border:0">
                 <table class="data-table">
                     <thead><tr><th>المالك</th><th>الحالة</th><th>سبب الرفض</th><th>ردّك</th><th></th></tr></thead>

@@ -234,13 +234,16 @@ a { color: inherit; text-decoration: none; }
 .sidebar-nav::-webkit-scrollbar { width: 0; height: 0; }
 
 .nav-section-title { padding: 1rem 1rem .5rem; font-size: .65625rem; font-weight: 600; color: hsl(var(--muted-foreground) / .55); }
+/* القسم بلا عنوان (روابط المالك الأولى) ثابت أعلى القائمة، يفصله خطٌّ عن الأقسام المطويّة تحته. */
+.nav-section.is-pinned { padding: .35rem 0 .5rem; margin-bottom: .35rem; border-bottom: 1px solid var(--hair); }
 /*
  * القسم المطويّ (قائمة المالك): عنوانه <summary> يطويه، بسهمٍ في طرفه الأيسر
  * بدل علامة المتصفّح — يتّجه لأسفل مفتوحًا ونحو البنود (يسارًا) مطويًّا.
+ * بقياس البند نفسه (14px)، يعلوه وزنًا لا حجمًا.
  */
 summary.nav-section-title {
-    display: flex; align-items: center; gap: .5rem; padding: .6rem 1rem;
-    font-size: .75rem; font-weight: 700; color: hsl(var(--muted-foreground) / .8);
+    display: flex; align-items: center; gap: .5rem; min-height: 2.25rem; padding: .4rem 1rem;
+    font-size: .875rem; line-height: 1.5; font-weight: 700; color: hsl(var(--muted-foreground));
     cursor: pointer; list-style: none; user-select: none; transition: color .15s;
 }
 summary.nav-section-title::-webkit-details-marker { display: none; }
@@ -347,7 +350,6 @@ html.dark .topbar { border-bottom: 1px solid hsl(var(--primary) / .4); }
 .section-head .ico { display: flex; align-items: center; justify-content: center; height: 1.9rem; width: 1.9rem; flex-shrink: 0; background: hsl(var(--primary) / .1); border: 1px solid hsl(var(--primary) / .5); color: hsl(var(--primary)); }
 .section-head .ico svg { width: 15px; height: 15px; }
 .section-head h2 { font-size: .82rem; font-weight: 700; letter-spacing: .02em; white-space: nowrap; }
-.section-head small { font-size: .7rem; color: hsl(var(--muted-foreground)); white-space: nowrap; }
 .section-head .line { flex: 1; height: 1px; background: linear-gradient(to left, hsl(var(--border)), transparent); }
 .section-head .with-icon { display: flex; align-items: center; gap: .5rem; }
 .section-head .with-icon svg { width: 15px; height: 15px; color: hsl(var(--primary)); }

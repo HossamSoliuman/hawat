@@ -43,7 +43,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'file-chart'])</div>
             <div>
                 <h1>التقارير المفصلة</h1>
-                <p>كل التقارير على أساس الشهر مع إمكانية التصفية بالقارب</p>
             </div>
         </div>
     </div>

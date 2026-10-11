@@ -8,7 +8,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'archive'])</div>
             <div>
                 <h1>مخزون الدلالين</h1>
-                <p>ما أرسلته من كل قارب ورحلة إلى الدلالين، وما باعوه منه، وما بقي عندهم الآن — من دفتر المخزون نفسه الذي يبيعون منه</p>
             </div>
         </div>
         <div class="actions">
@@ -50,7 +49,7 @@
 
     <div class="grid-2" style="margin-bottom:1.25rem">
         <div class="card">
-            @include('partials.section-head', ['icon' => 'ship', 'title' => 'حسب القارب', 'note' => number_format($totals['boats']).' قارب — '.number_format($totals['trips']).' رحلة'])
+            @include('partials.section-head', ['icon' => 'ship', 'title' => 'حسب القارب'])
             <div class="table-card" style="border:0">
                 <table class="data-table">
                     <thead><tr><th>القارب</th><th>رحلات</th><th>دلالون</th><th>أُرسل</th><th>بيع</th><th>باقٍ</th><th>التصريف</th><th>صافيك</th></tr></thead>
@@ -74,7 +73,7 @@
             </div>
         </div>
         <div class="card">
-            @include('partials.section-head', ['icon' => 'handshake', 'title' => 'حسب الدلال', 'note' => number_format($totals['holding_dalals']).' دلال بمخزونه شيء من مصيدك'])
+            @include('partials.section-head', ['icon' => 'handshake', 'title' => 'حسب الدلال'])
             <div class="table-card" style="border:0">
                 <table class="data-table">
                     <thead><tr><th>الدلال</th><th>أُرسل</th><th>بيع</th><th>باقٍ</th><th>التصريف</th><th>صافيك</th></tr></thead>
@@ -98,7 +97,7 @@
     </div>
 
     <div class="card">
-        @include('partials.section-head', ['icon' => 'route', 'title' => 'حسب الرحلة', 'note' => 'الأحدث أوّلًا — افتح الرحلة لترى كل دلال وأصنافه وإرسالاته وفواتيره'])
+        @include('partials.section-head', ['icon' => 'route', 'title' => 'حسب الرحلة'])
         <div class="table-card" style="border:0">
             <table class="data-table">
                 <thead><tr><th>الرحلة</th><th>القارب</th><th>الدلالون</th><th>أُرسل</th><th>بيع</th><th>أخرى</th><th>باقٍ</th><th>التصريف</th><th>أقدم باقٍ</th><th>قيمة المباع</th><th>صافيك</th><th></th></tr></thead>

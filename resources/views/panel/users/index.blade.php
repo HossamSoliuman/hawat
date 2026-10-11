@@ -15,7 +15,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'user-cog'])</div>
             <div>
                 <h1>حسابات التطبيق</h1>
-                <p>الملاك والعدّادون والدلالون والتجار — من يدخل التطبيق ولوحته على الويب بجواله</p>
             </div>
         </div>
         <div class="actions">

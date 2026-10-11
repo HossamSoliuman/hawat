@@ -2,10 +2,8 @@
     use App\Support\Nav;
 
     $user = auth()->user();
-    // قائمة المالك تُطوى أقسامها: القسم <details> وعنوانه <summary> — انظر Nav::collapsible().
+    // قائمة المالك تُطوى أقسامها المعنونة: القسم <details> وعنوانه <summary> — انظر Nav::collapsible().
     $collapsible = Nav::collapsible();
-    $sectionTag = $collapsible ? 'details' : 'div';
-    $titleTag = $collapsible ? 'summary' : 'p';
 @endphp
 <aside class="sidebar" id="sidebar">
     {{-- الشعار انتقل إلى الشريط العلوي، فلم يبقَ في رأس القائمة إلا زرّ الإغلاق — ولا يظهر إلا دون 1024px. --}}
@@ -19,14 +17,20 @@
         @foreach (Nav::sections() as $section)
             @php
                 $current = collect($section['items'])->contains(fn (array $item) => Nav::isActive($item));
+                $title = $section['title'] ?? null;
+                $folds = $collapsible && $title !== null;
+                $sectionTag = $folds ? 'details' : 'div';
+                $titleTag = $folds ? 'summary' : 'p';
             @endphp
-            <{{ $sectionTag }} class="nav-section" @if ($collapsible) data-group="{{ $section['title'] }}" @if ($current) open data-current @endif @endif>
-                <{{ $titleTag }} class="nav-section-title">
-                    <span>{{ $section['title'] }}</span>
-                    @if ($collapsible)
-                        @include('partials.icon', ['name' => 'chevron-down'])
-                    @endif
-                </{{ $titleTag }}>
+            <{{ $sectionTag }} @class(['nav-section', 'is-pinned' => $title === null]) @if ($folds) data-group="{{ $title }}" @if ($current) open data-current @endif @endif>
+                @if ($title !== null)
+                    <{{ $titleTag }} class="nav-section-title">
+                        <span>{{ $title }}</span>
+                        @if ($folds)
+                            @include('partials.icon', ['name' => 'chevron-down'])
+                        @endif
+                    </{{ $titleTag }}>
+                @endif
                 @foreach ($section['items'] as $item)
                     <a href="{{ Nav::url($item) }}" class="nav-link {{ Nav::isActive($item) ? 'is-active' : '' }}">
                         @include('partials.icon', ['name' => $item['icon']])

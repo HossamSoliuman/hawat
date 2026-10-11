@@ -8,7 +8,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'coins'])</div>
             <div>
                 <h1>المبيعات</h1>
-                <p>إدارة وتتبع جميع عمليات بيع الأسماك من مخزونك</p>
             </div>
         </div>
         <div class="actions">

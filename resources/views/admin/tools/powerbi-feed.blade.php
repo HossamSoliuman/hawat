@@ -1,7 +1,6 @@
 <div class="section-head">
     <div>
         <h2>بيانات Power BI</h2>
-        <p>الجداول المتاحة لتغذية Power BI مع أعداد السجلات ودورية التحديث.</p>
     </div>
 </div>
 

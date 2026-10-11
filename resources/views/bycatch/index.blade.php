@@ -8,7 +8,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'waves'])</div>
             <div>
                 <h1>الصيد العرضي</h1>
-                <p>تسجيل الأنواع غير المستهدفة والإجراء المتخذ بشأنها</p>
             </div>
         </div>
         <div class="actions">

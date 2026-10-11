@@ -8,7 +8,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'settings'])</div>
             <div>
                 <h1>إعدادات النظام</h1>
-                <p>إدارة الحساب التجاري والدكة والشركة — ما يُطبع على فواتيرك وتقاريرك</p>
             </div>
         </div>
         <div class="actions">
@@ -43,7 +42,7 @@
             </form>
 
             <div class="card" style="display:flex;flex-direction:column;gap:1rem">
-                @include('partials.section-head', ['icon' => 'file-text', 'title' => 'شعار الشركة', 'note' => 'يُطبع على الفواتير — الموصى به 200×200'])
+                @include('partials.section-head', ['icon' => 'file-text', 'title' => 'شعار الشركة'])
                 <div style="display:flex;align-items:center;justify-content:center;min-height:9rem;border:1px dashed hsl(var(--border))">
                     @if ($profile->logo_url)
                         <img src="{{ $profile->logo_url }}" alt="الشعار" style="max-height:8rem;max-width:100%">
@@ -67,7 +66,7 @@
     @elseif ($tab === 'workers')
         <div class="grid-3">
             <div class="card span-2">
-                @include('partials.section-head', ['icon' => 'users', 'title' => 'عمالة الدكة', 'note' => number_format($workers->sum('count')).' عامل'])
+                @include('partials.section-head', ['icon' => 'users', 'title' => 'عمالة الدكة'])
                 <div class="table-card" style="border:0">
                     <table class="data-table">
                         <thead><tr><th>النوع</th><th>الجنسية</th><th>العدد</th><th>ملاحظات</th><th></th></tr></thead>
@@ -110,7 +109,7 @@
     @else
         <form method="POST" action="{{ route('panel.dalal.settings.update') }}" class="card" style="display:flex;flex-direction:column;gap:1rem">
             @csrf @method('PUT')
-            @include('partials.section-head', ['icon' => 'user', 'title' => 'الملف التجاري', 'note' => $user->name.' — '.$user->phone])
+            @include('partials.section-head', ['icon' => 'user', 'title' => 'الملف التجاري'])
             <div class="form-grid cols-3">
                 <label class="field"><span>رقم الهوية</span><input class="input num" name="id_number" value="{{ old('id_number', $profile->id_number) }}" dir="ltr"></label>
                 <label class="field"><span>المنطقة</span>

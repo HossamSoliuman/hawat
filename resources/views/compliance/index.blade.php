@@ -12,7 +12,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'shield-check'])</div>
             <div>
                 <h1>الرقابة والامتثال</h1>
-                <p>سجل المخالفات والغرامات والإجراءات المتخذة بحق القوارب</p>
             </div>
         </div>
         <div class="actions">

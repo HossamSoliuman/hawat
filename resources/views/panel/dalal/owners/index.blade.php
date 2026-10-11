@@ -8,7 +8,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'users'])</div>
             <div>
                 <h1>الصيّادون المرتبطون</h1>
-                <p>الملاك الذين أرسلوا لك مخزونًا لإدارته أو قبلت طلبهم — وحساب كلٍّ منهم عندك</p>
             </div>
         </div>
         <div class="actions">

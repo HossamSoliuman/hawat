@@ -8,7 +8,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'route'])</div>
             <div>
                 <h1 class="num">الرحلة {{ $trip->trip_number }} عند الدلالين</h1>
-                <p>{{ $trip->boat?->name }} — ما أُرسل منها إلى كل دلال وما باعه وما بقي عنده، صنفًا صنفًا</p>
             </div>
         </div>
         <div class="actions">
@@ -27,7 +26,7 @@
 
     @forelse ($dalals as $dalal)
         <div class="card" style="margin-bottom:1.25rem">
-            @include('partials.section-head', ['icon' => 'handshake', 'title' => $dalal['dalal'], 'note' => 'أُرسل '.number_format($dalal['consigned_kg'], 1).' كجم — بيع '.number_format($dalal['sold_kg'], 1).' — باقٍ '.number_format($dalal['remaining_kg'], 1)])
+            @include('partials.section-head', ['icon' => 'handshake', 'title' => $dalal['dalal']])
             <div class="table-card" style="border:0">
                 <table class="data-table">
                     <thead><tr><th>الصنف</th><th>أُرسل</th><th>بيع</th><th>أخرى</th><th>باقٍ</th><th>متوسط سعر الكيلو</th><th>قيمة المباع</th><th>صافيك</th><th>منذ</th></tr></thead>
@@ -55,7 +54,7 @@
 
     <div class="grid-2">
         <div class="card">
-            @include('partials.section-head', ['icon' => 'send', 'title' => 'الإرسالات', 'note' => number_format($consignments->count()).' إرسالية'])
+            @include('partials.section-head', ['icon' => 'send', 'title' => 'الإرسالات'])
             <div class="table-card" style="border:0">
                 <table class="data-table">
                     <thead><tr><th>الرقم</th><th>التاريخ</th><th>الدلال</th><th>الأصناف</th><th>الوزن</th></tr></thead>
@@ -76,7 +75,7 @@
             </div>
         </div>
         <div class="card">
-            @include('partials.section-head', ['icon' => 'file-text', 'title' => 'البيع منها', 'note' => number_format($sales->pluck('sale_id')->unique()->count()).' فاتورة دلال'])
+            @include('partials.section-head', ['icon' => 'file-text', 'title' => 'البيع منها'])
             <div class="table-card" style="border:0">
                 <table class="data-table">
                     <thead><tr><th>الفاتورة</th><th>التاريخ</th><th>الدلال</th><th>الصنف</th><th>الوزن</th><th>السعر</th><th>صافيك</th><th>المراجعة</th></tr></thead>

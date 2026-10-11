@@ -14,7 +14,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'route'])</div>
             <div>
                 <h1 class="num">{{ $trip->trip_number }}</h1>
-                <p>{{ $trip->boat?->name }} — {{ $trip->captain?->name ?? $trip->captain_name ?? 'بلا كابتن' }} — {{ $trip->departurePort?->name }}</p>
             </div>
         </div>
         <div class="actions">
@@ -70,7 +69,7 @@
         </div>
 
         <div class="card">
-            @include('partials.section-head', ['icon' => 'fish', 'title' => 'مخرجات المصيد', 'note' => $trip->catchRecords->isNotEmpty() ? $trip->catchRecords->count().' أصناف' : null])
+            @include('partials.section-head', ['icon' => 'fish', 'title' => 'مخرجات المصيد'])
             @if ($trip->catchRecords->isNotEmpty())
                 <div class="table-card" style="border:0">
                     <table class="data-table">
@@ -111,7 +110,7 @@
     @if ($trip->sales->isNotEmpty() || $trip->consignments->isNotEmpty())
         <div class="grid-2">
             <div class="card">
-                @include('partials.section-head', ['icon' => 'coins', 'title' => 'مبيعات الرحلة', 'note' => number_format($trip->sales->sum('total'), 2).' ر.س'])
+                @include('partials.section-head', ['icon' => 'coins', 'title' => 'مبيعات الرحلة'])
                 <div class="table-card" style="border:0">
                     <table class="data-table">
                         <thead><tr><th>الفاتورة</th><th>الزبون</th><th>الوزن</th><th style="text-align:left">الإجمالي</th></tr></thead>
@@ -131,7 +130,7 @@
                 </div>
             </div>
             <div class="card">
-                @include('partials.section-head', ['icon' => 'send', 'title' => 'المرسل للدلالين', 'note' => number_format($trip->consignments->sum('total_kg'), 1).' كجم'])
+                @include('partials.section-head', ['icon' => 'send', 'title' => 'المرسل للدلالين'])
                 <div class="table-card" style="border:0">
                     <table class="data-table">
                         <thead><tr><th>الشحنة</th><th>الدلال</th><th>الأصناف</th><th style="text-align:left">الوزن</th></tr></thead>

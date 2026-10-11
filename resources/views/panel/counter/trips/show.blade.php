@@ -14,7 +14,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'scale'])</div>
             <div>
                 <h1 class="num">{{ $trip->trip_number }}</h1>
-                <p>{{ $trip->boat?->name }} — المالك: {{ $trip->owner?->name ?? '—' }} — القبطان: {{ $trip->captain?->name ?? $trip->captain_name ?? '—' }}</p>
             </div>
         </div>
         <div class="actions">
@@ -68,7 +67,6 @@
             @include('partials.section-head', [
                 'icon' => 'scale',
                 'title' => $trip->canCount() && ! $trip->canReceive() ? 'عدّ المصيد' : 'مخرجات المصيد',
-                'note' => $trip->catchRecords->count().' أصناف — المعلن '.number_format($declared, 1).' كجم',
             ])
 
             @if ($trip->canReceive())

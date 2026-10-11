@@ -8,7 +8,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'coins'])</div>
             <div>
                 <h1>المبيعات</h1>
-                <p>فواتير بيع المصيد للزبائن — والرحلات التي ما زالت تحتاج تسجيل البيع</p>
             </div>
         </div>
     </div>
@@ -23,7 +22,7 @@
 
     @if ($pendingTrips->isNotEmpty())
         <div class="card" style="margin-bottom:1.25rem">
-            @include('partials.section-head', ['icon' => 'shopping-cart', 'title' => 'الرحلات التي تحتاج تسجيل البيع', 'note' => $pendingTrips->count().' رحلة'])
+            @include('partials.section-head', ['icon' => 'shopping-cart', 'title' => 'الرحلات التي تحتاج تسجيل البيع'])
             <div class="table-card" style="border:0">
                 <table class="data-table">
                     <thead><tr><th>الرحلة</th><th>القارب</th><th>اكتمل العد</th><th>المعدود</th><th></th></tr></thead>

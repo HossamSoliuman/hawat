@@ -8,7 +8,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'map'])</div>
             <div>
                 <h1>الخريطة البحرية</h1>
-                <p>خريطة تفاعلية للموانئ ومواقع الصيد والقوارب النشطة ومناطق الحظر</p>
             </div>
         </div>
     </div>

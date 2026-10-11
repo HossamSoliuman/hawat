@@ -8,7 +8,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'layout-dashboard'])</div>
             <div>
                 <h1>مرحبًا {{ $user->name }}</h1>
-                <p>{{ $user->appRole->description }}</p>
             </div>
         </div>
     </div>

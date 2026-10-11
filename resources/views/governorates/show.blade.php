@@ -12,7 +12,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'building'])</div>
             <div>
                 <h1>{{ $governorate->name }}</h1>
-                <p>محافظة ساحلية في {{ $governorate->region?->name ?? '—' }}</p>
             </div>
         </div>
         <div class="actions">

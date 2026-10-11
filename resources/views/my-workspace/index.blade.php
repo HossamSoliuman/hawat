@@ -24,7 +24,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'user'])</div>
             <div>
                 <h1>مساحتي</h1>
-                <p>ما ينتظرك أنت — إجراءات فورية ومهام وتنبيهات وإشعارات، مع تقرير أدائك</p>
             </div>
         </div>
         <form method="GET" class="actions">

@@ -13,7 +13,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'file-text'])</div>
             <div>
                 <h1>فاتورة الدلال <bdi class="num" dir="ltr">{{ $sale->invoice_number }}</bdi></h1>
-                <p>{{ $review->dalal?->name }} — <bdi class="num" dir="ltr">{{ $sale->sold_at?->format('Y-m-d H:i') }}</bdi> — سطور مصيدك فقط</p>
             </div>
         </div>
         <div class="actions">
@@ -49,7 +48,7 @@
         </div>
 
         <div class="card">
-            @include('partials.section-head', ['icon' => 'check-circle', 'title' => 'المراجعة', 'note' => 'قبولك يُبلغ الدلال بأن الأرقام صحيحة، والرفض يرسل إليه السبب'])
+            @include('partials.section-head', ['icon' => 'check-circle', 'title' => 'المراجعة'])
             <dl class="detail-list">
                 <dt>الحالة</dt><dd><span class="badge {{ $review->status_badge }}">{{ $review->status_label }}</span></dd>
                 @if ($review->reviewed_at)

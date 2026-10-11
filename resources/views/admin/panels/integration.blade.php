@@ -5,7 +5,6 @@
 <div class="section-head">
     <div>
         <h2>{{ $config['title'] }}</h2>
-        <p>{{ $config['description'] }}</p>
     </div>
     <span class="badge {{ $setting->enabled ? 'badge-ok' : 'badge-muted' }}">{{ $setting->enabled ? 'مفعّل' : 'معطل' }}</span>
 </div>

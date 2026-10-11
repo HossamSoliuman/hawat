@@ -19,7 +19,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'settings'])</div>
             <div>
                 <h1>الإعدادات</h1>
-                <p>بياناتك الأساسية — قواربك وطاقمك وجهاتك التي تعتمد عليها الرحلات والمبيعات والرواتب</p>
             </div>
         </div>
         <div class="actions">@yield('settings-actions')</div>
@@ -34,7 +33,7 @@
         @endforeach
     </nav>
 
-    @include('partials.section-head', ['icon' => $settingsTab['icon'], 'title' => $settingsTab['label'], 'note' => $settingsTab['note']])
+    @include('partials.section-head', ['icon' => $settingsTab['icon'], 'title' => $settingsTab['label']])
 
     @yield('settings')
 @endsection

@@ -8,7 +8,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'handshake'])</div>
             <div>
                 <h1>طلبات المالكين</h1>
-                <p>إدارة طلبات الربط المقدّمة من الملاك — المقبول منها تُحسب عمولته وأجوره على كل بيع من مصيد صاحبه</p>
             </div>
         </div>
     </div>

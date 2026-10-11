@@ -12,7 +12,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'calculator'])</div>
             <div>
                 <h1>مسيرات الرواتب</h1>
-                <p>مسير لكل قارب في كل شهر: الرواتب الثابتة، ونصيب الطاقم من صافي ربح القارب، والسلف المخصومة</p>
             </div>
         </div>
         <div class="actions">

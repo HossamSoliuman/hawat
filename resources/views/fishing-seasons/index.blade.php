@@ -12,7 +12,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'calendar'])</div>
             <div>
                 <h1>مواسم الصيد</h1>
-                <p>إدارة مواسم الصيد وقراراتها التنظيمية والرخص ودورة المراجعة والاعتماد والنشر</p>
             </div>
         </div>
         <div class="actions">

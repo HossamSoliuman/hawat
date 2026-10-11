@@ -12,7 +12,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'building'])</div>
             <div>
                 <h1>شركات التشغيل</h1>
-                <p>الشركات التي تشغّل الموانئ وتوظّف العدّادين فيها — أسند إلى كل شركة موانئها وأنشئ حساب موظفها</p>
             </div>
         </div>
         <div class="actions">

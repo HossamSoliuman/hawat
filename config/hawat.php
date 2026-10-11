@@ -8,12 +8,12 @@ $domain = env('APP_DOMAIN') ?: parse_url((string) env('APP_URL'), PHP_URL_HOST);
  * الإعدادات وشريط تبويباتها — انظر panel/owner/settings/layout.
  */
 $ownerSettings = [
-    'boats' => ['label' => 'القوارب', 'icon' => 'ship', 'route' => 'panel.owner.boats', 'note' => 'أسطولك كما تراه الوزارة — كل قارب هنا يظهر في صفحة مينائه ومركز المعلومات'],
-    'captains' => ['label' => 'الكباتن', 'icon' => 'user-check', 'route' => 'panel.owner.captains', 'note' => 'حساب دخول للتطبيق فوق سجلّ صياد في الوزارة — الكابتن يبدأ رحلاتك ويرسل مصيدها'],
-    'crew' => ['label' => 'الطاقم', 'icon' => 'users', 'route' => 'panel.owner.crew', 'note' => 'بحّارة قواربك — سجلات صيادين في الوزارة بلا حساب دخول'],
-    'employees' => ['label' => 'الموظفون', 'icon' => 'user', 'route' => 'panel.owner.employees', 'note' => 'موظفوك على البر — محاسب وسائق وعامل — سجلات بلا حساب دخول'],
-    'customers' => ['label' => 'العملاء', 'icon' => 'handshake', 'route' => 'panel.owner.customers', 'note' => 'من تبيع لهم المصيد — القائمة نفسها التي يبحث فيها التطبيق عند تسجيل بيع'],
-    'vendors' => ['label' => 'الموردون', 'icon' => 'truck', 'route' => 'panel.owner.vendors', 'note' => 'موردو الوقود والثلج والمعدات'],
+    'boats' => ['label' => 'القوارب', 'icon' => 'ship', 'route' => 'panel.owner.boats'],
+    'captains' => ['label' => 'الكباتن', 'icon' => 'user-check', 'route' => 'panel.owner.captains'],
+    'crew' => ['label' => 'الطاقم', 'icon' => 'users', 'route' => 'panel.owner.crew'],
+    'employees' => ['label' => 'الموظفون', 'icon' => 'user', 'route' => 'panel.owner.employees'],
+    'customers' => ['label' => 'العملاء', 'icon' => 'handshake', 'route' => 'panel.owner.customers'],
+    'vendors' => ['label' => 'الموردون', 'icon' => 'truck', 'route' => 'panel.owner.vendors'],
 ];
 
 return [
@@ -296,7 +296,7 @@ return [
         ],
         'owner' => [
             [
-                'title' => 'المالك',
+                // بلا عنوان: روابط المالك اليومية ثابتة أعلى القائمة فوق الأقسام المطويّة.
                 'items' => [
                     ['label' => 'الرئيسية', 'route' => 'panel.home', 'icon' => 'layout-dashboard'],
                     ['label' => 'الرحلات', 'route' => 'panel.owner.trips', 'icon' => 'route'],

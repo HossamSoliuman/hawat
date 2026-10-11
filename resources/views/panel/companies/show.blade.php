@@ -30,7 +30,7 @@
 
     <div class="grid-2" style="margin-bottom:1.25rem">
         <div class="card">
-            @include('partials.section-head', ['icon' => 'anchor', 'title' => 'الموانئ التي تشغّلها', 'note' => $company->ports->count().' ميناء'])
+            @include('partials.section-head', ['icon' => 'anchor', 'title' => 'الموانئ التي تشغّلها'])
             <div class="table-card" style="border:0">
                 <table class="data-table">
                     <thead><tr><th>الميناء</th><th>المحافظة</th><th>منذ</th><th></th></tr></thead>
@@ -68,7 +68,7 @@
         </div>
 
         <div class="card">
-            @include('partials.section-head', ['icon' => 'user-cog', 'title' => 'موظفو الشركة', 'note' => 'يدخلون بوابة الشركة بجوالهم'])
+            @include('partials.section-head', ['icon' => 'user-cog', 'title' => 'موظفو الشركة'])
             <div class="table-card" style="border:0">
                 <table class="data-table">
                     <thead><tr><th>الاسم</th><th>الجوال</th><th>آخر دخول</th><th>الحالة</th></tr></thead>
@@ -101,7 +101,7 @@
     </div>
 
     <div class="card" style="margin-bottom:1.25rem">
-        @include('partials.section-head', ['icon' => 'users', 'title' => 'عدّادو الشركة', 'note' => $counters->count().' عدّاد'])
+        @include('partials.section-head', ['icon' => 'users', 'title' => 'عدّادو الشركة'])
         <div class="table-card" style="border:0">
             <table class="data-table">
                 <thead><tr><th>العدّاد</th><th>الرقم الوظيفي</th><th>الميناء</th><th>رحلات عدّها</th><th>الحالة</th></tr></thead>
@@ -124,7 +124,7 @@
     </div>
 
     <div class="card">
-        @include('partials.section-head', ['icon' => 'calendar', 'title' => 'آخر جولات التوظيف', 'note' => 'تفتحها الشركة من بوابتها'])
+        @include('partials.section-head', ['icon' => 'calendar', 'title' => 'آخر جولات التوظيف'])
         <div class="table-card" style="border:0">
             <table class="data-table">
                 <thead><tr><th>الجولة</th><th>الميناء</th><th>المدة</th><th>المقاعد</th><th>الحالة</th></tr></thead>

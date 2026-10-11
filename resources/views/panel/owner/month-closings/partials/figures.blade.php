@@ -18,7 +18,7 @@
     @include('partials.stat-card', ['label' => 'إهلاك مؤجَّل للشهر التالي', 'value' => number_format($t['depreciation_deferred'], 2), 'unit' => 'ر.س', 'icon' => 'clock', 'tone' => $t['depreciation_deferred'] > 0 ? 'warning' : 'primary'])
 </div>
 
-@include('partials.section-head', ['icon' => 'ship', 'title' => 'القوارب', 'note' => 'نصيب الطاقم من صافي ربح كل قارب بعد نسبة المالك'])
+@include('partials.section-head', ['icon' => 'ship', 'title' => 'القوارب'])
 <div class="table-card" style="margin-bottom:1.25rem">
     <table class="data-table">
         <thead>
@@ -76,7 +76,7 @@
     <p style="margin:.5rem 0 0;font-size:.75rem;color:hsl(var(--muted-foreground))">ما لا قارب له يُنقص نصيب المالك وحده — لا يمسّ نصيب الطاقم. إهلاك القارب لا يُحمَّل منه إلا ما يغطيه ربحه، والباقي يؤجَّل إلى الشهر التالي.</p>
 </div>
 
-@include('partials.section-head', ['icon' => 'users', 'title' => 'مستحقات الطاقم', 'note' => 'سطور مسير كل قارب — السداد من صفحة المسير'])
+@include('partials.section-head', ['icon' => 'users', 'title' => 'مستحقات الطاقم'])
 @foreach ($data['boats'] as $boat)
     @continue($boat['dues'] === [])
     <div class="table-card" style="margin-bottom:1rem">

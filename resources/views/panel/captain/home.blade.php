@@ -8,7 +8,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'layout-dashboard'])</div>
             <div>
                 <h1>مرحبًا {{ $user->name }}</h1>
-                <p>رحلاتك المسندة إليك — ابدأها، وأرسل مخرجاتها عند العودة</p>
             </div>
         </div>
         <div class="actions">
@@ -30,7 +29,7 @@
 
     <div class="grid-2" style="margin-bottom:1.25rem">
         <div class="card">
-            @include('partials.section-head', ['icon' => 'zap', 'title' => 'الرحلات التي بانتظارك', 'note' => $pending_trips->count().' رحلة'])
+            @include('partials.section-head', ['icon' => 'zap', 'title' => 'الرحلات التي بانتظارك'])
             @forelse ($pending_trips as $trip)
                 @include('panel.captain.partials.trip-card', ['trip' => $trip])
             @empty
@@ -39,7 +38,7 @@
         </div>
 
         <div class="card">
-            @include('partials.section-head', ['icon' => 'waves', 'title' => 'الرحلات النشطة', 'note' => $active_trips->count().' في البحر'])
+            @include('partials.section-head', ['icon' => 'waves', 'title' => 'الرحلات النشطة'])
             @forelse ($active_trips as $trip)
                 @include('panel.captain.partials.trip-card', ['trip' => $trip])
             @empty
@@ -49,7 +48,7 @@
     </div>
 
     <div class="card">
-        @include('partials.section-head', ['icon' => 'route', 'title' => 'آخر الرحلات', 'note' => number_format($kpis['total']).' رحلة — '.number_format($kpis['cancelled']).' ملغاة'])
+        @include('partials.section-head', ['icon' => 'route', 'title' => 'آخر الرحلات'])
         <div class="table-card" style="border:0">
             <table class="data-table">
                 <thead><tr><th>الرحلة</th><th>القارب</th><th>الميناء</th><th>الانطلاق</th><th>المعلن</th><th>الحالة</th><th></th></tr></thead>

@@ -9,7 +9,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'calendar-days'])</div>
             <div>
                 <h1>جدول الإهلاك — {{ $year }}</h1>
-                <p>ما يُحمَّل على كل شهر من إهلاك الأصول — هو ما يخصمه إغلاق الشهر من الربح</p>
             </div>
         </div>
         <div class="actions">
@@ -40,7 +39,7 @@
     </div>
 
     <div class="card" style="margin-bottom:1.25rem">
-        @include('partials.section-head', ['icon' => 'calendar', 'title' => 'الإهلاك الشهري', 'note' => 'المجموع والتراكم'])
+        @include('partials.section-head', ['icon' => 'calendar', 'title' => 'الإهلاك الشهري'])
         <div class="table-card" style="border:0;overflow-x:auto">
             <table class="data-table">
                 <thead><tr><th></th>@foreach ($monthNames as $m)<th>{{ $m }}</th>@endforeach</tr></thead>
@@ -53,7 +52,7 @@
     </div>
 
     <div class="card">
-        @include('partials.section-head', ['icon' => 'archive', 'title' => 'تفصيل الأصول', 'note' => 'الموقف في نهاية '.$year])
+        @include('partials.section-head', ['icon' => 'archive', 'title' => 'تفصيل الأصول'])
         <div class="table-card" style="border:0;overflow-x:auto">
             <table class="data-table">
                 <thead><tr><th>الأصل</th><th>التكلفة</th><th>القسط</th><th>أشهر السنة</th><th>إهلاك السنة</th><th>المتراكم</th><th>القيمة الدفترية</th><th>المتبقي</th></tr></thead>

@@ -8,7 +8,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'alert-triangle'])</div>
             <div>
                 <h1>مراجعة الفروقات</h1>
-                <p>الرحلات التي يختلف فيها إدخال الكابتن عن الوزن الفعلي ومعالجتها قبل الاعتماد</p>
             </div>
         </div>
     </div>

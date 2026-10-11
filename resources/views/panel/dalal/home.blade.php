@@ -8,7 +8,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'layout-dashboard'])</div>
             <div>
                 <h1>مرحبًا {{ $user->name }}</h1>
-                <p>نظرة عامة على المبيعات وتسليم المصيد — {{ $period['label'] }} (<span class="num">{{ $period['from'] }}</span> — <span class="num">{{ $period['to'] }}</span>)</p>
             </div>
         </div>
         <div class="actions">
@@ -45,11 +44,11 @@
 
     <div class="grid-3" style="margin-bottom:1.25rem">
         <div class="card span-2">
-            @include('partials.section-head', ['icon' => 'line-chart', 'title' => 'الإيرادات والأرباح', 'note' => 'آخر ستة أشهر — الربح = العمولة + الأجور'])
+            @include('partials.section-head', ['icon' => 'line-chart', 'title' => 'الإيرادات والأرباح'])
             <div class="chart-wrap"><canvas id="revenueChart"></canvas></div>
         </div>
         <div class="card">
-            @include('partials.section-head', ['icon' => 'calculator', 'title' => 'المالية', 'note' => $period['label']])
+            @include('partials.section-head', ['icon' => 'calculator', 'title' => 'المالية'])
             <dl class="detail-list">
                 <dt>عمولة الدلال</dt><dd class="num">{{ number_format($kpis['commission'], 2) }} ر.س</dd>
                 <dt>أجور العمالة</dt><dd class="num">{{ number_format($kpis['wages'], 2) }} ر.س</dd>
@@ -63,7 +62,7 @@
 
     <div class="grid-2" style="margin-bottom:1.25rem">
         <div class="card">
-            @include('partials.section-head', ['icon' => 'handshake', 'title' => 'طلبات الملاك المعلّقة', 'note' => 'بانتظار موافقتك'])
+            @include('partials.section-head', ['icon' => 'handshake', 'title' => 'طلبات الملاك المعلّقة'])
             <div class="table-card" style="border:0">
                 <table class="data-table">
                     <thead><tr><th>المالك</th><th>العمولة</th><th>الأجور</th><th>التاريخ</th></tr></thead>
@@ -83,13 +82,13 @@
             </div>
         </div>
         <div class="card">
-            @include('partials.section-head', ['icon' => 'fish', 'title' => 'أكثر أنواع السمك مبيعًا', 'note' => $period['label']])
+            @include('partials.section-head', ['icon' => 'fish', 'title' => 'أكثر أنواع السمك مبيعًا'])
             <div class="chart-wrap"><canvas id="speciesChart"></canvas></div>
         </div>
     </div>
 
     <div class="card">
-        @include('partials.section-head', ['icon' => 'coins', 'title' => 'العمليات الأخيرة', 'note' => 'آخر 10 مبيعات'])
+        @include('partials.section-head', ['icon' => 'coins', 'title' => 'العمليات الأخيرة'])
         <div class="table-card" style="border:0">
             <table class="data-table">
                 <thead><tr><th>الفاتورة</th><th>التاريخ</th><th>العميل</th><th>نوع السمك</th><th>الوزن</th><th>الإجمالي</th><th>العمولة</th><th>الحالة</th></tr></thead>

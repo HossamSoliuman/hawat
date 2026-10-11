@@ -31,7 +31,6 @@
     <div class="toolbar">
         <div>
             <h2>{{ $resource['title'] }}</h2>
-            <p>{{ $resource['description'] }}</p>
         </div>
         <div class="tools">
             <form class="search" method="GET" action="{{ route('admin.tab', $activeTab) }}" role="search">

@@ -227,7 +227,7 @@ class CaptainPortalTest extends TestCase
             ->assertOk()
             ->assertSee('رحلة جديدة بانتظارك')
             ->assertSee('TR-2026-0400')
-            ->assertSee('1 غير مقروء')
+            ->assertSee('notif-item is-unread', false)
             ->assertDontSee('إشعار غريب');
 
         $this->asCaptain()->post("/admin/notifications/{$stranger->id}/read")->assertNotFound();
@@ -239,7 +239,7 @@ class CaptainPortalTest extends TestCase
         AppNotification::factory()->to($this->captain)->count(2)->create();
         $this->asCaptain()->post('/admin/notifications/read-all')->assertRedirect(route('panel.notifications'));
         $this->assertSame(0, AppNotification::forUser($this->captain)->unread()->count());
-        $this->asCaptain()->get('/admin/notifications?filter=unread')->assertOk()->assertSee('لا إشعارات غير مقروءة');
+        $this->asCaptain()->get('/admin/notifications?filter=unread')->assertOk()->assertSee('لا إشعارات')->assertDontSee('notif-item is-unread', false);
     }
 
     public function test_profile_page_shows_the_port_and_updates_name_avatar_and_password(): void

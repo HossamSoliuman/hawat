@@ -8,7 +8,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'fish'])</div>
             <div>
                 <h1>سجل الصيد</h1>
-                <p>كل ما أعلنته من مصيد على رحلاتك، وما عدّه العدّاد منه</p>
             </div>
         </div>
     </div>
@@ -21,7 +20,7 @@
 
     <div class="grid-3" style="margin-bottom:1.25rem">
         <div class="card span-2">
-            @include('partials.section-head', ['icon' => 'history', 'title' => 'السطور', 'note' => number_format($entries->total()).' سطر'])
+            @include('partials.section-head', ['icon' => 'history', 'title' => 'السطور'])
             <form method="GET" class="filter-bar" style="margin-bottom:.9rem">
                 <label class="field"><span>بحث</span><input class="input" name="search" value="{{ request('search') }}" placeholder="رقم الرحلة أو الصنف..."></label>
                 <button class="btn btn-primary">بحث</button>

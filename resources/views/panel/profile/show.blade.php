@@ -13,7 +13,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'user'])</div>
             <div>
                 <h1>الملف الشخصي</h1>
-                <p>بياناتك كما يراها التطبيق — الاسم والدور والجوال والميناء وحالة الحساب</p>
             </div>
         </div>
     </div>

@@ -21,7 +21,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'calendar-days'])</div>
             <div>
                 <h1>تقويم المهام الإدارية</h1>
-                <p>متابعة المهام الإدارية لكل قسم، مع ربط كل مهمة بصلاحية الموظف المختص</p>
             </div>
         </div>
         <div class="actions">

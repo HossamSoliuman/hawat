@@ -8,7 +8,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'route'])</div>
             <div>
                 <h1>الرحلات</h1>
-                <p>ما بانتظارك ابدأه أو ألغه بسبب، وما في البحر أنهِه بإرسال مخرجات المصيد</p>
             </div>
         </div>
     </div>

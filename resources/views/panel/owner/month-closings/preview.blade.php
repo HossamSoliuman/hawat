@@ -8,7 +8,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'eye'])</div>
             <div>
                 <h1>معاينة إغلاق {{ $data['label'] }}</h1>
-                <p>هذه الأرقام تُثبَّت عند الإغلاق، ثم تُقفل مصروفات الشهر ومسيراته (يبقى السداد متاحًا)</p>
             </div>
         </div>
         <div class="actions">

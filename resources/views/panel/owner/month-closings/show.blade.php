@@ -8,7 +8,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'lock'])</div>
             <div>
                 <h1>{{ $closing->period_label }} — مُغلق</h1>
-                <p>أُغلق <span class="num">{{ $closing->closed_at->format('Y-m-d H:i') }}</span>@if ($closing->closedBy) بواسطة {{ $closing->closedBy->name }}@endif · الأرقام لقطة مجمَّدة، والسداد حيّ من المسيرات</p>
             </div>
         </div>
         <div class="actions">

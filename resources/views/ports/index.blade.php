@@ -8,7 +8,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'anchor'])</div>
             <div>
                 <h1>الموانئ والمراسي</h1>
-                <p>مؤشرات تشغيل كل ميناء: القوارب، الصيادون، الرحلات، والإحصاء</p>
             </div>
         </div>
         <div class="actions">

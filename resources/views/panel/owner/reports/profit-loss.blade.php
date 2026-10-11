@@ -8,7 +8,7 @@
         $net = (float) $f['net_profit'];
     @endphp
 
-    @include('panel.owner.reports.partials.head', ['description' => false, 'print' => true])
+    @include('panel.owner.reports.partials.head', ['print' => true])
     @include('panel.owner.reports.partials.closing-note', ['months' => $f['months_count'], 'closed' => $f['closed_count']])
 
     <div class="card">

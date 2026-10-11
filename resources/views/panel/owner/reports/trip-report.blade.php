@@ -5,7 +5,7 @@
 @section('content')
     @php $s = $statistics; @endphp
 
-    @include('panel.owner.reports.partials.head', ['description' => false, 'print' => true])
+    @include('panel.owner.reports.partials.head', ['print' => true])
 
     <div class="stat-grid cols-4" style="margin-bottom:1.25rem">
         @include('partials.stat-card', ['label' => 'إجمالي الرحلات', 'value' => number_format($s['total_trips']), 'icon' => 'ship', 'tone' => 'primary'])

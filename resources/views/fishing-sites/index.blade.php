@@ -12,7 +12,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'map-pin'])</div>
             <div>
                 <h1>مواقع الصيد</h1>
-                <p>مواقع الصيد المسجلة ومستوى ضغط الصيد على كل موقع</p>
             </div>
         </div>
         <div class="actions">

@@ -134,7 +134,7 @@ class DalalPortalTest extends TestCase
         $this->asDalal()->get('/admin/dalal/stock')
             ->assertOk()
             ->assertSee('مالك الاختبار')
-            ->assertSee('عدد الأسماك 1، الوزن 55.0 كجم')
+            ->assertSee('55.00 كجم')
             ->assertSee('الهامور (اختبار)')
             ->assertSee('Epinephelus coioides')
             ->assertSee('TR-2026-0802');

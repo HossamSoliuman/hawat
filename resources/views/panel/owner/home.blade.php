@@ -8,7 +8,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'layout-dashboard'])</div>
             <div>
                 <h1>مرحبًا {{ $user->name }}</h1>
-                <p>أسطولك ورحلاتك ومبيعاتك — ما يراه التطبيق تراه هنا</p>
             </div>
         </div>
         <div class="actions">
@@ -29,7 +28,7 @@
 
     @if ($dalalSettlement['pending'] > 0 || $dalalSettlement['rejected'] > 0 || $dalalSettlement['balance'] > 0)
         <div class="card" style="margin-bottom:1.25rem">
-            @include('partials.section-head', ['icon' => 'handshake', 'title' => 'تسوية الدلالين', 'note' => 'فواتير بيع مصيدك عند الدلالين وما لك عندهم'])
+            @include('partials.section-head', ['icon' => 'handshake', 'title' => 'تسوية الدلالين'])
             <div style="display:flex;flex-wrap:wrap;gap:.5rem;align-items:center">
                 @if ($dalalSettlement['pending'] > 0)
                     <a href="{{ route('panel.owner.dalal-invoices', ['status' => 'pending']) }}" class="badge badge-warn" style="font-size:.78rem;padding:.35rem .6rem">{{ number_format($dalalSettlement['pending']) }} فاتورة بانتظار مراجعتك</a>
@@ -46,7 +45,7 @@
 
     @if ($fleetAlerts->isNotEmpty())
         <div class="card" style="margin-bottom:1.25rem">
-            @include('partials.section-head', ['icon' => 'alert-triangle', 'title' => 'تنبيهات الأسطول', 'note' => $fleetAlerts->count().' تنبيه — وثائق وفحوص ورخص منتهية أو تنتهي خلال 30 يومًا'])
+            @include('partials.section-head', ['icon' => 'alert-triangle', 'title' => 'تنبيهات الأسطول'])
             <div class="table-card" style="border:0">
                 <table class="data-table">
                     <tbody>
@@ -67,12 +66,12 @@
 
     <div class="grid-2" style="margin-bottom:1.25rem">
         <div class="card">
-            @include('partials.section-head', ['icon' => 'line-chart', 'title' => 'اتجاه الإيرادات', 'note' => 'آخر ستة أشهر'])
+            @include('partials.section-head', ['icon' => 'line-chart', 'title' => 'اتجاه الإيرادات'])
             <div class="chart-wrap"><canvas id="revenueChart"></canvas></div>
         </div>
 
         <div class="card">
-            @include('partials.section-head', ['icon' => 'fish', 'title' => 'الأسماك المتوفرة', 'note' => 'ما لم يُبع بعد'])
+            @include('partials.section-head', ['icon' => 'fish', 'title' => 'الأسماك المتوفرة'])
             <div class="table-card" style="border:0">
                 <table class="data-table">
                     <thead><tr><th>الصنف</th><th>الاسم العلمي</th><th style="text-align:left">الوزن</th></tr></thead>
@@ -94,7 +93,7 @@
 
     <div class="grid-2">
         <div class="card">
-            @include('partials.section-head', ['icon' => 'route', 'title' => 'الرحلات النشطة', 'note' => 'من الانطلاق حتى البيع'])
+            @include('partials.section-head', ['icon' => 'route', 'title' => 'الرحلات النشطة'])
             <div class="table-card" style="border:0">
                 <table class="data-table">
                     <thead><tr><th>الرحلة</th><th>القارب</th><th>الكابتن</th><th>الحالة</th></tr></thead>
@@ -115,7 +114,7 @@
         </div>
 
         <div class="card">
-            @include('partials.section-head', ['icon' => 'coins', 'title' => 'آخر المبيعات', 'note' => number_format($kpis['sales_count']).' فاتورة — المستحق '.number_format($kpis['unpaid']).' ر.س'])
+            @include('partials.section-head', ['icon' => 'coins', 'title' => 'آخر المبيعات'])
             <div class="table-card" style="border:0">
                 <table class="data-table">
                     <thead><tr><th>الفاتورة</th><th>الزبون</th><th>الرحلة</th><th style="text-align:left">الإجمالي</th></tr></thead>

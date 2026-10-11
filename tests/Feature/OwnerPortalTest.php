@@ -66,6 +66,12 @@ class OwnerPortalTest extends TestCase
         $this->assertStringContainsString('data-group="الدلالون"', $html);
         $this->assertStringContainsString('<summary class="nav-section-title">', $html);
 
+        // الرئيسية والرحلات والمبيعات ثابتة فوق الأقسام المطويّة، بلا عنوان ولا طيّ.
+        $home = $this->asOwner()->get('/admin')->assertOk()->getContent();
+        $this->assertSame([], $this->openSidebarGroups($home));
+        $this->assertMatchesRegularExpression('/<div class="nav-section is-pinned"\s*>\s*<a href="'.preg_quote(route('panel.home'), '/').'" class="nav-link is-active">/u', $home);
+        $this->assertLessThan(strpos($home, '<details'), strpos($home, 'href="'.route('panel.owner.sales').'"'));
+
         // بقية الأدوار قوائمها قصيرة فلا تُطوى.
         $captain = User::factory()->role(Role::CAPTAIN)->ownedBy($this->owner)->create();
         $this->actingAs($captain)->get('/admin')->assertOk()->assertDontSee('<details', false);

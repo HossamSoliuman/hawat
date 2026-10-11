@@ -20,7 +20,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'headset'])</div>
             <div>
                 <h1>خدمات الصيادين</h1>
-                <p>طلبات التجديد والإصدار والاستبدال وتغيير القارب ونقل الميناء — من التقديم إلى الرخصة</p>
             </div>
         </div>
         <div class="actions">

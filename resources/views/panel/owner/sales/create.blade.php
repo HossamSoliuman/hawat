@@ -8,7 +8,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'coins'])</div>
             <div>
                 <h1>بيع مصيد لزبون</h1>
-                <p>الرحلة <span class="num">{{ $trip->trip_number }}</span> — {{ $trip->boat?->name }} — المتاح {{ number_format(collect($available)->sum('available_kg'), 1) }} كجم</p>
             </div>
         </div>
         <div class="actions">

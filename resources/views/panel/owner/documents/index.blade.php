@@ -23,7 +23,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'file-check'])</div>
             <div>
                 <h1>الوثائق</h1>
-                <p>وثائق القوارب والطاقم بتواريخ انتهائها — المنتهية وما ينتهي خلال {{ \App\Models\FleetDocument::EXPIRING_DAYS }} يومًا تظهر في تنبيهات الرئيسية</p>
             </div>
         </div>
         <div class="actions">
@@ -42,7 +41,7 @@
     </div>
 
     <div class="card" style="margin-bottom:1.25rem">
-        @include('partials.section-head', ['icon' => 'users', 'title' => 'امتثال الطاقم', 'note' => 'منتهية = غير ممتثل، تنتهي قريبًا = تنبيه، بلا وثائق = ناقص'])
+        @include('partials.section-head', ['icon' => 'users', 'title' => 'امتثال الطاقم'])
         <div class="table-card" style="border:0">
             <table class="data-table">
                 <thead><tr><th>الفرد</th><th>الدور</th><th>الوثائق</th><th>منتهية</th><th>تنتهي قريبًا</th><th>أقرب انتهاء</th><th>الموقف</th></tr></thead>

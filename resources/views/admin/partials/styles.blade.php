@@ -11,7 +11,6 @@
 .eyebrow { display: flex; align-items: center; gap: .35rem; margin-bottom: .2rem; font-size: .68rem; font-weight: 600; color: hsl(var(--muted-foreground)); }
 .eyebrow a:hover { color: hsl(var(--primary)); }
 .eyebrow svg { width: 11px; height: 11px; opacity: .6; }
-.page-header .en { font-family: 'Chakra Petch', sans-serif; letter-spacing: .02em; }
 
 /* ── الرئيسة ─────────────────────────────────────────────── */
 .hub-section { margin-top: 1.6rem; }
@@ -48,7 +47,6 @@
 
 .toolbar { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: .8rem; }
 .toolbar h2 { font-size: .98rem; font-weight: 700; }
-.toolbar p { margin-top: .15rem; font-size: .72rem; line-height: 1.75; color: hsl(var(--muted-foreground)); }
 .toolbar .tools { display: flex; flex-wrap: wrap; align-items: center; gap: .45rem; }
 .search { position: relative; display: flex; }
 .search svg { position: absolute; inset-inline-start: .6rem; top: 50%; width: 14px; height: 14px; transform: translateY(-50%); color: hsl(var(--muted-foreground)); pointer-events: none; }
@@ -88,7 +86,6 @@ html.dark .notice svg { color: hsl(38 90% 66%); }
 /* ترويسة الأقسام في لوحات الأدوات والتكاملات: سطران وزرّ في الطرف المقابل. */
 .section-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: .75rem; margin: 0; }
 .section-head h2 { font-size: .95rem; font-weight: 700; letter-spacing: 0; white-space: normal; }
-.section-head p { margin-top: .15rem; font-size: .72rem; line-height: 1.75; color: hsl(var(--muted-foreground)); }
 
 /* الحقل: التسمية عنصر <label>، والحقول نفسها تحمل .input و .select. */
 .field label { font-size: .7rem; font-weight: 600; color: hsl(var(--muted-foreground)); }

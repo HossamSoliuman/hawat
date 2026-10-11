@@ -8,7 +8,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'user-cog'])</div>
             <div>
                 <h1>أجور الطاقم</h1>
-                <p>كيف يُحسب أجر كل كابتن وفرد طاقم: راتب ثابت، أو نسبة من صافي ربح القارب بالأسهم أو بنسبة خاصة</p>
             </div>
         </div>
         <div class="actions">
@@ -21,7 +20,7 @@
     @if ($errors->any())<div class="flash-error">{{ $errors->first() }}</div>@endif
 
     <div class="card" style="margin-bottom:1.25rem;font-size:.8rem;line-height:1.9">
-        @include('partials.section-head', ['icon' => 'calculator', 'title' => 'كيف يُحسب المسير', 'note' => 'لكل قارب مسير شهري'])
+        @include('partials.section-head', ['icon' => 'calculator', 'title' => 'كيف يُحسب المسير'])
         <p style="margin:0">صافي ربح القارب = صافي المالك من مبيعات مصيده (مباشرةً ومن الدلال) − مصروفات القارب (ومنها الرواتب الثابتة) − إهلاك أصوله.</p>
         <p style="margin:0">يأخذ المالك نسبته من الصافي والباقي <b>نصيب الطاقم</b>: صاحب النسبة الخاصة يأخذ نسبته منه أولًا، ثم يُقسم الباقي على بقية أصحاب النسبة بأسهمهم.</p>
         <p style="margin:0">تُخصم السلف من المستحق، ولا يدخل المسير إلا أفراد القارب النشطون ذوو إعداد أجر.</p>

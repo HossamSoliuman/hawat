@@ -1,5 +1,5 @@
 {{--
-    رأس صفحة التقرير كما في hispa: العنوان ووصفه، ورابط العودة إلى مركز
+    رأس صفحة التقرير كما في hispa: العنوان، ورابط العودة إلى مركز
     التقارير، وزر الطباعة أعلى الصفحة في التقارير التي تضعه هناك.
 --}}
 <div class="page-header">
@@ -7,7 +7,6 @@
         <div class="icon-wrap">@include('partials.icon', ['name' => 'file-chart'])</div>
         <div>
             <h1>{{ $meta['title'] }}</h1>
-            @if ($description ?? true)<p>{{ $meta['description'] }}</p>@endif
         </div>
     </div>
     <div class="actions">

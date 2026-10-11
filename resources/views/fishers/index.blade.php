@@ -12,7 +12,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'users'])</div>
             <div>
                 <h1>الصيادون</h1>
-                <p>سجل الصيادين والكباتن ورخصهم وارتباطهم بالموانئ</p>
             </div>
         </div>
     </div>

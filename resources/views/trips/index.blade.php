@@ -12,7 +12,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'sailboat'])</div>
             <div>
                 <h1>رحلات الصيد</h1>
-                <p>دورة حياة الرحلة من الانطلاق حتى اعتماد المصيد</p>
             </div>
         </div>
     </div>

@@ -34,7 +34,7 @@
 
     <div class="grid-2" style="margin-bottom:1.25rem">
         <div class="card">
-            @include('partials.section-head', ['icon' => 'inbox', 'title' => 'أقدم الطلبات بانتظارك', 'note' => number_format($kpis['pending']).' طلب'])
+            @include('partials.section-head', ['icon' => 'inbox', 'title' => 'أقدم الطلبات بانتظارك'])
             @forelse ($pending_applications as $item)
                 <div style="display:flex;justify-content:space-between;gap:.75rem;padding:.6rem 0;border-bottom:1px solid var(--hair)">
                     <div>
@@ -52,7 +52,7 @@
         </div>
 
         <div class="card">
-            @include('partials.section-head', ['icon' => 'calendar', 'title' => 'الجولات المفتوحة', 'note' => $rounds->count().' جولة'])
+            @include('partials.section-head', ['icon' => 'calendar', 'title' => 'الجولات المفتوحة'])
             @forelse ($rounds as $round)
                 <div style="display:flex;justify-content:space-between;gap:.75rem;padding:.6rem 0;border-bottom:1px solid var(--hair)">
                     <div>
@@ -71,7 +71,7 @@
     </div>
 
     <div class="card">
-        @include('partials.section-head', ['icon' => 'activity', 'title' => 'نشاط العدّادين', 'note' => 'الأنشط أولًا'])
+        @include('partials.section-head', ['icon' => 'activity', 'title' => 'نشاط العدّادين'])
         @include('panel.company.partials.activity-table', ['counters' => $activity, 'actions' => false])
         <div style="margin-top:.6rem"><a href="{{ route('panel.company.counters') }}">كل العدّادين ←</a></div>
     </div>

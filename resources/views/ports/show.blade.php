@@ -14,7 +14,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'anchor'])</div>
             <div>
                 <h1>{{ $port->name }}</h1>
-                <p>{{ $port->governorate?->name ?? '—' }} — {{ $port->governorate?->region?->name ?? '—' }}</p>
             </div>
         </div>
         <div class="actions">
@@ -100,7 +99,7 @@
         </div>
     </div>
 
-    @include('partials.section-head', ['icon' => 'ship', 'title' => 'قوارب الميناء', 'note' => $boats->count() . ' قارب'])
+    @include('partials.section-head', ['icon' => 'ship', 'title' => 'قوارب الميناء'])
 
     <div class="table-card">
         <table class="data-table">
@@ -127,7 +126,7 @@
         </table>
     </div>
 
-    @include('partials.section-head', ['icon' => 'users', 'title' => 'صيّادو الميناء', 'note' => $licensedFishers . ' بترخيص سارٍ من ' . $fishers->count()])
+    @include('partials.section-head', ['icon' => 'users', 'title' => 'صيّادو الميناء'])
 
     <div class="table-card">
         <table class="data-table">
@@ -150,7 +149,7 @@
         </table>
     </div>
 
-    @include('partials.section-head', ['icon' => 'map-pin', 'title' => 'مواقع الصيد التابعة', 'note' => $sites->count() . ' موقع'])
+    @include('partials.section-head', ['icon' => 'map-pin', 'title' => 'مواقع الصيد التابعة'])
 
     @if ($sites->isNotEmpty())
         <div class="cards-grid cols-4">
@@ -171,7 +170,7 @@
         <div class="card" style="padding:2rem;text-align:center;font-size:.875rem;color:hsl(var(--muted-foreground))">لا توجد مواقع صيد مرتبطة بهذا الميناء</div>
     @endif
 
-    @include('partials.section-head', ['icon' => 'clipboard-check', 'title' => 'موظفو الإحصاء', 'note' => $officers->count() . ' موظف'])
+    @include('partials.section-head', ['icon' => 'clipboard-check', 'title' => 'موظفو الإحصاء'])
 
     <div class="table-card">
         <table class="data-table">
@@ -192,7 +191,7 @@
         </table>
     </div>
 
-    @include('partials.section-head', ['icon' => 'sailboat', 'title' => 'رحلات المغادرة', 'note' => 'أحدث ٢٥ رحلة من ' . $trips->count()])
+    @include('partials.section-head', ['icon' => 'sailboat', 'title' => 'رحلات المغادرة'])
 
     <div class="table-card">
         <table class="data-table">

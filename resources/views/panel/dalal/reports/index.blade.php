@@ -8,7 +8,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'file-chart'])</div>
             <div>
                 <h1>التقارير</h1>
-                <p>إنشاء وطباعة تقارير المبيعات والمخزون والمدفوعات</p>
             </div>
         </div>
     </div>

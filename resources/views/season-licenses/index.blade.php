@@ -8,7 +8,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'ticket'])</div>
             <div>
                 <h1>رخص المواسم</h1>
-                <p>إصدار وربط رخص مواسم الصيد بالقوارب والتحقق من صلاحيتها قبل بدء الرحلات</p>
             </div>
         </div>
         <div class="actions">

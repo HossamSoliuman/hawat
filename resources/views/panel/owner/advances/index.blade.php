@@ -8,7 +8,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'arrow-left-right'])</div>
             <div>
                 <h1>سلف الطاقم</h1>
-                <p>ما يُصرف نقدًا للكباتن والطاقم مقدّمًا — يُخصم من أول مسير غير مسدَّد لشهره أو بعده، بحد مستحقه</p>
             </div>
         </div>
         <div class="actions">
@@ -28,7 +27,7 @@
 
     @if ($debtors->isNotEmpty())
         <div class="card" style="margin-bottom:1.25rem">
-            @include('partials.section-head', ['icon' => 'users', 'title' => 'سلف لم تُخصم بعد', 'note' => 'تُخصم عند سداد مسيراتهم'])
+            @include('partials.section-head', ['icon' => 'users', 'title' => 'سلف لم تُخصم بعد'])
             <div style="display:flex;flex-wrap:wrap;gap:.5rem">
                 @foreach ($debtors as $d)
                     <a href="{{ route('panel.owner.advances', ['fisher' => $d['fisher']->id]) }}" class="badge badge-warn" style="font-size:.78rem;padding:.35rem .6rem">

@@ -8,7 +8,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'anchor'])</div>
             <div>
                 <h1>معدات الصيد</h1>
-                <p>الشباك والقراقير والأدوات: نوعها الوزاري ومواسمها، وتكلفة شرائها تُرحَّل إلى المصروفات</p>
             </div>
         </div>
         <div class="actions">

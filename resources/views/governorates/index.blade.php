@@ -8,7 +8,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'building'])</div>
             <div>
                 <h1>المحافظات الساحلية</h1>
-                <p>إحصائيات تفصيلية لكل محافظة: الموانئ، القوارب النشطة، وحجم المصيد</p>
             </div>
         </div>
     </div>

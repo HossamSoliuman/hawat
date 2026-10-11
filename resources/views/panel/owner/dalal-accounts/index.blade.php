@@ -8,7 +8,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'calculator'])</div>
             <div>
                 <h1>حسابات الدلالين</h1>
-                <p>رصيدك عند كل دلال تعاملت معه: صافي ما باعه من مصيدك ناقص ما دفعه لك — الرقم نفسه الذي يراه الدلال في بوابته</p>
             </div>
         </div>
         <div class="actions">

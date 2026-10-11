@@ -26,7 +26,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'bell-ring'])</div>
             <div>
                 <h1>مركز الإنذارات</h1>
-                <p>إنذارات الاستدامة والرقابة والامتثال — مصنّفة بالأولوية مع تعيين مسؤول للمتابعة</p>
             </div>
         </div>
         <div class="actions">

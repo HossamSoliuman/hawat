@@ -8,7 +8,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'bell'])</div>
             <div>
                 <h1>الإشعارات</h1>
-                <p>{{ $unread > 0 ? number_format($unread).' غير مقروء من '.number_format($total) : 'لا إشعارات غير مقروءة' }}</p>
             </div>
         </div>
         <div class="actions">

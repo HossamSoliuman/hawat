@@ -8,7 +8,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'handshake'])</div>
             <div>
                 <h1>الدلالون</h1>
-                <p>اقترح على الدلال عمولته وأجور عمالته؛ حين يقبل تُقتطع من كل بيع لمصيدك عنده ويصلك الصافي</p>
             </div>
         </div>
         <div class="actions">

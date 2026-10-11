@@ -278,7 +278,7 @@ class CounterPortalTest extends TestCase
 
         $this->actingAs($stray)->get('/admin')
             ->assertOk()
-            ->assertSee('لم يُسند إليك ميناء')
+            ->assertSee('حسابك غير مربوط بميناء')
             ->assertDontSee('TR-2026-1100');
 
         $this->actingAs($stray)->get('/admin/counter/trips')->assertOk()->assertDontSee('TR-2026-1100');

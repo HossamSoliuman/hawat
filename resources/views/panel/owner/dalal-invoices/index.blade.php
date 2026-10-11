@@ -8,7 +8,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'file-text'])</div>
             <div>
                 <h1>فواتير الدلالين</h1>
-                <p>كل بيع من مصيدك عند دلال — سطورك وحدها بعمولتها وأجورها وصافيك، تقبلها أو ترفضها بسبب؛ والدفعات تُوزَّع على الأقدم أوّلًا</p>
             </div>
         </div>
         <div class="actions">

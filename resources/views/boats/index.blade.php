@@ -13,7 +13,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'ship'])</div>
             <div>
                 <h1>القوارب</h1>
-                <p>سجل أسطول الصيد: الملاك، الرخص، حالة التشغيل، والمصيد التراكمي</p>
             </div>
         </div>
     </div>

@@ -8,7 +8,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'bar-chart'])</div>
             <div>
                 <h1>مقارنة الموانئ</h1>
-                <p>ترتيب الموانئ حسب المؤشر المختار مع مقارنة بصرية لأعلى ١٠ موانئ</p>
             </div>
         </div>
         <div class="actions">

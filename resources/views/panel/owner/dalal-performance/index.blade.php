@@ -14,7 +14,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'bar-chart'])</div>
             <div>
                 <h1>أداء الدلالين</h1>
-                <p>من يبيع مصيدك بأعلى سعر وأقل اقتطاع، ومن يصرّف ما ترسله أسرع، ومن يسدّد — لتختار لمن ترسل</p>
             </div>
         </div>
         <div class="actions">
@@ -70,7 +69,7 @@
 
     <div class="grid-2" style="margin-bottom:1.25rem">
         <div class="card">
-            @include('partials.section-head', ['icon' => 'bar-chart', 'title' => 'صافيك من كل دلال', 'note' => $period['label'].' — بعد العمولة والأجور'])
+            @include('partials.section-head', ['icon' => 'bar-chart', 'title' => 'صافيك من كل دلال'])
             @if ($netRows->isNotEmpty())
                 <div class="chart-wrap" style="min-height:{{ $barHeight($netRows->count()) }}px"><canvas id="netChart" aria-label="صافي المالك من كل دلال"></canvas></div>
             @else
@@ -79,7 +78,7 @@
         </div>
 
         <div class="card">
-            @include('partials.section-head', ['icon' => 'scale', 'title' => 'سعر الكيلو عند كل دلال', 'note' => $prices['species_name'] ? $prices['species_name'].($prices['direct'] !== null ? ' — بيعك المباشر '.number_format($prices['direct'], 2).' ر.س/كجم' : '') : 'السعر يُقارن لصنف واحد'])
+            @include('partials.section-head', ['icon' => 'scale', 'title' => 'سعر الكيلو عند كل دلال'])
             @if ($prices['species']->count() > 1)
                 <form method="GET" style="display:flex;gap:.5rem;align-items:flex-end;margin-bottom:.75rem">
                     @foreach (request()->only('period', 'from', 'to') as $k => $v)<input type="hidden" name="{{ $k }}" value="{{ $v }}">@endforeach
@@ -100,7 +99,7 @@
 
     <div class="grid-2" style="margin-bottom:1.25rem">
         <div class="card">
-            @include('partials.section-head', ['icon' => 'line-chart', 'title' => 'صافيك شهرًا بشهر', 'note' => 'آخر ستة أشهر — أعلى خمسة دلالين والباقون "آخرون"'])
+            @include('partials.section-head', ['icon' => 'line-chart', 'title' => 'صافيك شهرًا بشهر'])
             @if (! empty($trend['series']))
                 <div class="chart-wrap"><canvas id="trendChart" aria-label="صافي المالك شهريًا حسب الدلال"></canvas></div>
             @else
@@ -109,7 +108,7 @@
         </div>
 
         <div class="card">
-            @include('partials.section-head', ['icon' => 'check-circle', 'title' => 'المستلم والمستحق', 'note' => 'كل الفترات — ما دفعه كل دلال مما عليه'])
+            @include('partials.section-head', ['icon' => 'check-circle', 'title' => 'المستلم والمستحق'])
             @if ($settleRows->isNotEmpty())
                 <div class="chart-wrap" style="min-height:{{ $barHeight($settleRows->count()) }}px"><canvas id="settleChart" aria-label="المستلم والمستحق عند كل دلال"></canvas></div>
             @else
@@ -119,7 +118,7 @@
     </div>
 
     <div class="card">
-        @include('partials.section-head', ['icon' => 'list-checks', 'title' => 'مقارنة الدلالين', 'note' => $period['label'].' — التصريف والتسديد والرصيد على كل الفترات'])
+        @include('partials.section-head', ['icon' => 'list-checks', 'title' => 'مقارنة الدلالين'])
         <div class="table-card" style="border:0">
             <table class="data-table">
                 <thead>

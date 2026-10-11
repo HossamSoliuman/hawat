@@ -12,7 +12,6 @@
             <div class="icon-wrap">@include('partials.icon', ['name' => 'user-cog'])</div>
             <div>
                 <h1>{{ config('info.title') }}</h1>
-                <p>البيانات الأساسية والصلاحيات والتكاملات وحوكمة البيانات — كل تعديل يُنسب إلى صاحبه في سجل العمليات.</p>
             </div>
         </div>
         <div class="actions">

@@ -8,7 +8,7 @@
         $s = $statistics;
     @endphp
 
-    @include('panel.owner.reports.partials.head', ['description' => false, 'print' => true])
+    @include('panel.owner.reports.partials.head', ['print' => true])
 
     <div class="stat-grid" style="margin-bottom:1.25rem">
         @include('partials.stat-card', ['label' => 'إجمالي المبيعات', 'value' => number_format($s['total_sales']), 'icon' => 'file-text', 'tone' => 'primary'])

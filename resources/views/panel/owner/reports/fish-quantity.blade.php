@@ -5,7 +5,7 @@
 @section('content')
     @php $money = fn ($v) => \App\Services\Owner\OwnerReports::money($v); @endphp
 
-    @include('panel.owner.reports.partials.head', ['description' => false])
+    @include('panel.owner.reports.partials.head')
 
     <div class="card">
         <form method="GET" action="{{ route('panel.owner.reports.show', $key) }}" class="filter-bar" style="border:0;padding:0;background:none;margin-bottom:1rem">
