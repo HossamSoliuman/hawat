@@ -2,6 +2,10 @@
     use App\Support\Nav;
 
     $user = auth()->user();
+    // قائمة المالك تُطوى أقسامها: القسم <details> وعنوانه <summary> — انظر Nav::collapsible().
+    $collapsible = Nav::collapsible();
+    $sectionTag = $collapsible ? 'details' : 'div';
+    $titleTag = $collapsible ? 'summary' : 'p';
 @endphp
 <aside class="sidebar" id="sidebar">
     {{-- الشعار انتقل إلى الشريط العلوي، فلم يبقَ في رأس القائمة إلا زرّ الإغلاق — ولا يظهر إلا دون 1024px. --}}
@@ -13,17 +17,53 @@
 
     <nav class="sidebar-nav">
         @foreach (Nav::sections() as $section)
-            <div class="nav-section">
-                <p class="nav-section-title">{{ $section['title'] }}</p>
+            @php
+                $current = collect($section['items'])->contains(fn (array $item) => Nav::isActive($item));
+            @endphp
+            <{{ $sectionTag }} class="nav-section" @if ($collapsible) data-group="{{ $section['title'] }}" @if ($current) open data-current @endif @endif>
+                <{{ $titleTag }} class="nav-section-title">
+                    <span>{{ $section['title'] }}</span>
+                    @if ($collapsible)
+                        @include('partials.icon', ['name' => 'chevron-down'])
+                    @endif
+                </{{ $titleTag }}>
                 @foreach ($section['items'] as $item)
                     <a href="{{ Nav::url($item) }}" class="nav-link {{ Nav::isActive($item) ? 'is-active' : '' }}">
                         @include('partials.icon', ['name' => $item['icon']])
                         <span>{{ $item['label'] }}</span>
                     </a>
                 @endforeach
-            </div>
+            </{{ $sectionTag }}>
         @endforeach
     </nav>
+
+    @if ($collapsible)
+        {{--
+            قسم الصفحة الحالية مفتوح دائمًا، وما فتحه المستخدم بيده يبقى مفتوحًا
+            في الصفحات التالية. يُطبَّق هنا قبل الرسم فلا ترمش القائمة. الحفظ عند
+            النقر لا عند حدث toggle: ذاك يُطلق أيضًا لقسم الصفحة المفتوح من الخادم،
+            فتتراكم الأقسام المفتوحة بمجرّد زيارتها.
+        --}}
+        <script>
+            (() => {
+                const key = 'hawat-nav-open';
+                const groups = document.querySelectorAll('#sidebar details[data-group]');
+                let open = [];
+                try { open = JSON.parse(localStorage.getItem(key)) || []; } catch (e) {}
+
+                groups.forEach((group) => {
+                    if (open.includes(group.dataset.group)) group.open = true;
+
+                    group.querySelector('summary').addEventListener('click', () => {
+                        const name = group.dataset.group;
+                        open = open.filter((n) => n !== name);
+                        if (!group.open) open.push(name);
+                        try { localStorage.setItem(key, JSON.stringify(open)); } catch (e) {}
+                    });
+                });
+            })();
+        </script>
+    @endif
 
     {{--
         ذيل القائمة: هويّة المستخدم — الداخل باسمه ودوره وزرّ خروجه، والزائر

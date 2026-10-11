@@ -2,6 +2,20 @@
 
 $domain = env('APP_DOMAIN') ?: parse_url((string) env('APP_URL'), PHP_URL_HOST);
 
+/*
+ * إعدادات المالك: بياناته الأساسية التي يُدخلها مرّة وتعتمد عليها الرحلات
+ * والمبيعات والرواتب. كل تبويب صفحته القائمة بمسارها، تُعرض تحت ترويسة
+ * الإعدادات وشريط تبويباتها — انظر panel/owner/settings/layout.
+ */
+$ownerSettings = [
+    'boats' => ['label' => 'القوارب', 'icon' => 'ship', 'route' => 'panel.owner.boats', 'note' => 'أسطولك كما تراه الوزارة — كل قارب هنا يظهر في صفحة مينائه ومركز المعلومات'],
+    'captains' => ['label' => 'الكباتن', 'icon' => 'user-check', 'route' => 'panel.owner.captains', 'note' => 'حساب دخول للتطبيق فوق سجلّ صياد في الوزارة — الكابتن يبدأ رحلاتك ويرسل مصيدها'],
+    'crew' => ['label' => 'الطاقم', 'icon' => 'users', 'route' => 'panel.owner.crew', 'note' => 'بحّارة قواربك — سجلات صيادين في الوزارة بلا حساب دخول'],
+    'employees' => ['label' => 'الموظفون', 'icon' => 'user', 'route' => 'panel.owner.employees', 'note' => 'موظفوك على البر — محاسب وسائق وعامل — سجلات بلا حساب دخول'],
+    'customers' => ['label' => 'العملاء', 'icon' => 'handshake', 'route' => 'panel.owner.customers', 'note' => 'من تبيع لهم المصيد — القائمة نفسها التي يبحث فيها التطبيق عند تسجيل بيع'],
+    'vendors' => ['label' => 'الموردون', 'icon' => 'truck', 'route' => 'panel.owner.vendors', 'note' => 'موردو الوقود والثلج والمعدات'],
+];
+
 return [
     /*
      * مضيفا المنتجين — انظر routes/web.php:
@@ -315,26 +329,20 @@ return [
             [
                 'title' => 'الأسطول',
                 'items' => [
-                    ['label' => 'القوارب', 'route' => 'panel.owner.boats', 'icon' => 'ship'],
                     ['label' => 'الصيانة', 'route' => 'panel.owner.maintenance', 'icon' => 'hammer'],
                     ['label' => 'الفحوصات', 'route' => 'panel.owner.inspections', 'icon' => 'clipboard-check'],
                     ['label' => 'الوثائق', 'route' => 'panel.owner.documents', 'icon' => 'file-check'],
                     ['label' => 'معدات الصيد', 'route' => 'panel.owner.equipment', 'icon' => 'anchor'],
-                    ['label' => 'الكباتن', 'route' => 'panel.owner.captains', 'icon' => 'user-check'],
-                    ['label' => 'الطاقم', 'route' => 'panel.owner.crew', 'icon' => 'users'],
                 ],
             ],
             [
-                'title' => 'الجهات',
+                // القوارب والكباتن والطاقم والجهات صارت تبويبات في الإعدادات ($ownerSettings أعلاه).
+                'title' => 'الإعدادات والحساب',
                 'items' => [
-                    ['label' => 'العملاء', 'route' => 'panel.owner.customers', 'icon' => 'handshake'],
-                    ['label' => 'الموردون', 'route' => 'panel.owner.vendors', 'icon' => 'truck'],
-                    ['label' => 'الموظفون', 'route' => 'panel.owner.employees', 'icon' => 'user'],
-                ],
-            ],
-            [
-                'title' => 'الحساب',
-                'items' => [
+                    [
+                        'label' => 'الإعدادات', 'route' => 'panel.owner.settings', 'icon' => 'settings',
+                        'active' => ['panel.owner.settings', ...array_column($ownerSettings, 'route')],
+                    ],
                     ['label' => 'الإشعارات', 'route' => 'panel.notifications', 'icon' => 'bell'],
                     ['label' => 'الملف الشخصي', 'route' => 'panel.profile', 'icon' => 'user'],
                 ],
@@ -439,6 +447,9 @@ return [
             ],
         ],
     ],
+
+    // تبويبات إعدادات المالك — انظر $ownerSettings أعلى الملف.
+    'owner_settings' => $ownerSettings,
 
     /*
      * مركز العمليات — قسم المدير العام في تطبيق حوات؛ أسماء مساراته بلا بادئة.

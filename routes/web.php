@@ -378,6 +378,9 @@ $adminPanel = function () use ($operationsConsole): void {
          * والإرسال للدلال. كل سجل مقيّد بمالكه — انظر ResolvesOwnerRecords.
          */
         Route::prefix('owner')->name('panel.owner.')->middleware('panel:owner')->group(function (): void {
+            // الإعدادات: تبويبات البيانات الأساسية أدناه (config/hawat.php → owner_settings)، تُفتح على أولها.
+            Route::get('/settings', fn () => redirect()->route(array_values(config('hawat.owner_settings'))[0]['route']))->name('settings');
+
             Route::get('/boats', [OwnerBoatController::class, 'index'])->name('boats');
             Route::post('/boats', [OwnerBoatController::class, 'store'])->name('boats.store');
             Route::put('/boats/{boat}', [OwnerBoatController::class, 'update'])->name('boats.update');

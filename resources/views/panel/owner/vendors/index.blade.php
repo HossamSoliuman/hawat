@@ -1,24 +1,10 @@
-@extends('layouts.app')
+@extends('panel.owner.settings.layout')
 
-@section('title', 'الموردون')
+@section('settings-actions')
+    <button type="button" class="btn btn-primary" onclick="openDrawerForm(recordForm)">@include('partials.icon', ['name' => 'plus']) مورد جديد</button>
+@endsection
 
-@section('content')
-    <div class="page-header">
-        <div class="lead">
-            <div class="icon-wrap">@include('partials.icon', ['name' => 'truck'])</div>
-            <div>
-                <h1>الموردون</h1>
-                <p>موردو الوقود والثلج والمعدات</p>
-            </div>
-        </div>
-        <div class="actions">
-            <button type="button" class="btn btn-primary" onclick="openDrawerForm(recordForm)">@include('partials.icon', ['name' => 'plus']) مورد جديد</button>
-        </div>
-    </div>
-
-    @if (session('status'))<div class="flash">{{ session('status') }}</div>@endif
-    @if ($errors->any())<div class="flash-error">{{ $errors->first() }}</div>@endif
-
+@section('settings')
     <form method="GET" class="filter-bar" style="margin-bottom:1.25rem">
         <label class="field"><span>بحث</span><input class="input" name="search" value="{{ request('search') }}" placeholder="الاسم أو الجوال..."></label>
         <label class="field"><span>الحالة</span>

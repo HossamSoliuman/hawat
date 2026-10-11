@@ -235,6 +235,20 @@ a { color: inherit; text-decoration: none; }
 
 .nav-section-title { padding: 1rem 1rem .5rem; font-size: .65625rem; font-weight: 600; color: hsl(var(--muted-foreground) / .55); }
 /*
+ * القسم المطويّ (قائمة المالك): عنوانه <summary> يطويه، بسهمٍ في طرفه الأيسر
+ * بدل علامة المتصفّح — يتّجه لأسفل مفتوحًا ونحو البنود (يسارًا) مطويًّا.
+ */
+summary.nav-section-title {
+    display: flex; align-items: center; gap: .5rem; padding: .6rem 1rem;
+    font-size: .75rem; font-weight: 700; color: hsl(var(--muted-foreground) / .8);
+    cursor: pointer; list-style: none; user-select: none; transition: color .15s;
+}
+summary.nav-section-title::-webkit-details-marker { display: none; }
+summary.nav-section-title:hover, details.nav-section[data-current] > summary { color: hsl(var(--foreground)); }
+summary.nav-section-title svg { width: .875rem; height: .875rem; margin-right: auto; transition: transform .15s; }
+details.nav-section:not([open]) > summary svg { transform: rotate(90deg); }
+details.nav-section[open] { padding-bottom: .35rem; }
+/*
  * البند بقياس hispa حرفيًّا: 14px على سطرٍ ارتفاعه 1.5 داخل صفٍّ من 2rem
  * وحشوة .3rem/1rem — لا 2.5rem كما كان، فقد بدا البند أفسح من مرجعه. لا خلفية
  * عند المرور ولا عند النشاط: الخلفية الملوّنة تقطع شبكة الصفحة تحتها، ويكفي أن
@@ -658,8 +672,9 @@ html.dark .delta-pill.down { color: hsl(352 85% 72%); border-color: hsl(352 85% 
 .score-chip { display: inline-block; padding: .1rem .5rem; font-size: .7rem; font-weight: 700; color: hsl(var(--background)); }
 
 /* البطاقة عمود مرن، فبلا هذا يتمدّد الشريط على عرضها كلّه. */
-.seg { display: inline-flex; align-self: flex-start; border: 1px solid var(--hair); background: var(--surface); }
-.seg a { display: inline-flex; align-items: center; gap: .35rem; padding: .4rem .8rem; font-size: .76rem; font-weight: 600; color: hsl(var(--muted-foreground)); border-left: 1px solid hsl(var(--border)); }
+/* تبويبات أعرض من الشاشة (إعدادات المالك على الجوال) تُمرَّر أفقيًا بدل أن تفيض عن الصفحة. */
+.seg { display: inline-flex; align-self: flex-start; max-width: 100%; overflow-x: auto; scrollbar-width: none; border: 1px solid var(--hair); background: var(--surface); }
+.seg a { display: inline-flex; align-items: center; gap: .35rem; flex-shrink: 0; white-space: nowrap; padding: .4rem .8rem; font-size: .76rem; font-weight: 600; color: hsl(var(--muted-foreground)); border-left: 1px solid hsl(var(--border)); }
 .seg a:last-child { border-left: 0; }
 .seg a svg { width: 13px; height: 13px; }
 .seg a.is-active { background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); }

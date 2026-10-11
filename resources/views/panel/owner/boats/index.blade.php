@@ -1,6 +1,4 @@
-@extends('layouts.app')
-
-@section('title', 'القوارب')
+@extends('panel.owner.settings.layout')
 
 @php
     // الحقول التي يعيدها الزر إلى النموذج عند التعديل — بأسماء الأعمدة نفسها.
@@ -12,23 +10,11 @@
     ];
 @endphp
 
-@section('content')
-    <div class="page-header">
-        <div class="lead">
-            <div class="icon-wrap">@include('partials.icon', ['name' => 'ship'])</div>
-            <div>
-                <h1>القوارب</h1>
-                <p>أسطولك كما تراه الوزارة — كل قارب هنا يظهر في صفحة مينائه ومركز المعلومات</p>
-            </div>
-        </div>
-        <div class="actions">
-            <button type="button" class="btn btn-primary" onclick="openDrawerForm(boatForm)">@include('partials.icon', ['name' => 'plus']) قارب جديد</button>
-        </div>
-    </div>
+@section('settings-actions')
+    <button type="button" class="btn btn-primary" onclick="openDrawerForm(boatForm)">@include('partials.icon', ['name' => 'plus']) قارب جديد</button>
+@endsection
 
-    @if (session('status'))<div class="flash">{{ session('status') }}</div>@endif
-    @if ($errors->any())<div class="flash-error">{{ $errors->first() }}</div>@endif
-
+@section('settings')
     <div class="stat-grid cols-4" style="margin-bottom:1.25rem">
         @include('partials.stat-card', ['label' => 'كل القوارب', 'value' => number_format($counts['total']), 'icon' => 'ship', 'tone' => 'primary'])
         @include('partials.stat-card', ['label' => 'نشطة', 'value' => number_format($counts['active']), 'icon' => 'check-circle', 'tone' => 'success'])

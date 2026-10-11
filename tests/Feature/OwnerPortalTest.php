@@ -54,8 +54,54 @@ class OwnerPortalTest extends TestCase
             ->assertSee('مرحبًا مالك الاختبار')
             ->assertSee('الأسماك المتوفرة')
             ->assertSee(route('panel.owner.trips'), false)
-            ->assertSee(route('panel.owner.boats'), false)
+            ->assertSee(route('panel.owner.settings'), false)
             ->assertDontSee(route('panel.users'), false);
+    }
+
+    public function test_owner_sidebar_groups_collapse_with_only_the_current_group_open(): void
+    {
+        $html = $this->asOwner()->get('/admin/owner/expenses')->assertOk()->getContent();
+
+        $this->assertSame(['المالية'], $this->openSidebarGroups($html));
+        $this->assertStringContainsString('data-group="الدلالون"', $html);
+        $this->assertStringContainsString('<summary class="nav-section-title">', $html);
+
+        // بقية الأدوار قوائمها قصيرة فلا تُطوى.
+        $captain = User::factory()->role(Role::CAPTAIN)->ownedBy($this->owner)->create();
+        $this->actingAs($captain)->get('/admin')->assertOk()->assertDontSee('<details', false);
+    }
+
+    public function test_settings_opens_on_its_first_tab_and_every_master_data_page_is_a_tab(): void
+    {
+        $this->asOwner()->get('/admin/owner/settings')->assertRedirect(route('panel.owner.boats'));
+
+        $tabs = config('hawat.owner_settings');
+
+        foreach ($tabs as $tab) {
+            $response = $this->asOwner()->get(route($tab['route']))
+                ->assertOk()
+                ->assertSee('<title>الإعدادات — '.$tab['label'], false)
+                ->assertSee('href="'.route($tab['route']).'" class="is-active"', false);
+
+            foreach ($tabs as $other) {
+                $response->assertSee('href="'.route($other['route']).'"', false);
+            }
+
+            // الإعدادات نشطة في القائمة على كل تبويب، وقسمها وحده مفتوح.
+            $this->assertSame(['الإعدادات والحساب'], $this->openSidebarGroups($response->getContent()));
+        }
+    }
+
+    /**
+     * أقسام القائمة المفتوحة من الخادم بأسمائها.
+     *
+     * @return array<int, string>
+     */
+    private function openSidebarGroups(string $html): array
+    {
+        preg_match_all('/<details[^>]*data-group="([^"]+)"[^>]*\sopen[\s>]/u', $html, $matches);
+
+        return $matches[1];
     }
 
     public function test_owner_pages_are_for_owners_only(): void

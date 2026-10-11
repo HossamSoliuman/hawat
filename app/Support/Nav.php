@@ -151,12 +151,13 @@ class Nav
     }
 
     /**
-     * هل عنصر القائمة هو الصفحة الحالية؟ 'active' نمطٌ يجمع صفحات تحت تبويب
-     * واحد (كلوحات شاشة العرض)، و'params' تميّز تبويبات المسار الواحد.
+     * هل عنصر القائمة هو الصفحة الحالية؟ 'active' نمطٌ — أو قائمة أنماط — يجمع
+     * صفحات تحت تبويب واحد (كلوحات شاشة العرض وتبويبات إعدادات المالك)،
+     * و'params' تميّز تبويبات المسار الواحد.
      */
     public static function isActive(array $item): bool
     {
-        if (! request()->routeIs($item['active'] ?? $item['route'])) {
+        if (! request()->routeIs(...(array) ($item['active'] ?? $item['route']))) {
             return false;
         }
 
@@ -196,6 +197,15 @@ class Nav
     public static function panelRole(): string
     {
         return Auth::user()?->app_role_key ?? Role::SUPER_ADMIN;
+    }
+
+    /**
+     * هل تُطوى أقسام القائمة؟ قائمة المالك وحدها طويلة بما يفيض عن الشاشة،
+     * فكل قسم فيها ينطوي، ولا يُفتح افتراضًا إلا قسم الصفحة الحالية.
+     */
+    public static function collapsible(): bool
+    {
+        return self::portalKey() === self::OPS && self::panelRole() === Role::OWNER;
     }
 
     /**

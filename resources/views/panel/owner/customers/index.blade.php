@@ -1,24 +1,10 @@
-@extends('layouts.app')
+@extends('panel.owner.settings.layout')
 
-@section('title', 'العملاء')
+@section('settings-actions')
+    <button type="button" class="btn btn-primary" onclick="openDrawerForm(recordForm)">@include('partials.icon', ['name' => 'plus']) عميل جديد</button>
+@endsection
 
-@section('content')
-    <div class="page-header">
-        <div class="lead">
-            <div class="icon-wrap">@include('partials.icon', ['name' => 'handshake'])</div>
-            <div>
-                <h1>العملاء</h1>
-                <p>من تبيع لهم المصيد — القائمة نفسها التي يبحث فيها التطبيق عند تسجيل بيع</p>
-            </div>
-        </div>
-        <div class="actions">
-            <button type="button" class="btn btn-primary" onclick="openDrawerForm(recordForm)">@include('partials.icon', ['name' => 'plus']) عميل جديد</button>
-        </div>
-    </div>
-
-    @if (session('status'))<div class="flash">{{ session('status') }}</div>@endif
-    @if ($errors->any())<div class="flash-error">{{ $errors->first() }}</div>@endif
-
+@section('settings')
     <form method="GET" class="filter-bar" style="margin-bottom:1.25rem">
         <label class="field"><span>بحث</span><input class="input" name="search" value="{{ request('search') }}" placeholder="الاسم أو الجوال..."></label>
         <label class="field"><span>الحالة</span>
