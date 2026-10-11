@@ -43,8 +43,23 @@ class RegistrationRequestController extends Controller
         ], [
             'g-recaptcha-response.required' => 'تعذّر التحقق من أنك لست روبوتًا، أعد المحاولة.',
             'role.required' => 'اختر نوع الحساب: مالك قوارب أو دلال.',
+            'role.in' => 'اختر نوع الحساب: مالك قوارب أو دلال.',
+            'name.required' => 'اكتب اسمك الكامل.',
+            'name.max' => 'الاسم أطول من المسموح.',
+            'phone.required' => 'اكتب رقم جوالك.',
             'phone.regex' => 'رقم الجوال يجب أن يكون بصيغة 05XXXXXXXX.',
             'phone.unique' => 'هذا الجوال مسجّل لدينا أو له طلب قيد المراجعة.',
+            'email.email' => 'البريد الإلكتروني غير صحيح.',
+            'email.max' => 'البريد الإلكتروني أطول من المسموح.',
+            'business_name.max' => 'اسم المنشأة أطول من المسموح.',
+            'city.max' => 'اسم المدينة أطول من المسموح.',
+            'boats_count.integer' => 'عدد القوارب رقم من 1 إلى 999.',
+            'boats_count.min' => 'عدد القوارب رقم من 1 إلى 999.',
+            'boats_count.max' => 'عدد القوارب رقم من 1 إلى 999.',
+            'notes.max' => 'الملاحظات أطول من 2000 حرف.',
+            'password.required' => 'اختر كلمة مرور.',
+            'password.min' => 'كلمة المرور 8 أحرف على الأقل.',
+            'password.confirmed' => 'كلمتا المرور غير متطابقتين.',
         ]);
 
         if ($validator->fails()) {

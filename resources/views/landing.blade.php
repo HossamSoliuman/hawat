@@ -371,24 +371,70 @@
         .ld-contact-info .card { flex-direction: row; align-items: center; gap: .9rem; padding: 1rem 1.2rem; }
         .ld-contact-info .k { font-size: .75rem; color: hsl(var(--muted-foreground)); margin-bottom: .2rem; }
         .ld-contact-info a { font-size: .98rem; font-weight: 600; color: hsl(var(--primary)); }
-        .ld-form .row { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr)); gap: 1.2rem; }
-        .ld-form .input { padding: .7rem .85rem; font-size: .92rem; }
-        .ld-form .field > span { font-size: .78rem; }
-        .ld-form textarea.input { resize: vertical; min-height: 8rem; line-height: 1.7; }
-        .ld-form .err { display: grid; gap: .25rem; padding: .8rem 1rem; font-size: .84rem; color: var(--st-critical); border: 1px solid color-mix(in srgb, var(--st-critical) 45%, transparent); background: color-mix(in srgb, var(--st-critical) 10%, transparent); }
-        .ld-reg-roles { border: 0; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr)); gap: .8rem; }
-        .ld-reg-roles legend { font-size: .78rem; margin-bottom: .5rem; padding: 0; }
+        {{--
+            نموذج الطلب: شبكة من عمودين تتّسع في النافذة بلا تمرير، وخطأ الخادم تحت
+            حقله حتى يُعدَّل.
+        --}}
+        .ld-form .ld-modal-body { gap: 1.1rem; padding: 1.2rem 1.4rem; }
+        .ld-fs { border: 0; margin: 0; padding: 0; min-width: 0; display: grid; gap: .5rem; }
+        .ld-fs > legend { padding: 0; margin-bottom: .5rem; }
+        .ld-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .85rem 1rem; }
+        @media (max-width: 520px) { .ld-fields { grid-template-columns: minmax(0, 1fr); } }
+        .ld-form .field { gap: .35rem; }
+        .ld-form .lbl { font-size: .8rem; font-weight: 600; color: hsl(var(--foreground) / .85); }
+        .ld-form .lbl em { margin-inline-start: .35rem; font-style: normal; font-size: .72rem; font-weight: 500; color: hsl(var(--muted-foreground)); }
+        .ld-form .input { padding: .62rem .85rem; font-size: .92rem; transition: border-color .15s, background .15s; }
+        .ld-form .input::placeholder { color: hsl(var(--muted-foreground) / .65); }
+        .ld-form .input:hover { border-color: hsl(var(--foreground) / .3); }
+        .ld-form .input:focus { border-color: hsl(var(--primary)); background: hsl(var(--primary) / .06); }
+        .ld-form .input:user-invalid, .ld-form .has-error .input { border-color: var(--st-critical); }
+        .ld-form textarea.input { resize: vertical; min-height: 5.5rem; line-height: 1.7; }
+        .ld-form .msg { font-size: .75rem; line-height: 1.6; color: var(--st-critical); }
+        .ld-form :not(.has-error) > .msg { display: none; }
+        {{-- كلمة المرور: زرّ الإظهار في طرف الحقل، والنصّ لاتينيّ يبدأ بعده. --}}
+        .ld-form .field > .pw { position: relative; display: block; font-size: inherit; color: inherit; }
+        .ld-form .pw .input { padding-left: 2.7rem; }
+        .ld-form .pw-toggle { position: absolute; inset-block: 0; left: 0; width: 2.7rem; display: grid; place-items: center; border: 0; background: none; color: hsl(var(--muted-foreground)); cursor: pointer; }
+        .ld-form .pw-toggle:hover { color: hsl(var(--primary)); }
+        .ld-form .pw-toggle svg { width: 17px; height: 17px; }
+        .ld-form .pw-toggle .ico-hide, .ld-form .pw.is-shown .ico-show { display: none; }
+        .ld-form .pw.is-shown .ico-hide { display: block; }
+        .ld-form .err { margin-inline-end: 1.6rem; display: flex; gap: .7rem; align-items: flex-start; padding: .8rem 1rem; font-size: .84rem; line-height: 1.7; color: var(--st-critical); border: 1px solid color-mix(in srgb, var(--st-critical) 45%, transparent); background: color-mix(in srgb, var(--st-critical) 10%, transparent); }
+        .ld-form .err svg { flex-shrink: 0; width: 18px; height: 18px; margin-top: .2rem; }
+        .ld-form .err span { display: block; color: hsl(var(--foreground) / .85); }
+        {{-- نوع الحساب: بطاقتان، والمختارة بحدّ أزرق ومربّع ممتلئ. --}}
+        .ld-reg-roles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .8rem; }
         .ld-reg-roles label { position: relative; cursor: pointer; }
         .ld-reg-roles input { position: absolute; opacity: 0; pointer-events: none; }
-        .ld-reg-roles label > span { display: grid; grid-template-columns: auto 1fr; column-gap: .7rem; row-gap: .15rem; align-items: center; padding: .9rem 1rem; border: 1px solid var(--hair); background: hsl(var(--muted) / .35); transition: border-color .15s, background .15s; }
-        .ld-reg-roles label > span svg { grid-row: span 2; width: 22px; height: 22px; color: hsl(var(--muted-foreground)); }
-        .ld-reg-roles b { font-size: .95rem; }
-        .ld-reg-roles small { font-size: .74rem; color: hsl(var(--muted-foreground)); }
+        .ld-reg-roles label > span { display: flex; align-items: center; gap: .75rem; padding: .8rem 1rem; border: 1px solid var(--hair); background: hsl(var(--muted) / .35); transition: border-color .15s, background .15s; }
+        .ld-reg-roles label:hover > span { border-color: hsl(var(--primary) / .55); }
+        .ld-reg-roles svg { flex-shrink: 0; width: 22px; height: 22px; color: hsl(var(--muted-foreground)); transition: color .15s; }
+        .ld-reg-roles b { flex: 1; font-size: .95rem; white-space: nowrap; }
+        .ld-reg-roles .tick { flex-shrink: 0; display: grid; place-items: center; width: 16px; height: 16px; border: 1px solid hsl(var(--muted-foreground) / .6); }
+        .ld-reg-roles .tick::after { content: ''; width: 8px; height: 8px; background: hsl(var(--primary)); transform: scale(0); transition: transform .15s; }
         .ld-reg-roles input:checked + span { border-color: hsl(var(--primary)); background: hsl(var(--primary) / .12); }
         .ld-reg-roles input:checked + span svg { color: hsl(var(--primary)); }
+        .ld-reg-roles input:checked + span .tick { border-color: hsl(var(--primary)); }
+        .ld-reg-roles input:checked + span .tick::after { transform: none; }
         .ld-reg-roles input:focus-visible + span { outline: 2px solid hsl(var(--primary)); outline-offset: 2px; }
-        /* عدد القوارب سؤال المالك وحده. */
-        .ld-form:has(input[name="role"][value="dalal"]:checked) .only-owner { visibility: hidden; }
+        .ld-fs.has-error .ld-reg-roles label > span { border-color: var(--st-critical); }
+        {{-- على الجوال يضيق العرض عن المربّع، والحدّ الأزرق يكفي للدلالة على المختار. --}}
+        @media (max-width: 520px) {
+            .ld-reg-roles label > span { padding: .75rem; gap: .6rem; }
+            .ld-reg-roles .tick { display: none; }
+        }
+        /* عدد القوارب سؤال المالك وحده، فيأخذ اسم النشاط الصفّ كاملًا للدلال. */
+        .ld-form:has(input[name="role"][value="dalal"]:checked) .only-owner { display: none; }
+        .ld-form:has(input[name="role"][value="dalal"]:checked) .ld-biz { grid-column: 1 / -1; }
+        {{-- الملاحظات مطويّة: قليلٌ من يحتاجها. --}}
+        .ld-notes summary { display: inline-flex; align-items: center; gap: .45rem; cursor: pointer; list-style: none; font-size: .84rem; font-weight: 600; color: hsl(var(--primary)); }
+        .ld-notes summary::-webkit-details-marker { display: none; }
+        .ld-notes summary svg { width: 15px; height: 15px; transition: transform .15s; }
+        .ld-notes[open] summary svg { transform: rotate(45deg); }
+        .ld-notes .field { margin-top: .7rem; }
+        .ld-form .busy, .ld-form.is-busy .idle { display: none; }
+        .ld-form.is-busy .busy { display: inline; }
+        .ld-form.is-busy button[type="submit"] { opacity: .75; cursor: progress; }
         .ld-reg-steps { list-style: none; margin: 1.2rem 0 0; padding: 0; display: grid; gap: .9rem; max-width: 42ch; }
         .ld-reg-steps li { display: flex; gap: .9rem; align-items: flex-start; }
         .ld-reg-steps .n { font-family: 'Chakra Petch', monospace; font-weight: 600; font-size: .85rem; color: hsl(var(--primary)); padding-top: .1rem; }
@@ -424,12 +470,8 @@
         .ld-modal::backdrop { background: rgba(2, 8, 20, .66); backdrop-filter: blur(3px); }
         @keyframes ld-modal-in { from { opacity: 0; transform: translateY(8px) scale(.985); } }
         .ld-modal-box { flex: 1 1 auto; min-height: 0; padding: 0; gap: 0; background: hsl(var(--background)); }
-        .ld-modal-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; padding: 1.1rem 1.4rem; border-bottom: 1px solid var(--hair); }
-        .ld-modal-head .ld-eyebrow { margin-bottom: .45rem; }
-        .ld-modal-head h2 { font-size: clamp(18px, 1.6vw, 21px); font-weight: 800; line-height: 1.35; }
-        .ld-modal-steps { list-style: none; display: flex; flex-wrap: wrap; gap: .35rem 1.1rem; margin-top: .6rem; font-size: .78rem; color: hsl(var(--muted-foreground)); }
-        .ld-modal-steps li { display: flex; align-items: center; gap: .4rem; }
-        .ld-modal-steps .n { font-family: 'Chakra Petch', monospace; font-weight: 600; font-size: .74rem; color: hsl(var(--primary)); }
+        {{-- بلا رأس: زرّ الإغلاق وحده في الزاوية، فيتّسع النموذج كله بلا تمرير. --}}
+        .ld-modal-close { position: absolute; top: .5rem; left: .5rem; z-index: 4; }
         .ld-modal-form { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
         .ld-modal-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; display: grid; gap: 1.1rem; padding: 1.3rem 1.4rem; }
         .ld-modal-foot { display: flex; flex-wrap: wrap; gap: .8rem; align-items: center; justify-content: space-between; padding: .9rem 1.4rem; border-top: 1px solid var(--hair); background: hsl(var(--muted) / .35); }
@@ -895,24 +937,11 @@
         نافذة طلب التسجيل: كل روابط #register تفتحها بدل النزول إلى القسم 13، وتُفتح
         وحدها إن وصل الزائر على #register — وهو مرجع الإرسال بنجاحه أو بأخطائه.
     --}}
-    <dialog class="ld-modal" id="ld-join" aria-labelledby="ld-join-title">
+    <dialog class="ld-modal" id="ld-join" aria-label="طلب الانضمام إلى حوات">
         <div class="card ld-modal-box">
-            <div class="ld-modal-head">
-                <div>
-                    <div class="ld-eyebrow"><span>انضم إلى حوات</span></div>
-                    <h2 id="ld-join-title">سجّل مالكًا أو دلالًا</h2>
-                    @unless (session('registered'))
-                        <ol class="ld-modal-steps">
-                            <li><span class="n">01</span>أرسل طلبك</li>
-                            <li><span class="n">02</span>تراجعه إدارة حوات</li>
-                            <li><span class="n">03</span>ادخل بجوالك وكلمة المرور</li>
-                        </ol>
-                    @endunless
-                </div>
-                <button class="icon-btn" type="button" data-join-close aria-label="إغلاق">
-                    @include('partials.icon', ['name' => 'x'])
-                </button>
-            </div>
+            <button class="icon-btn ld-modal-close" type="button" data-join-close aria-label="إغلاق">
+                @include('partials.icon', ['name' => 'x'])
+            </button>
 
             @if (session('registered'))
                 <div class="ld-modal-body ld-reg-done" role="status">
@@ -926,76 +955,127 @@
                     </div>
                 </div>
             @else
+                @php
+                    // ما لا حقل له في النموذج (reCAPTCHA) يُعرض في التنبيه، والباقي تحت حقله.
+                    $regFields = ['role', 'name', 'phone', 'email', 'city', 'business_name', 'boats_count', 'password', 'notes'];
+                    $regGeneral = collect($reg->getMessages())->except($regFields)->flatten();
+                    $regOnFields = collect($reg->keys())->intersect($regFields)->isNotEmpty();
+                @endphp
                 <form class="ld-form ld-modal-form" id="ld-form" method="POST" action="{{ route('landing.register') }}#register">
                     @csrf
                     <input type="hidden" name="g-recaptcha-response">
                     <div class="ld-modal-body">
                         @if ($reg->any())
                             <div class="err" role="alert">
-                                @foreach ($reg->all() as $message)<div>{{ $message }}</div>@endforeach
+                                @include('partials.icon', ['name' => 'alert-triangle'])
+                                <div>
+                                    <b>لم يُرسَل الطلب</b>
+                                    @foreach ($regGeneral as $message)<span>{{ $message }}</span>@endforeach
+                                    @if ($regOnFields)<span>صحّح الحقول المعلَّمة بالأحمر ثم أعد الإرسال.</span>@endif
+                                </div>
                             </div>
                         @endif
 
-                        <fieldset class="ld-reg-roles">
-                            <legend>نوع الحساب *</legend>
-                            <label>
-                                <input type="radio" name="role" value="owner" @checked($regRole === 'owner')>
-                                <span>@include('partials.icon', ['name' => 'ship'])<b>مالك قوارب</b></span>
-                            </label>
-                            <label>
-                                <input type="radio" name="role" value="dalal" @checked($regRole === 'dalal')>
-                                <span>@include('partials.icon', ['name' => 'gavel'])<b>دلال</b></span>
-                            </label>
+                        <fieldset @class(['ld-fs', 'has-error' => $reg->has('role')])>
+                            <legend class="lbl">نوع الحساب</legend>
+                            <div class="ld-reg-roles">
+                                <label>
+                                    <input type="radio" name="role" value="owner" @checked($regRole === 'owner')>
+                                    <span>
+                                        @include('partials.icon', ['name' => 'ship'])
+                                        <b>مالك قوارب</b>
+                                        <span class="tick" aria-hidden="true"></span>
+                                    </span>
+                                </label>
+                                <label>
+                                    <input type="radio" name="role" value="dalal" @checked($regRole === 'dalal')>
+                                    <span>
+                                        @include('partials.icon', ['name' => 'gavel'])
+                                        <b>دلال</b>
+                                        <span class="tick" aria-hidden="true"></span>
+                                    </span>
+                                </label>
+                            </div>
+                            @error('role', 'register')<small class="msg">{{ $message }}</small>@enderror
                         </fieldset>
 
-                        <div class="row">
-                            <label class="field"><span>الاسم الكامل *</span><input class="input" name="name" value="{{ old('name') }}" required maxlength="255" autocomplete="name"></label>
-                            <label class="field"><span>رقم الجوال *</span><input class="input dash" name="phone" value="{{ old('phone') }}" type="tel" dir="ltr" placeholder="05XXXXXXXX" required autocomplete="tel"></label>
+                        <div class="ld-fields">
+                            <label @class(['field', 'has-error' => $reg->has('name')])>
+                                <span class="lbl">الاسم الكامل</span>
+                                <input class="input" name="name" value="{{ old('name') }}" required maxlength="255" autocomplete="name">
+                                @error('name', 'register')<small class="msg">{{ $message }}</small>@enderror
+                            </label>
+                            <label @class(['field', 'has-error' => $reg->has('phone')])>
+                                <span class="lbl">رقم الجوال</span>
+                                <input class="input dash" name="phone" value="{{ old('phone') }}" type="tel" dir="ltr" placeholder="05XXXXXXXX" required autocomplete="tel">
+                                @error('phone', 'register')<small class="msg">{{ $message }}</small>@enderror
+                            </label>
+                            <label @class(['field', 'has-error' => $reg->has('email')])>
+                                <span class="lbl">البريد الإلكتروني</span>
+                                <input class="input" name="email" value="{{ old('email') }}" type="email" dir="ltr" maxlength="255" autocomplete="email">
+                                @error('email', 'register')<small class="msg">{{ $message }}</small>@enderror
+                            </label>
+                            <label @class(['field', 'has-error' => $reg->has('city')])>
+                                <span class="lbl">المدينة</span>
+                                <input class="input" name="city" value="{{ old('city') }}" maxlength="120" autocomplete="address-level2">
+                                @error('city', 'register')<small class="msg">{{ $message }}</small>@enderror
+                            </label>
+                            <label @class(['field', 'ld-biz', 'has-error' => $reg->has('business_name')])>
+                                <span class="lbl">اسم المنشأة / النشاط</span>
+                                <input class="input" name="business_name" value="{{ old('business_name') }}" maxlength="255" autocomplete="organization">
+                                @error('business_name', 'register')<small class="msg">{{ $message }}</small>@enderror
+                            </label>
+                            <label @class(['field', 'only-owner', 'has-error' => $reg->has('boats_count')])>
+                                <span class="lbl">عدد القوارب</span>
+                                <input class="input dash" name="boats_count" value="{{ old('boats_count') }}" type="number" min="1" max="999" dir="ltr" inputmode="numeric">
+                                @error('boats_count', 'register')<small class="msg">{{ $message }}</small>@enderror
+                            </label>
+                            <label @class(['field', 'has-error' => $reg->has('password')])>
+                                <span class="lbl">كلمة المرور<em>8 أحرف على الأقل</em></span>
+                                <span class="pw">
+                                    <input class="input" name="password" type="password" dir="ltr" minlength="8" required autocomplete="new-password">
+                                    <button class="pw-toggle" type="button" aria-label="إظهار كلمة المرور">
+                                        <span class="ico-show">@include('partials.icon', ['name' => 'eye'])</span>
+                                        <span class="ico-hide">@include('partials.icon', ['name' => 'eye-off'])</span>
+                                    </button>
+                                </span>
+                                @error('password', 'register')<small class="msg">{{ $message }}</small>@enderror
+                            </label>
+                            <label class="field">
+                                <span class="lbl">تأكيد كلمة المرور</span>
+                                <span class="pw">
+                                    <input class="input" name="password_confirmation" type="password" dir="ltr" minlength="8" required autocomplete="new-password">
+                                    <button class="pw-toggle" type="button" aria-label="إظهار كلمة المرور">
+                                        <span class="ico-show">@include('partials.icon', ['name' => 'eye'])</span>
+                                        <span class="ico-hide">@include('partials.icon', ['name' => 'eye-off'])</span>
+                                    </button>
+                                </span>
+                            </label>
                         </div>
-                        <div class="row">
-                            <label class="field"><span>البريد الإلكتروني</span><input class="input" name="email" value="{{ old('email') }}" type="email" dir="ltr" autocomplete="email"></label>
-                            <label class="field"><span>المدينة</span><input class="input" name="city" value="{{ old('city') }}" maxlength="120"></label>
-                        </div>
-                        <div class="row">
-                            <label class="field"><span>اسم المنشأة / النشاط</span><input class="input" name="business_name" value="{{ old('business_name') }}" maxlength="255" autocomplete="organization"></label>
-                            <label class="field only-owner"><span>عدد القوارب</span><input class="input" name="boats_count" value="{{ old('boats_count') }}" type="number" min="1" max="999" dir="ltr"></label>
-                        </div>
-                        <div class="row">
-                            <label class="field"><span>كلمة المرور *</span><input class="input" name="password" type="password" dir="ltr" minlength="8" required autocomplete="new-password"></label>
-                            <label class="field"><span>تأكيد كلمة المرور *</span><input class="input" name="password_confirmation" type="password" dir="ltr" minlength="8" required autocomplete="new-password"></label>
-                        </div>
-                        <label class="field"><span>ملاحظات</span><textarea class="input" name="notes" rows="3" maxlength="2000" placeholder="أي معلومة تساعدنا في مراجعة طلبك">{{ old('notes') }}</textarea></label>
+
+                        <details class="ld-notes" @if (old('notes') || $reg->has('notes')) open @endif>
+                            <summary>@include('partials.icon', ['name' => 'plus'])أضف ملاحظة لفريق المراجعة</summary>
+                            <label @class(['field', 'has-error' => $reg->has('notes')])>
+                                <textarea class="input" name="notes" rows="2" maxlength="2000" aria-label="ملاحظات" placeholder="أي معلومة تساعدنا في مراجعة طلبك">{{ old('notes') }}</textarea>
+                                @error('notes', 'register')<small class="msg">{{ $message }}</small>@enderror
+                            </label>
+                        </details>
                     </div>
                     <div class="ld-modal-foot">
-                        <span class="hint">لا يُنشأ الحساب إلا بعد اعتماد الإدارة.</span>
+                        <span class="hint">بعد اعتماد الإدارة تدخل برقم جوالك وكلمة المرور.</span>
                         <div class="actions">
                             <button class="btn btn-primary btn-lg" type="submit">
                                 @include('partials.icon', ['name' => 'send'])
-                                إرسال الطلب
+                                <span class="idle">إرسال الطلب</span>
+                                <span class="busy">جارٍ الإرسال…</span>
                             </button>
                             <button class="btn btn-outline btn-lg" type="button" data-join-close>إلغاء</button>
                         </div>
                     </div>
                 </form>
                 @if (\App\Rules\Recaptcha::enabled())
-                    {{-- reCAPTCHA v3: رمز جديد لحظة الإرسال (صلاحيته دقيقتان). --}}
+                    {{-- reCAPTCHA v3: الرمز يُطلب لحظة الإرسال (صلاحيته دقيقتان) في سكربت النافذة أدناه. --}}
                     <script src="https://www.google.com/recaptcha/api.js?render={{ config('services.recaptcha.site_key') }}" async defer></script>
-                    <script>
-                        document.getElementById('ld-form').addEventListener('submit', function (event) {
-                            const form = event.target;
-                            if (form.dataset.verified) return;
-                            event.preventDefault();
-                            const btn = form.querySelector('button[type="submit"]');
-                            btn.disabled = true;
-                            grecaptcha.ready(function () {
-                                grecaptcha.execute(@js(config('services.recaptcha.site_key')), { action: 'register' }).then(function (token) {
-                                    form.elements['g-recaptcha-response'].value = token;
-                                    form.dataset.verified = '1';
-                                    form.submit();
-                                }, function () { btn.disabled = false; });
-                            });
-                        });
-                    </script>
                 @endif
             @endif
         </div>
@@ -1054,8 +1134,63 @@
                 const radio = role && form && form.querySelector('input[name="role"][value="' + role + '"]');
                 if (radio) radio.checked = true;
                 if (!dialog.open) dialog.showModal();
-                // لوحة المفاتيح الافتراضية لا تُفتح وحدها على الجوال.
-                if (form && window.matchMedia('(pointer: fine)').matches) form.querySelector('input[name="name"]').focus();
+                // أول حقلٍ فيه خطأ وإلا الاسم، ولوحة المفاتيح الافتراضية لا تُفتح وحدها على الجوال.
+                if (form && window.matchMedia('(pointer: fine)').matches) {
+                    (form.querySelector('.has-error .input') || form.querySelector('input[name="name"]')).focus();
+                }
+            }
+
+            if (form) {
+                // خطأ الخادم يزول عن حقله حين يُعدَّل.
+                form.addEventListener('input', function (event) {
+                    const field = event.target.closest('.has-error');
+                    if (field) field.classList.remove('has-error');
+                });
+
+                form.querySelectorAll('.pw-toggle').forEach(function (btn) {
+                    btn.addEventListener('click', function () {
+                        const input = btn.previousElementSibling;
+                        const show = input.type === 'password';
+                        input.type = show ? 'text' : 'password';
+                        btn.parentElement.classList.toggle('is-shown', show);
+                        btn.setAttribute('aria-label', show ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور');
+                    });
+                });
+
+                const pw = form.querySelector('input[name="password"]');
+                const pw2 = form.querySelector('input[name="password_confirmation"]');
+                function matchPasswords() {
+                    pw2.setCustomValidity(pw2.value && pw2.value !== pw.value ? 'كلمتا المرور غير متطابقتين.' : '');
+                }
+                pw.addEventListener('input', matchPasswords);
+                pw2.addEventListener('input', matchPasswords);
+
+                // الإرسال يُقفل الزرّ ويُعلن الانتظار، ورمز reCAPTCHA يُطلب لحظتها إن كان مفعّلًا.
+                const siteKey = @js(\App\Rules\Recaptcha::enabled() ? config('services.recaptcha.site_key') : null);
+                const submit = form.querySelector('button[type="submit"]');
+                function busy(on) {
+                    submit.disabled = on;
+                    form.classList.toggle('is-busy', on);
+                }
+                form.addEventListener('submit', function (event) {
+                    if (form.dataset.verified) return;
+                    busy(true);
+                    if (!siteKey || !window.grecaptcha) return;
+                    event.preventDefault();
+                    grecaptcha.ready(function () {
+                        grecaptcha.execute(siteKey, { action: 'register' }).then(function (token) {
+                            form.elements['g-recaptcha-response'].value = token;
+                            form.dataset.verified = '1';
+                            form.submit();
+                        }, function () { busy(false); });
+                    });
+                });
+                // العودة بزرّ الرجوع تُعيد الصفحة من الذاكرة: يُفكّ القفل.
+                window.addEventListener('pageshow', function (event) {
+                    if (!event.persisted) return;
+                    busy(false);
+                    delete form.dataset.verified;
+                });
             }
 
             document.addEventListener('click', function (event) {
