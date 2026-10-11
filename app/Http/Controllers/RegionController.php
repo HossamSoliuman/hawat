@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Market;
 use App\Models\Region;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class RegionController extends Controller
@@ -44,11 +46,25 @@ class RegionController extends Controller
         return redirect()->route('regions')->with('status', 'تم تحديث المنطقة بنجاح');
     }
 
+    /**
+     * تُحذف المنطقة بمحافظاتها وموانئها ومواقع صيدها وأسواقها، ما لم يكن في
+     * موانئها سجل تشغيلي (Region::usage) فتُرفض ويُذكر السبب.
+     */
     public function destroy(Region $region): RedirectResponse
     {
-        $region->delete();
+        if ($usage = $region->usage()) {
+            $details = collect($usage)->map(fn ($count, $label) => "{$count} {$label}")->implode('، ');
 
-        return redirect()->route('regions')->with('status', 'تم حذف المنطقة');
+            return redirect()->route('regions')
+                ->with('error', "لا يمكن حذف منطقة «{$region->name}» لأن في موانئها: {$details}.");
+        }
+
+        DB::transaction(function () use ($region) {
+            Market::where('region', $region->name)->delete();
+            $region->delete();
+        });
+
+        return redirect()->route('regions')->with('status', "تم حذف منطقة «{$region->name}» بمحافظاتها وموانئها");
     }
 
     private function validated(Request $request): array

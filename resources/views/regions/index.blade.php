@@ -17,6 +17,7 @@
     </div>
 
     @if (session('status'))<div class="flash">{{ session('status') }}</div>@endif
+    @if (session('error'))<div class="flash-error">{{ session('error') }}</div>@endif
 
     <div class="stat-grid cols-6" style="margin-bottom:1.25rem">
         @include('partials.stat-card', ['label' => 'المناطق', 'value' => $stats['total'], 'icon' => 'map', 'tone' => 'primary'])
@@ -49,7 +50,7 @@
                             onclick='openRegionForm({!! json_encode($region->only(['id', 'name', 'code', 'coast_length_km', 'governorates_count', 'ports_count', 'total_catch_tons', 'active_boats', 'active_fishers']), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!})'>
                             @include('partials.icon', ['name' => 'pencil'])
                         </button>
-                        <form method="POST" action="{{ route('regions.destroy', $region) }}" onsubmit="return confirm('حذف منطقة «{{ $region->name }}»؟')">
+                        <form method="POST" action="{{ route('regions.destroy', $region) }}" onsubmit="return confirm('حذف منطقة «{{ $region->name }}» مع محافظاتها وموانئها ومواقع الصيد والأسواق فيها؟ لا يمكن التراجع.')">
                             @csrf
                             @method('DELETE')
                             <button type="submit" class="icon-action danger" title="حذف">@include('partials.icon', ['name' => 'trash'])</button>

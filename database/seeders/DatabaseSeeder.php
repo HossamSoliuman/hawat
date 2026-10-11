@@ -8,6 +8,15 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
+        // الإنتاج يحمل بيانات حقيقية بعد hawat:purge-demo-data: لا يُعاد فيه إلا
+        // ما تملكه الشيفرة من أدوار وقوائم مرجعية. البذّارات الأخرى تُنشئ
+        // بيانات تجريبية وتعيد المناطق المحذوفة وعدّاداتها الوهمية.
+        if (app()->isProduction()) {
+            $this->call([RoleSeeder::class, LookupSeeder::class]);
+
+            return;
+        }
+
         $this->call([
             GeographicSeeder::class,
             FleetSeeder::class,
