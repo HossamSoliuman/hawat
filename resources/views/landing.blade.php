@@ -371,13 +371,10 @@
         .ld-contact-info .card { flex-direction: row; align-items: center; gap: .9rem; padding: 1rem 1.2rem; }
         .ld-contact-info .k { font-size: .75rem; color: hsl(var(--muted-foreground)); margin-bottom: .2rem; }
         .ld-contact-info a { font-size: .98rem; font-weight: 600; color: hsl(var(--primary)); }
-        .ld-form { padding: clamp(20px, 3vw, 40px); gap: 1.2rem; }
         .ld-form .row { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr)); gap: 1.2rem; }
         .ld-form .input { padding: .7rem .85rem; font-size: .92rem; }
         .ld-form .field > span { font-size: .78rem; }
         .ld-form textarea.input { resize: vertical; min-height: 8rem; line-height: 1.7; }
-        .ld-form .foot { display: flex; flex-wrap: wrap; gap: .9rem; align-items: center; justify-content: space-between; }
-        .ld-form .foot .hint { font-size: .78rem; color: hsl(var(--muted-foreground)); }
         .ld-form .err { display: grid; gap: .25rem; padding: .8rem 1rem; font-size: .84rem; color: var(--st-critical); border: 1px solid color-mix(in srgb, var(--st-critical) 45%, transparent); background: color-mix(in srgb, var(--st-critical) 10%, transparent); }
         .ld-reg-roles { border: 0; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr)); gap: .8rem; }
         .ld-reg-roles legend { font-size: .78rem; margin-bottom: .5rem; padding: 0; }
@@ -397,10 +394,46 @@
         .ld-reg-steps .n { font-family: 'Chakra Petch', monospace; font-weight: 600; font-size: .85rem; color: hsl(var(--primary)); padding-top: .1rem; }
         .ld-reg-steps b { display: block; font-size: .95rem; margin-bottom: .15rem; }
         .ld-reg-steps li span:not(.n) { font-size: .84rem; line-height: 1.7; color: hsl(var(--muted-foreground)); }
-        .ld-reg-done { align-items: flex-start; gap: .9rem; }
-        .ld-reg-done h3 { margin: 0; font-size: 1.2rem; }
-        .ld-reg-done p { margin: 0; font-size: .9rem; line-height: 1.8; color: hsl(var(--muted-foreground)); }
+        .ld-reg-done { align-items: flex-start; justify-items: start; gap: .9rem; }
+        .ld-reg-done h3 { font-size: 1.2rem; font-weight: 800; }
+        .ld-reg-done p { font-size: .9rem; line-height: 1.8; color: hsl(var(--muted-foreground)); }
         .ld-reg-done .ico-box { color: var(--st-good); }
+        .hint { font-size: .78rem; color: hsl(var(--muted-foreground)); }
+
+        {{-- مكان النموذج في القسم: اختيار نوع الحساب يفتح النافذة عليه. --}}
+        .ld-join-cta { padding: clamp(20px, 3vw, 40px); gap: 1rem; align-items: flex-start; }
+        .ld-join-cta h3 { font-size: 1.2rem; font-weight: 800; }
+        .ld-join-cta p { font-size: .9rem; line-height: 1.8; color: hsl(var(--muted-foreground)); }
+        .ld-join-roles { display: grid; gap: .7rem; width: 100%; }
+        .ld-join-roles button { display: grid; grid-template-columns: auto 1fr auto; column-gap: .9rem; row-gap: .15rem; align-items: center; width: 100%; padding: 1rem 1.1rem; text-align: start; font: inherit; color: inherit; cursor: pointer; border: 1px solid var(--hair); background: hsl(var(--muted) / .35); transition: border-color .15s, background .15s; }
+        .ld-join-roles button > svg:first-child { grid-column: 1; grid-row: 1 / span 2; width: 24px; height: 24px; color: hsl(var(--primary)); }
+        .ld-join-roles button > svg:last-child { grid-column: 3; grid-row: 1 / span 2; width: 18px; height: 18px; color: hsl(var(--muted-foreground)); transition: transform .15s, color .15s; }
+        .ld-join-roles b, .ld-join-roles small { grid-column: 2; }
+        .ld-join-roles b { font-size: 1rem; }
+        .ld-join-roles small { font-size: .78rem; color: hsl(var(--muted-foreground)); }
+        .ld-join-roles button:hover { border-color: hsl(var(--primary)); background: hsl(var(--primary) / .1); }
+        .ld-join-roles button:hover > svg:last-child { color: hsl(var(--primary)); transform: translateX(-3px); }
+
+        {{--
+            نافذة التسجيل: <dialog> أصليّ والصندوق داخلها بطاقة بأقواس الزوايا. الرأس
+            والذيل ثابتان، والحقول وحدها تتمرّر إن ضاقت الشاشة.
+        --}}
+        html:has(.ld-modal[open]) { overflow: hidden; }
+        .ld-modal { border: 0; padding: 0; margin: auto; width: min(46rem, calc(100vw - 24px)); max-width: none; max-height: calc(100dvh - 24px); overflow: hidden; background: transparent; color: hsl(var(--foreground)); font-family: inherit; box-shadow: 0 28px 70px -20px rgba(0, 0, 0, .6); }
+        .ld-modal[open] { display: flex; flex-direction: column; animation: ld-modal-in .18s ease-out; }
+        .ld-modal::backdrop { background: rgba(2, 8, 20, .66); backdrop-filter: blur(3px); }
+        @keyframes ld-modal-in { from { opacity: 0; transform: translateY(8px) scale(.985); } }
+        .ld-modal-box { flex: 1 1 auto; min-height: 0; padding: 0; gap: 0; background: hsl(var(--background)); }
+        .ld-modal-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; padding: 1.1rem 1.4rem; border-bottom: 1px solid var(--hair); }
+        .ld-modal-head .ld-eyebrow { margin-bottom: .45rem; }
+        .ld-modal-head h2 { font-size: clamp(18px, 1.6vw, 21px); font-weight: 800; line-height: 1.35; }
+        .ld-modal-steps { list-style: none; display: flex; flex-wrap: wrap; gap: .35rem 1.1rem; margin-top: .6rem; font-size: .78rem; color: hsl(var(--muted-foreground)); }
+        .ld-modal-steps li { display: flex; align-items: center; gap: .4rem; }
+        .ld-modal-steps .n { font-family: 'Chakra Petch', monospace; font-weight: 600; font-size: .74rem; color: hsl(var(--primary)); }
+        .ld-modal-form { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
+        .ld-modal-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; display: grid; gap: 1.1rem; padding: 1.3rem 1.4rem; }
+        .ld-modal-foot { display: flex; flex-wrap: wrap; gap: .8rem; align-items: center; justify-content: space-between; padding: .9rem 1.4rem; border-top: 1px solid var(--hair); background: hsl(var(--muted) / .35); }
+        .ld-modal-foot .actions { display: flex; flex-wrap: wrap; gap: .6rem; margin-inline-start: auto; }
 
         /* ---------- التذييل ---------- */
         .ld-foot { border-top: 1px solid var(--hair); padding: clamp(28px, 3.5vw, 44px) clamp(18px, 4vw, 40px) 20px; }
@@ -826,16 +859,77 @@
                 </div>
 
                 @if (session('registered'))
-                    <div class="card ld-form ld-reg-done" data-reveal role="status">
-                        <span class="ico-box">@include('partials.icon', ['name' => 'check-circle'])</span>
+                    <div class="card ld-join-cta ld-reg-done" data-reveal role="status">
+                        <span class="ico-box lg">@include('partials.icon', ['name' => 'check-circle'])</span>
                         <h3>وصل طلبك، {{ session('registered') }}</h3>
                         <p>طلبك الآن بانتظار مراجعة إدارة حوات. بعد اعتماده تدخل التطبيق ولوحته على الويب برقم جوالك وكلمة المرور التي اخترتها.</p>
-                        <a class="btn btn-outline" href="#top">العودة إلى الأعلى</a>
                     </div>
                 @else
-                    <form class="card ld-form" id="ld-form" method="POST" action="{{ route('landing.register') }}#register" data-reveal>
-                        @csrf
-                        <input type="hidden" name="g-recaptcha-response">
+                    {{-- النموذج نفسه في نافذة #ld-join، وهنا يختار الزائر نوع حسابه فتُفتح عليه. --}}
+                    <div class="card ld-join-cta" data-reveal>
+                        <span class="ico-box lg">@include('partials.icon', ['name' => 'user-plus'])</span>
+                        <h3>اختر نوع حسابك</h3>
+                        <p>يُفتح نموذج الطلب على النوع الذي تختاره، ويمكنك تغييره فيه.</p>
+                        <div class="ld-join-roles">
+                            <button type="button" data-join-open="owner">
+                                @include('partials.icon', ['name' => 'ship'])
+                                <b>مالك قوارب</b>
+                                <small>رحلة الصيد وتسجيل المصيد</small>
+                                @include('partials.icon', ['name' => 'arrow-left'])
+                            </button>
+                            <button type="button" data-join-open="dalal">
+                                @include('partials.icon', ['name' => 'gavel'])
+                                <b>دلال</b>
+                                <small>عرض المصيد في السوق / الحراج</small>
+                                @include('partials.icon', ['name' => 'arrow-left'])
+                            </button>
+                        </div>
+                        <span class="hint">لا يُنشأ الحساب إلا بعد اعتماد الإدارة.</span>
+                    </div>
+                @endif
+            </div>
+        </section>
+    </main>
+
+    {{--
+        نافذة طلب التسجيل: كل روابط #register تفتحها بدل النزول إلى القسم 13، وتُفتح
+        وحدها إن وصل الزائر على #register — وهو مرجع الإرسال بنجاحه أو بأخطائه.
+    --}}
+    <dialog class="ld-modal" id="ld-join" aria-labelledby="ld-join-title">
+        <div class="card ld-modal-box">
+            <div class="ld-modal-head">
+                <div>
+                    <div class="ld-eyebrow"><span>انضم إلى حوات</span></div>
+                    <h2 id="ld-join-title">سجّل مالكًا أو دلالًا</h2>
+                    @unless (session('registered'))
+                        <ol class="ld-modal-steps">
+                            <li><span class="n">01</span>أرسل طلبك</li>
+                            <li><span class="n">02</span>تراجعه إدارة حوات</li>
+                            <li><span class="n">03</span>ادخل بجوالك وكلمة المرور</li>
+                        </ol>
+                    @endunless
+                </div>
+                <button class="icon-btn" type="button" data-join-close aria-label="إغلاق">
+                    @include('partials.icon', ['name' => 'x'])
+                </button>
+            </div>
+
+            @if (session('registered'))
+                <div class="ld-modal-body ld-reg-done" role="status">
+                    <span class="ico-box lg">@include('partials.icon', ['name' => 'check-circle'])</span>
+                    <h3>وصل طلبك، {{ session('registered') }}</h3>
+                    <p>طلبك الآن بانتظار مراجعة إدارة حوات. بعد اعتماده تدخل التطبيق ولوحته على الويب برقم جوالك وكلمة المرور التي اخترتها.</p>
+                </div>
+                <div class="ld-modal-foot">
+                    <div class="actions">
+                        <button class="btn btn-primary btn-lg" type="button" data-join-close>تم</button>
+                    </div>
+                </div>
+            @else
+                <form class="ld-form ld-modal-form" id="ld-form" method="POST" action="{{ route('landing.register') }}#register">
+                    @csrf
+                    <input type="hidden" name="g-recaptcha-response">
+                    <div class="ld-modal-body">
                         @if ($reg->any())
                             <div class="err" role="alert">
                                 @foreach ($reg->all() as $message)<div>{{ $message }}</div>@endforeach
@@ -871,38 +965,41 @@
                             <label class="field"><span>تأكيد كلمة المرور *</span><input class="input" name="password_confirmation" type="password" dir="ltr" minlength="8" required autocomplete="new-password"></label>
                         </div>
                         <label class="field"><span>ملاحظات</span><textarea class="input" name="notes" rows="3" maxlength="2000" placeholder="أي معلومة تساعدنا في مراجعة طلبك">{{ old('notes') }}</textarea></label>
-                        <div class="foot">
-                            <span class="hint">لا يُنشأ الحساب إلا بعد اعتماد الإدارة.</span>
+                    </div>
+                    <div class="ld-modal-foot">
+                        <span class="hint">لا يُنشأ الحساب إلا بعد اعتماد الإدارة.</span>
+                        <div class="actions">
                             <button class="btn btn-primary btn-lg" type="submit">
                                 @include('partials.icon', ['name' => 'send'])
-                                إرسال طلب التسجيل
+                                إرسال الطلب
                             </button>
+                            <button class="btn btn-outline btn-lg" type="button" data-join-close>إلغاء</button>
                         </div>
-                    </form>
-                    @if (\App\Rules\Recaptcha::enabled())
-                        {{-- reCAPTCHA v3: رمز جديد لحظة الإرسال (صلاحيته دقيقتان). --}}
-                        <script src="https://www.google.com/recaptcha/api.js?render={{ config('services.recaptcha.site_key') }}" async defer></script>
-                        <script>
-                            document.getElementById('ld-form').addEventListener('submit', function (event) {
-                                const form = event.target;
-                                if (form.dataset.verified) return;
-                                event.preventDefault();
-                                const btn = form.querySelector('button[type="submit"]');
-                                btn.disabled = true;
-                                grecaptcha.ready(function () {
-                                    grecaptcha.execute(@js(config('services.recaptcha.site_key')), { action: 'register' }).then(function (token) {
-                                        form.elements['g-recaptcha-response'].value = token;
-                                        form.dataset.verified = '1';
-                                        form.submit();
-                                    }, function () { btn.disabled = false; });
-                                });
+                    </div>
+                </form>
+                @if (\App\Rules\Recaptcha::enabled())
+                    {{-- reCAPTCHA v3: رمز جديد لحظة الإرسال (صلاحيته دقيقتان). --}}
+                    <script src="https://www.google.com/recaptcha/api.js?render={{ config('services.recaptcha.site_key') }}" async defer></script>
+                    <script>
+                        document.getElementById('ld-form').addEventListener('submit', function (event) {
+                            const form = event.target;
+                            if (form.dataset.verified) return;
+                            event.preventDefault();
+                            const btn = form.querySelector('button[type="submit"]');
+                            btn.disabled = true;
+                            grecaptcha.ready(function () {
+                                grecaptcha.execute(@js(config('services.recaptcha.site_key')), { action: 'register' }).then(function (token) {
+                                    form.elements['g-recaptcha-response'].value = token;
+                                    form.dataset.verified = '1';
+                                    form.submit();
+                                }, function () { btn.disabled = false; });
                             });
-                        </script>
-                    @endif
+                        });
+                    </script>
                 @endif
-            </div>
-        </section>
-    </main>
+            @endif
+        </div>
+    </dialog>
 
     <footer class="ld-foot">
         <div class="ld-wrap">
@@ -947,6 +1044,43 @@
             const state = drawer.classList.toggle('is-open', open);
             document.querySelector('.ld-menu-btn').setAttribute('aria-expanded', state);
         }
+
+        // نافذة التسجيل: روابط #register وأزرار نوع الحساب تفتحها بدل النزول إلى القسم.
+        (function () {
+            const dialog = document.getElementById('ld-join');
+            const form = document.getElementById('ld-form');
+
+            function open(role) {
+                const radio = role && form && form.querySelector('input[name="role"][value="' + role + '"]');
+                if (radio) radio.checked = true;
+                if (!dialog.open) dialog.showModal();
+                // لوحة المفاتيح الافتراضية لا تُفتح وحدها على الجوال.
+                if (form && window.matchMedia('(pointer: fine)').matches) form.querySelector('input[name="name"]').focus();
+            }
+
+            document.addEventListener('click', function (event) {
+                const trigger = event.target.closest('a[href="#register"], [data-join-open]');
+                if (trigger) {
+                    event.preventDefault();
+                    open(trigger.dataset.joinOpen);
+                } else if (event.target.closest('[data-join-close]')) {
+                    dialog.close();
+                }
+            });
+
+            // النقر على الخلفية يغلقها، لا سحبٌ بدأ داخل حقل وانتهى خارجه.
+            let downOnBackdrop = false;
+            dialog.addEventListener('pointerdown', function (event) { downOnBackdrop = event.target === dialog; });
+            dialog.addEventListener('click', function (event) {
+                if (downOnBackdrop && event.target === dialog) dialog.close();
+            });
+
+            dialog.addEventListener('close', function () {
+                if (location.hash === '#register') history.replaceState(null, '', location.pathname + location.search);
+            });
+
+            if (location.hash === '#register') open();
+        })();
 
         (function () {
             const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
