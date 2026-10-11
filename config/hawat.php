@@ -169,13 +169,14 @@ return [
      * أينما كان.
      *
      * عنصر بـ 'tab' تبويبٌ من config/info.php يأخذ اسمه وأيقونته من هناك —
-     * انظر App\Support\Nav::sections(). وكل تبويب هناك له موضعه هنا.
+     * انظر App\Support\Nav::sections(). وكل تبويب هناك له موضعه هنا. و'label'
+     * على العنصر اسمٌ أقصر للقائمة وحدها، ويبقى عنوان الصفحة باسمه الكامل.
      */
     'nav_subadmin' => [
         [
             'title' => 'الأشخاص والصلاحيات',
             'items' => [
-                ['tab' => 'permissions'],
+                ['tab' => 'permissions', 'label' => 'المستخدمون'],
                 ['label' => 'الهيكل التنظيمي', 'route' => 'subadmin.org-structure', 'icon' => 'git-branch'],
                 ['label' => 'إدارة الموظفين', 'route' => 'subadmin.staff-management', 'icon' => 'users'],
             ],
@@ -192,7 +193,7 @@ return [
             'title' => 'البيانات الأساسية',
             'items' => [
                 ['tab' => 'geo'],
-                ['tab' => 'fleet'],
+                ['tab' => 'fleet', 'label' => 'الأسطول'],
                 ['tab' => 'seasons'],
                 ['tab' => 'markets'],
             ],
@@ -201,9 +202,9 @@ return [
             'title' => 'الحوكمة والتدقيق',
             'items' => [
                 ['tab' => 'data-quality'],
-                ['tab' => 'data-catalog'],
-                ['tab' => 'business-glossary'],
-                ['tab' => 'fao'],
+                ['tab' => 'data-catalog', 'label' => 'كتالوج البيانات'],
+                ['tab' => 'business-glossary', 'label' => 'قاموس الأعمال'],
+                ['tab' => 'fao', 'label' => 'معايير FAO'],
                 ['label' => 'سجل العمليات', 'route' => 'subadmin.audit-log', 'icon' => 'history'],
             ],
         ],
