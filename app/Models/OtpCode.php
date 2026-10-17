@@ -43,7 +43,9 @@ class OtpCode extends BaseModel
     {
         static::where('phone', $phone)->where('purpose', $purpose)->whereNull('used_at')->delete();
 
-        $code = (string) random_int(100000, 999999);
+        // بيئة الاختبار بلا رسائل نصية تضبط رمزًا ثابتًا؛ الإنتاج لا يقبله أبدًا.
+        $fixed = app()->isProduction() ? null : config('hawat.fixed_otp');
+        $code = $fixed ? (string) $fixed : (string) random_int(100000, 999999);
 
         $otp = static::create([
             'phone' => $phone,

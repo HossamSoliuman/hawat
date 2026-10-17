@@ -24,10 +24,18 @@ jobs:
           host: 191.218.163.161
           username: root
           password: ${{ secrets.SSH_PASSWORD }}
-          command_timeout: 2m
+          command_timeout: 4m
           script: |
             set -e
             cd /www/wwwroot/hawat
             git -c safe.directory=/www/wwwroot/hawat pull --ff-only origin main
             php artisan migrate --force
             php artisan optimize
+            # بيئة الاختبار (hawat.sa/staging) تتبع main أيضًا، بمكتبات الإنتاج نفسها.
+            if [ -d /www/wwwroot/hawat-staging ]; then
+              cd /www/wwwroot/hawat-staging
+              git -c safe.directory=/www/wwwroot/hawat-staging pull --ff-only origin main
+              rsync -a --delete /www/wwwroot/hawat/vendor/ vendor/
+              php artisan migrate --force
+              php artisan optimize
+            fi

@@ -28,6 +28,21 @@ return [
     'domain' => $domain,
     'gov_domain' => env('GOV_DOMAIN') ?: 'gov.'.$domain,
 
+    /*
+     * بيئة الاختبار لفريق التطبيق (APP_ENV=staging، انظر hawat:staging-reset):
+     *
+     *   staging.password   — كلمة مرور حساباتها التجريبية، من .env لا من Git.
+     *   staging.reference  — لقطة القوائم المرجعية من الإنتاج (بلا حسابات)
+     *                        تُحمَّل بعد كل إعادة ضبط.
+     *   fixed_otp          — رمز تحقق ثابت بدل الرسائل النصية، ليُجرَّب التفعيل
+     *                        واستعادة كلمة المرور. لا يُقبل في الإنتاج أبدًا.
+     */
+    'staging' => [
+        'password' => env('STAGING_ACCOUNTS_PASSWORD'),
+        'reference' => env('STAGING_REFERENCE_DUMP', storage_path('app/private/staging/reference.sql')),
+    ],
+    'fixed_otp' => env('HAWAT_FIXED_OTP'),
+
     'name' => 'حوات',
     'tagline' => 'لوحة وزارة البيئة والمياه والزراعة',
     'ministry' => 'وزارة البيئة والمياه والزراعة',

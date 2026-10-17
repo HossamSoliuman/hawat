@@ -29,6 +29,11 @@ return Application::configure(basePath: dirname(__DIR__))
         // واجهة التطبيق تردّ JSON دائمًا، طلب العميل ذلك أم لم يطلبه.
         $middleware->api(prepend: [ForceJsonResponse::class]);
 
+        // بيئة الاختبار تُخدم خلف nginx نفسه على hawat.sa/staging: الوكيل المحلي
+        // يمرّر البادئة (X-Forwarded-Prefix) والبروتوكول. الإنتاج لا يصله إلا
+        // عناوين عامة، فلا يتأثر.
+        $middleware->trustProxies(at: ['127.0.0.1', '::1']);
+
         /*
          * صفحتا دخول على مضيفين: إدارة النظام بنصفيها (admin.* و subadmin.*) على
          * /login في مضيف الوزارة، وتطبيق حوات على /admin/login في النطاق الرئيسي.
