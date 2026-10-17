@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use App\Models\IdempotencyKey;
 use Closure;
 use Illuminate\Database\UniqueConstraintViolationException;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -57,10 +58,8 @@ class Idempotent
             }
 
             if ($record->isCompleted()) {
-                return response($record->response_body, $record->status_code, [
-                    'Content-Type' => 'application/json',
-                    'Idempotency-Replayed' => 'true',
-                ]);
+                // JsonResponse لا نص خام، فيخرج الردّ المعاد بترميز الردّ الأول نفسه (ForceJsonResponse).
+                return JsonResponse::fromJsonString($record->response_body, $record->status_code, ['Idempotency-Replayed' => 'true']);
             }
 
             if (! $record->isStale()) {

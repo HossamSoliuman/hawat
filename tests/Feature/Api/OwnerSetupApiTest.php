@@ -120,6 +120,11 @@ class OwnerSetupApiTest extends TestCase
             ->assertValidResponse(422)
             ->assertJsonValidationErrors(['iqama_expiry_date' => 'تاريخ انتهاء الإقامة يجب أن يكون في تاريخ بدايتها أو بعده.']);
 
+        // ملخص الرسالة بالعربية كذلك حين تتعدد الأخطاء.
+        $this->asOwner()->postJson('/api/v1/owner/crew', [])
+            ->assertValidResponse(422)
+            ->assertJsonPath('message', fn ($message) => str_contains($message, 'أخطاء أخرى'));
+
         $this->asOwner()->putJson("/api/v1/owner/crew/{$id}", $this->crewPayload(['license_date' => '2026-05-01', 'license_expiry' => '2026-01-01']))
             ->assertValidResponse(422)
             ->assertJsonValidationErrors(['license_expiry' => 'تاريخ انتهاء الرخصة يجب أن يكون في تاريخ بدايتها أو بعده.']);
@@ -291,6 +296,7 @@ class OwnerSetupApiTest extends TestCase
             ->assertHeader('Idempotency-Replayed', 'true');
 
         $this->assertSame($first->json('data.id'), $second->json('data.id'));
+        $this->assertSame($first->getContent(), $second->getContent(), 'الردّ المعاد هو الردّ الأول حرفًا بحرف');
         $this->assertSame(1, Boat::where('boat_number', 'B-7001')->count());
 
         // المفتاح نفسه لطلب مختلف مرفوض.
