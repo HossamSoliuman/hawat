@@ -83,9 +83,12 @@ class Trip extends BaseModel
         return $this->belongsTo(User::class, 'owner_id');
     }
 
+    /**
+     * كابتن الرحلة: سجلّ صياد عند المالك، لا حساب دخول.
+     */
     public function captain(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'captain_id');
+        return $this->belongsTo(Fisher::class, 'captain_id');
     }
 
     public function counter(): BelongsTo
@@ -128,25 +131,12 @@ class Trip extends BaseModel
         return $query->where('owner_id', $owner->id);
     }
 
-    public function scopeForCaptain(Builder $query, User $captain): Builder
-    {
-        return $query->where('captain_id', $captain->id);
-    }
-
     /**
-     * شاشة الكابتن "الرحلات التي بانتظارك": مسندة إليه ولم تنطلق.
+     * رئيسة المالك "رحلات بانتظار الانطلاق": أُنشئت ولم يبدأها بعد.
      */
-    public function scopeAwaitingCaptain(Builder $query): Builder
+    public function scopeScheduled(Builder $query): Builder
     {
         return $query->where('status', self::SCHEDULED);
-    }
-
-    /**
-     * شاشة الكابتن "الرحلات النشطة": في البحر حتى يرسل مخرجاتها.
-     */
-    public function scopeActiveForCaptain(Builder $query): Builder
-    {
-        return $query->where('status', self::AT_SEA);
     }
 
     /**
@@ -210,7 +200,7 @@ class Trip extends BaseModel
     }
 
     /**
-     * ما يستطيعه الكابتن على الرحلة الآن — تقرؤه الشاشات وواجهة التطبيق.
+     * ما يستطيعه المالك على الرحلة الآن — تقرؤه الشاشات وواجهة التطبيق.
      */
     public function canStart(): bool
     {
@@ -261,7 +251,7 @@ class Trip extends BaseModel
     }
 
     /**
-     * تسمية الحالة كما يراها المالك والكابتن في التطبيق.
+     * تسمية الحالة كما يراها المالك في التطبيق.
      */
     public function getAppStatusAttribute(): string
     {

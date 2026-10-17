@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
- * إشعار لحساب تطبيق (كابتن، مالك…) — يُقرأ في شاشة الإشعارات في الويب
+ * إشعار لحساب تطبيق (مالك، عدّاد، دلال…) — يُقرأ في شاشة الإشعارات في الويب
  * والتطبيق، ويُدفع إلى الجوال عند إنشائه. اسمه app_notifications حتى لا
  * يلتبس بجدول notifications الذي يحجزه Laravel لقناة قاعدة البيانات.
  */

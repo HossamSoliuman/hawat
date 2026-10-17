@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\AppNotification;
 use App\Models\Boat;
 use App\Models\CatchRecord;
+use App\Models\Fisher;
 use App\Models\Port;
 use App\Models\Role;
 use App\Models\Species;
@@ -28,7 +29,7 @@ class CounterPortalTest extends TestCase
 
     private User $owner;
 
-    private User $captain;
+    private Fisher $captain;
 
     private User $counter;
 
@@ -44,8 +45,8 @@ class CounterPortalTest extends TestCase
         $this->seed(LookupSeeder::class);
 
         $this->owner = User::factory()->owner()->create(['name' => 'مالك الاختبار']);
-        $this->captain = User::factory()->role(Role::CAPTAIN)->ownedBy($this->owner)->create(['name' => 'كابتن الاختبار']);
         $this->port = Port::factory()->create(['name' => 'ميناء القطيف (اختبار)']);
+        $this->captain = Fisher::factory()->captain()->ownedBy($this->owner)->create(['name' => 'كابتن الاختبار', 'port_id' => $this->port->id]);
         $this->boat = Boat::factory()->ownedBy($this->owner)->captainedBy($this->captain)->create(['port_id' => $this->port->id, 'name' => 'قارب الاختبار']);
 
         $this->counter = User::factory()->role(Role::COUNTER)->create(['name' => 'عدّاد الاختبار']);
@@ -79,7 +80,7 @@ class CounterPortalTest extends TestCase
                 'captain_kg' => $line['kg'],
                 'captain_notes' => $line['notes'] ?? null,
                 'recorded_at' => now()->toDateString(),
-                'added_by' => $this->captain->id,
+                'added_by' => $this->owner->id,
             ]);
         }
 
@@ -104,7 +105,6 @@ class CounterPortalTest extends TestCase
             ->assertSee(route('panel.notifications'), false)
             ->assertSee(route('panel.profile'), false)
             ->assertDontSee(route('panel.owner.trips'), false)
-            ->assertDontSee(route('panel.captain.trips'), false)
             ->assertDontSee(route('panel.users'), false);
     }
 
@@ -124,7 +124,7 @@ class CounterPortalTest extends TestCase
         $atSea = Trip::factory()->onBoat($this->boat)->create(['trip_number' => 'TR-2026-0712', 'status' => Trip::AT_SEA]);
 
         $this->actingAs($this->owner)->get('/admin/counter/trips')->assertForbidden();
-        $this->actingAs($this->captain)->get('/admin/counter/trips')->assertForbidden();
+        $this->actingAs(User::factory()->role(Role::DALAL)->create())->get('/admin/counter/trips')->assertForbidden();
         $this->actingAs(User::factory()->superAdmin()->create())->get('/admin/counter/trips')->assertForbidden();
 
         $this->asCounter()->get('/admin/counter/trips')->assertOk()
@@ -208,10 +208,9 @@ class CounterPortalTest extends TestCase
         $this->assertSame('فرق في الوزن', $corrected->counter_notes);
         $this->assertSame($this->counter->id, $corrected->corrected_by);
 
-        // العد يفتح مصيد الرحلة للبيع عند مالكها ويُبلّغ الطرفين.
+        // العد يفتح مصيد الرحلة للبيع عند مالكها ويُبلّغه.
         $this->assertSame(Trip::SALE_OPEN, $trip->sale_status);
         $this->assertSame(3, $trip->stockMovements()->count());
-        $this->assertDatabaseHas('app_notifications', ['user_id' => $this->captain->id, 'trip_id' => $trip->id, 'title' => 'الرحلة مكتملة']);
         $this->assertDatabaseHas('app_notifications', ['user_id' => $this->owner->id, 'trip_id' => $trip->id, 'title' => 'اكتمل العد']);
         $this->assertSame(1, (int) $this->counter->statisticsOfficer->fresh()->trips_counted);
 
@@ -255,7 +254,7 @@ class CounterPortalTest extends TestCase
             'started_at' => now()->subDay(),
         ]);
 
-        $this->actingAs($this->captain)->post("/admin/captain/trips/{$trip->id}/catch", [
+        $this->actingAs($this->owner)->post("/admin/owner/trips/{$trip->id}/catch", [
             'items' => [['species_id' => $hamour->id, 'weight_kg' => 90]],
         ])->assertRedirect();
 

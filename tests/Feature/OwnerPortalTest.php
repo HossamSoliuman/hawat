@@ -17,6 +17,7 @@ use Database\Seeders\LookupSeeder;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 /**
@@ -76,8 +77,8 @@ class OwnerPortalTest extends TestCase
         $this->assertLessThan(strpos($home, '<details'), strpos($home, 'href="'.route('panel.owner.sales').'"'));
 
         // بقية الأدوار قوائمها قصيرة فلا تُطوى.
-        $captain = User::factory()->role(Role::CAPTAIN)->ownedBy($this->owner)->create();
-        $this->actingAs($captain)->get('/admin')->assertOk()->assertDontSee('<details', false);
+        $dalal = User::factory()->role(Role::DALAL)->create();
+        $this->actingAs($dalal)->get('/admin')->assertOk()->assertDontSee('<details', false);
     }
 
     public function test_settings_opens_on_its_first_tab_and_every_master_data_page_is_a_tab(): void
@@ -115,10 +116,10 @@ class OwnerPortalTest extends TestCase
 
     public function test_owner_pages_are_for_owners_only(): void
     {
-        $captain = User::factory()->role(Role::CAPTAIN)->ownedBy($this->owner)->create();
+        $dalal = User::factory()->role(Role::DALAL)->create();
         $admin = User::factory()->superAdmin()->create();
 
-        $this->actingAs($captain)->get('/admin/owner/boats')->assertForbidden();
+        $this->actingAs($dalal)->get('/admin/owner/boats')->assertForbidden();
         $this->actingAs($admin)->get('/admin/owner/boats')->assertForbidden();
         $this->asOwner()->get('/admin/owner/boats')->assertOk();
         $this->asOwner()->get('/admin/users')->assertForbidden();
@@ -146,57 +147,72 @@ class OwnerPortalTest extends TestCase
             ->assertNotFound();
     }
 
-    public function test_the_owner_creates_a_captain_who_gets_a_fisher_record_and_can_log_in(): void
+    public function test_the_owner_adds_a_captain_record_that_appears_in_the_ministry_console(): void
     {
+        Storage::fake('public');
+        $sms = new ArraySmsSender;
+        $this->app->instance(SmsSender::class, $sms);
         $boat = Boat::factory()->ownedBy($this->owner)->create(['port_id' => $this->port->id]);
 
         $this->asOwner()->post('/admin/owner/captains', [
             'name' => 'كابتن الاختبار',
             'phone' => '٠٥٥٩٩٩٨٨٧٧',
-            'password' => 'captain-123',
             'national_id' => '1055443322',
             'boat_id' => $boat->id,
-            'active' => 1,
-        ])->assertRedirect(route('panel.owner.captains'));
+            'iqama_issue_date' => '2025-01-01',
+            'iqama_expiry_date' => '2026-01-01',
+            'avatar' => UploadedFile::fake()->image('c.jpg', 300, 300),
+        ])->assertRedirect(route('panel.owner.captains'))->assertSessionHasNoErrors();
 
-        $captain = User::where('phone', '0559998877')->firstOrFail();
-        $this->assertTrue($captain->hasAppRole(Role::CAPTAIN));
+        $captain = Fisher::captains()->where('national_id', '1055443322')->firstOrFail();
         $this->assertSame($this->owner->id, $captain->owner_id);
-        $this->assertSame($boat->id, Fisher::where('user_id', $captain->id)->value('boat_id'));
+        $this->assertSame('0559998877', $captain->phone);
+        $this->assertSame($boat->id, $captain->boat_id);
         $this->assertSame($captain->id, $boat->fresh()->captain_id);
+        $this->assertSame('2026-01-01', $captain->iqama_expiry_date->toDateString());
+        Storage::disk('public')->assertExists($captain->avatar_path);
+
+        // لا حساب ولا دعوة.
+        $this->assertDatabaseMissing('users', ['phone' => '0559998877']);
+        $this->assertSame([], $sms->sent);
 
         $this->actingAs(User::factory()->superAdmin()->create())->get('/admin/fishers')
             ->assertOk()->assertSee('كابتن الاختبار');
 
-        $this->asOwner()->get('/admin/owner/captains')->assertOk()->assertSee('0559998877');
+        $this->asOwner()->get('/admin/owner/captains')->assertOk()->assertSee('0559998877')->assertSee($boat->name);
+
+        // تعطيل ثم حذف.
+        $this->asOwner()->post(route('panel.owner.captains.toggle', $captain))->assertRedirect();
+        $this->assertSame('غير نشط', $captain->fresh()->status);
+        $this->asOwner()->delete(route('panel.owner.captains.destroy', $captain))->assertRedirect(route('panel.owner.captains'));
+        $this->assertModelMissing($captain);
+        $this->assertNull($boat->fresh()->captain_id);
+
+        // كابتن مالك آخر 404.
+        $foreign = Fisher::factory()->captain()->ownedBy(User::factory()->owner()->create())->create(['port_id' => $this->port->id]);
+        $this->asOwner()->post(route('panel.owner.captains.toggle', $foreign))->assertNotFound();
     }
 
-    public function test_the_web_invites_a_captain_without_a_password_and_resends_the_invitation(): void
+    public function test_the_owner_reads_the_catch_log_by_captain_and_boat(): void
     {
-        $sms = new ArraySmsSender;
-        $this->app->instance(SmsSender::class, $sms);
+        $captain = Fisher::factory()->captain()->ownedBy($this->owner)->create(['name' => 'كابتن السجل', 'port_id' => $this->port->id]);
+        $boat = Boat::factory()->ownedBy($this->owner)->captainedBy($captain)->create(['port_id' => $this->port->id]);
+        $other = Boat::factory()->ownedBy($this->owner)->create(['port_id' => $this->port->id]);
+        $species = Species::factory()->create(['name_ar' => 'الهامور (سجل)']);
 
-        $this->asOwner()->post('/admin/owner/captains', [
-            'name' => 'كابتن مدعو',
-            'phone' => '0559990000',
-            'national_id' => '1055440000',
-            'port_id' => $this->port->id,
-            'iqama_issue_date' => '2025-01-01',
-            'iqama_expiry_date' => '2026-01-01',
-            'avatar' => UploadedFile::fake()->image('c.jpg', 300, 300),
-            'active' => 1,
-        ])->assertRedirect(route('panel.owner.captains'))->assertSessionHasNoErrors();
+        foreach ([[$boat, 'TR-2026-0901', 40], [$other, 'TR-2026-0902', 15]] as [$on, $number, $kg]) {
+            $trip = Trip::factory()->onBoat($on)->create(['trip_number' => $number, 'status' => Trip::AWAITING_COUNT]);
+            $trip->catchRecords()->create(['species_id' => $species->id, 'quantity_kg' => $kg, 'captain_kg' => $kg, 'recorded_at' => today()]);
+        }
 
-        $captain = User::where('phone', '0559990000')->firstOrFail();
-        $this->assertTrue($captain->isPendingInvitation());
-        $this->assertNotNull($captain->avatar_path);
-        $this->assertSame('2026-01-01', $captain->fisher->iqama_expiry_date->toDateString());
-        $this->assertNotNull($sms->lastTo('0559990000'));
+        $this->asOwner()->get(route('panel.owner.catch-log'))->assertOk()->assertSee('TR-2026-0901')->assertSee('TR-2026-0902')->assertSee('55.0');
+        $this->asOwner()->get(route('panel.owner.catch-log', ['captain' => $captain->id]))->assertOk()
+            ->assertSee('TR-2026-0901')->assertDontSee('TR-2026-0902')->assertSee('كابتن السجل');
+        $this->asOwner()->get(route('panel.owner.catch-log', ['boat' => $other->id]))->assertOk()
+            ->assertSee('TR-2026-0902')->assertDontSee('TR-2026-0901');
 
-        $this->asOwner()->get('/admin/owner/captains')->assertOk()->assertSee('مدعو');
-
-        $this->asOwner()->post(route('panel.owner.captains.invitation', $captain))->assertRedirect()->assertSessionHas('status');
-        $this->assertCount(2, $sms->sent);
+        // سجل مالك آخر لا يظهر.
+        $this->actingAs(User::factory()->owner()->create())->get(route('panel.owner.catch-log'))->assertOk()->assertDontSee('TR-2026-0901');
     }
 
     public function test_the_web_boat_form_guards_stale_edits_and_shows_setup(): void
@@ -214,7 +230,7 @@ class OwnerPortalTest extends TestCase
 
     public function test_the_owner_runs_a_trip_from_its_page_and_sells_the_counted_catch(): void
     {
-        $captain = User::factory()->role(Role::CAPTAIN)->ownedBy($this->owner)->create();
+        $captain = Fisher::factory()->captain()->ownedBy($this->owner)->create(['port_id' => $this->port->id]);
         $boat = Boat::factory()->ownedBy($this->owner)->captainedBy($captain)->create(['port_id' => $this->port->id]);
         $species = Species::factory()->create(['name_ar' => 'الكنعد (اختبار)']);
         $customer = Customer::factory()->ofAccount($this->owner)->create(['name' => 'زبون الاختبار']);
@@ -225,6 +241,8 @@ class OwnerPortalTest extends TestCase
         $response->assertRedirect(route('panel.owner.trips.show', $trip));
         $this->assertSame($captain->id, $trip->captain_id);
 
+        // الرحلة بانتظار الانطلاق تظهر في الرئيسية بزر البدء.
+        $this->asOwner()->get('/admin')->assertOk()->assertSee('بانتظار الانطلاق')->assertSee(route('panel.owner.trips.start', $trip), false);
         $this->asOwner()->get(route('panel.owner.trips.show', $trip))->assertOk()->assertSee('ابدأ الرحلة');
 
         $this->asOwner()->post(route('panel.owner.trips.start', $trip))->assertRedirect();
@@ -277,7 +295,7 @@ class OwnerPortalTest extends TestCase
     {
         Boat::factory()->ownedBy($this->owner)->create(['port_id' => $this->port->id]);
 
-        foreach (['maintenance', 'crew', 'employees', 'customers', 'vendors'] as $page) {
+        foreach (['maintenance', 'captains', 'crew', 'employees', 'customers', 'vendors'] as $page) {
             $this->asOwner()->get("/admin/owner/{$page}")->assertOk()->assertSee('recordFormEl');
         }
 
@@ -287,6 +305,6 @@ class OwnerPortalTest extends TestCase
 
         $this->asOwner()->post('/admin/owner/crew', ['name' => 'بحّار ويب', 'national_id' => '3000000001', 'port_id' => $this->port->id])
             ->assertRedirect(route('panel.owner.crew'));
-        $this->assertDatabaseHas('fishers', ['name' => 'بحّار ويب', 'owner_id' => $this->owner->id, 'user_id' => null]);
+        $this->assertDatabaseHas('fishers', ['name' => 'بحّار ويب', 'owner_id' => $this->owner->id, 'is_captain' => false]);
     }
 }

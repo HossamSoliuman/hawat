@@ -4,6 +4,7 @@ namespace Tests\Feature\Api;
 
 use App\Models\Boat;
 use App\Models\CatchRecord;
+use App\Models\Fisher;
 use App\Models\Port;
 use App\Models\Role;
 use App\Models\Species;
@@ -30,7 +31,7 @@ class CounterApiTest extends TestCase
 
     private User $owner;
 
-    private User $captain;
+    private Fisher $captain;
 
     private User $counter;
 
@@ -48,8 +49,8 @@ class CounterApiTest extends TestCase
         Spectator::using('openapi.yaml')->setPathPrefix('/api/v1');
 
         $this->owner = User::factory()->owner()->create(['name' => 'مالك الواجهة']);
-        $this->captain = User::factory()->role(Role::CAPTAIN)->ownedBy($this->owner)->create(['name' => 'كابتن الواجهة']);
         $this->port = Port::factory()->create(['name' => 'ميناء القطيف (اختبار)']);
+        $this->captain = Fisher::factory()->captain()->ownedBy($this->owner)->create(['name' => 'كابتن الواجهة', 'port_id' => $this->port->id]);
         $this->boat = Boat::factory()->ownedBy($this->owner)->captainedBy($this->captain)->create(['port_id' => $this->port->id, 'name' => 'قارب الواجهة']);
 
         $this->counter = User::factory()->role(Role::COUNTER)->create(['name' => 'عدّاد الواجهة']);
@@ -83,7 +84,7 @@ class CounterApiTest extends TestCase
                 'quantity_kg' => $line['kg'],
                 'captain_kg' => $line['kg'],
                 'recorded_at' => now()->toDateString(),
-                'added_by' => $this->captain->id,
+                'added_by' => $this->owner->id,
             ]);
         }
 
@@ -94,7 +95,7 @@ class CounterApiTest extends TestCase
     {
         $this->as($this->owner)->getJson('/api/v1/counter/dashboard')
             ->assertValidRequest()->assertValidResponse(403);
-        $this->as($this->captain)->getJson('/api/v1/counter/trips')
+        $this->as(User::factory()->role(Role::DALAL)->create())->getJson('/api/v1/counter/trips')
             ->assertValidRequest()->assertValidResponse(403);
 
         $otherPort = Port::factory()->create();
@@ -189,7 +190,6 @@ class CounterApiTest extends TestCase
             ->assertJsonPath('data.sale_status', Trip::SALE_OPEN)
             ->assertJsonCount(3, 'data.catch_records');
 
-        $this->assertDatabaseHas('app_notifications', ['user_id' => $this->captain->id, 'trip_id' => $trip->id, 'title' => 'الرحلة مكتملة']);
         $this->assertDatabaseHas('app_notifications', ['user_id' => $this->owner->id, 'trip_id' => $trip->id, 'title' => 'اكتمل العد']);
 
         // 3. التقرير المفصّل.
@@ -204,7 +204,7 @@ class CounterApiTest extends TestCase
             ->assertJsonPath('data.catch.2.added_by', 'عدّاد الواجهة');
     }
 
-    public function test_the_catch_submitted_by_the_captain_reaches_the_port_counter_as_a_notification(): void
+    public function test_the_catch_the_owner_submits_reaches_the_port_counter_as_a_notification(): void
     {
         $hamour = Species::factory()->create(['name_ar' => 'الهامور (اختبار)']);
         $trip = Trip::factory()->onBoat($this->boat)->captainedBy($this->captain)->create([
@@ -214,7 +214,7 @@ class CounterApiTest extends TestCase
             'started_at' => now()->subDay(),
         ]);
 
-        $this->as($this->captain)->postJson("/api/v1/captain/trips/{$trip->id}/catch", [
+        $this->as($this->owner)->postJson("/api/v1/owner/trips/{$trip->id}/catch", [
             'items' => [['species_id' => $hamour->id, 'weight_kg' => 75]],
         ])->assertValidRequest()->assertValidResponse(200);
 

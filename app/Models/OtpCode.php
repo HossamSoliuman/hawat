@@ -20,9 +20,6 @@ class OtpCode extends BaseModel
     /** توثيق جوال المتقدّم لوظيفة عدّاد قبل أن يصل طلبه الشركة. */
     public const PURPOSE_COUNTER_APPLICATION = 'counter_application';
 
-    /** رمز تفعيل حساب أنشأه المالك بدعوة (كابتن بلا كلمة مرور) — صالح أيامًا. */
-    public const PURPOSE_ACCOUNT_INVITATION = 'account_invitation';
-
     public const MAX_ATTEMPTS = 5;
 
     public const TTL_MINUTES = 10;

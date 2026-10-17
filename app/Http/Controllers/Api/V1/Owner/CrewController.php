@@ -67,12 +67,12 @@ class CrewController extends Controller
 
     public function updateAvatar(AvatarRequest $request, int $crew): JsonResponse
     {
-        return $this->respond($this->staff->storeCrewAvatar($this->ownedCrew($request->user(), $crew), $request->file('avatar')));
+        return $this->respond($this->staff->storeAvatar($this->ownedCrew($request->user(), $crew), $request->file('avatar')));
     }
 
     public function removeAvatar(Request $request, int $crew): JsonResponse
     {
-        return $this->respond($this->staff->removeCrewAvatar($this->ownedCrew($request->user(), $crew)));
+        return $this->respond($this->staff->removeAvatar($this->ownedCrew($request->user(), $crew)));
     }
 
     private function respond(Fisher $fisher, int $status = 200): JsonResponse

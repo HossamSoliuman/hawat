@@ -9,7 +9,6 @@ use App\Models\Role;
 use App\Models\Sale;
 use App\Models\Trip;
 use App\Models\User;
-use App\Services\Captain\CaptainDashboard;
 use App\Services\Counter\CounterDashboard;
 use App\Services\Counters\CompanyDashboard;
 use App\Services\Dalal\DalalDashboard;
@@ -26,13 +25,13 @@ use Illuminate\View\View;
  * رئيسة لوحة الإدارة — تتفرّع على دور المستخدم.
  *
  * المدير العام يرى حال الأسطول والرحلات والمصيد والمبيعات على مستوى النظام،
- * والمالك يرى مؤشراته ورحلاته النشطة، والكابتن رحلاته التي بانتظاره والنشطة،
- * والعدّاد طابور ميناء عمله، والدلال مبيعاته ومخزونه وطلبات الملاك،
+ * والمالك يرى مؤشراته ورحلاته التي بانتظار الانطلاق والنشطة، والعدّاد طابور
+ * ميناء عمله، والدلال مبيعاته ومخزونه وطلبات الملاك،
  * وبقية الأدوار ترى رئيسة بوابتها حين تُبنى؛ إلى ذلك الحين بطاقة تعريف بالحساب.
  */
 class HomeController extends Controller
 {
-    public function index(Request $request, OwnerDashboard $ownerDashboard, CaptainDashboard $captainDashboard, CounterDashboard $counterDashboard, DalalDashboard $dalalDashboard): View
+    public function index(Request $request, OwnerDashboard $ownerDashboard, CounterDashboard $counterDashboard, DalalDashboard $dalalDashboard): View
     {
         $user = $request->user();
 
@@ -46,10 +45,6 @@ class HomeController extends Controller
                 'fleetAlerts' => app(FleetAlerts::class)->for($user),
                 'dalalSettlement' => app(DalalSettlement::class)->summary($user),
             ] + $ownerDashboard->for($user));
-        }
-
-        if ($user->hasAppRole(Role::CAPTAIN)) {
-            return view('panel.captain.home', ['user' => $user] + $captainDashboard->for($user));
         }
 
         if ($user->hasAppRole(Role::COUNTER)) {

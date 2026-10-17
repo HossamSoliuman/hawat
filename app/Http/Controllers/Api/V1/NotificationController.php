@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\Http\Controllers\Concerns\ResolvesCaptainRecords;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\NotificationResource;
 use App\Models\AppNotification;
@@ -15,8 +14,6 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
  */
 class NotificationController extends Controller
 {
-    use ResolvesCaptainRecords;
-
     public function index(Request $request): AnonymousResourceCollection
     {
         $notifications = AppNotification::forUser($request->user())->with(['type', 'trip'])
@@ -36,7 +33,8 @@ class NotificationController extends Controller
 
     public function read(Request $request, int $notification): NotificationResource
     {
-        $model = $this->ownNotification($request->user(), $notification);
+        // إشعار حساب آخر 404.
+        $model = AppNotification::forUser($request->user())->findOrFail($notification);
         $model->markRead();
 
         return new NotificationResource($model->load(['type', 'trip']));

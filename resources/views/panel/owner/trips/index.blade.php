@@ -105,7 +105,7 @@
                 <label class="field"><span>القارب *</span>
                     <select class="select" name="boat_id" required onchange="syncBoatDefaults()">
                         <option value="">— اختر —</option>
-                        @foreach ($boats as $b)<option value="{{ $b->id }}" data-port="{{ $b->port_id }}" data-captain="{{ $b->captain_id }}" data-crew="{{ $b->crew_count }}" data-license="{{ $b->license_number }}">{{ $b->name }}@if ($b->captainUser) — {{ $b->captainUser->name }}@endif</option>@endforeach
+                        @foreach ($boats as $b)<option value="{{ $b->id }}" data-port="{{ $b->port_id }}" data-captain="{{ $b->captain_id }}" data-crew="{{ $b->crew_count }}" data-license="{{ $b->license_number }}">{{ $b->name }}@if ($b->captainFisher) — {{ $b->captainFisher->name }}@endif</option>@endforeach
                     </select>
                 </label>
                 <label class="field"><span>الكابتن</span>

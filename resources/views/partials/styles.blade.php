@@ -469,8 +469,8 @@ html.dark .note-box svg { color: hsl(160 60% 62%); }
 .trip-steps li.is-done, .trip-steps li.is-current { color: hsl(var(--foreground)); font-weight: 600; }
 .trip-steps[data-cancelled] li { opacity: .45; }
 /*
- * بوابة الكابتن: بطاقة الرحلة كما في التطبيق (رأس برقمها وحالتها، شبكة
- * بيانات، ثم أزرار الفعل)، وسطر الإشعار (غير المقروء بحافّة أوّلية مميّزة).
+ * بطاقة الرحلة كما في التطبيق (رأس برقمها وحالتها، شبكة بيانات، ثم أزرار
+ * الفعل)، وسطر الإشعار (غير المقروء بحافّة أوّلية مميّزة).
  */
 .trip-card { border: 1px solid var(--hair); background: hsl(var(--foreground) / .02); padding: .85rem .95rem; display: flex; flex-direction: column; gap: .7rem; }
 .trip-card + .trip-card { margin-top: .65rem; }

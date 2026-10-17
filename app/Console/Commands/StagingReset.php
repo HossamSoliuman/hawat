@@ -18,7 +18,8 @@ use Illuminate\Support\Facades\DB;
  * يعيد بيئة الاختبار (hawat.sa/staging) إلى حالة معروفة لفريق التطبيق:
  * قاعدة فارغة بالمخطط الحالي، ثم القوائم المرجعية كما في الإنتاج (لقطة بلا
  * حسابات — config('hawat.staging.reference'))، ثم الحسابات التجريبية أدناه
- * بكلمة مرور واحدة من .env (STAGING_ACCOUNTS_PASSWORD).
+ * بكلمة مرور واحدة من .env (STAGING_ACCOUNTS_PASSWORD)، وكباتن المالك الأول
+ * وطاقمه سجلات بلا حسابات (CAPTAINS و CREW).
  *
  * لا يعمل إلا في APP_ENV=staging وعلى قاعدة في اسمها "staging"، فلا يُمسح
  * الإنتاج خطأً.
@@ -29,13 +30,22 @@ class StagingReset extends Command
 
     protected $description = 'إعادة ضبط بيئة الاختبار: قاعدة جديدة بالقوائم المرجعية والحسابات التجريبية';
 
-    /** الحسابات التجريبية — الكابتنان للمالك الأول. */
+    /** الحسابات التجريبية. */
     public const ACCOUNTS = [
         ['role' => Role::OWNER, 'name' => 'مالك الاختبار الأول', 'phone' => '0500000101'],
         ['role' => Role::OWNER, 'name' => 'مالك الاختبار الثاني', 'phone' => '0500000102'],
         ['role' => Role::DALAL, 'name' => 'دلال الاختبار', 'phone' => '0500000103'],
-        ['role' => Role::CAPTAIN, 'name' => 'كابتن الاختبار الأول', 'phone' => '0500000111', 'national_id' => '1000000111'],
-        ['role' => Role::CAPTAIN, 'name' => 'كابتن الاختبار الثاني', 'phone' => '0500000112', 'national_id' => '1000000112'],
+    ];
+
+    /** كباتن المالك الأول — سجلات بلا دخول؛ الأول على قارب الاختبار. */
+    public const CAPTAINS = [
+        ['name' => 'كابتن الاختبار الأول', 'phone' => '0500000111', 'national_id' => '1000000111'],
+        ['name' => 'كابتن الاختبار الثاني', 'phone' => '0500000112', 'national_id' => '1000000112'],
+    ];
+
+    /** طاقم قارب الاختبار — فيكتمل إعداده وتُجرَّب الرحلة من أولها. */
+    public const CREW = [
+        ['name' => 'بحار الاختبار', 'national_id' => '2000000121'],
     ];
 
     public function handle(StaffService $staff): int
@@ -64,42 +74,32 @@ class StagingReset extends Command
         $users = [];
 
         foreach (self::ACCOUNTS as $account) {
-            if ($account['role'] === Role::CAPTAIN) {
-                $users[$account['phone']] = $staff->createCaptain($users['0500000101'], [
-                    'name' => $account['name'],
-                    'phone' => $account['phone'],
-                    'password' => $password,
-                    'national_id' => $account['national_id'],
-                    'port_id' => $port->id,
-                ]);
-
-                continue;
-            }
-
-            $user = User::create([
+            $users[$account['phone']] = User::create([
                 'name' => $account['name'],
                 'phone' => $account['phone'],
                 'password' => $password,
                 'role_id' => Role::key($account['role'])->id,
                 'active' => true,
             ]);
-            $user->forceFill(['activated_at' => now()])->save();
-            $users[$account['phone']] = $user;
         }
 
         DalalProfile::forUser($users['0500000103'])->update(['port_id' => $port->id, 'dakka_name' => 'دكة الاختبار']);
 
-        // قارب للمالك الأول بكابتنه الأول، والثاني بلا قارب — ليُجرَّب الإعداد من الصفر.
-        $boat = Boat::create(['name' => 'قارب الاختبار', 'boat_number' => 'STG-001', 'port_id' => $port->id, 'owner_id' => $users['0500000101']->id, 'status' => 'نشط']);
-        $staff->updateCaptain($users['0500000111']->fresh(), [
-            'name' => 'كابتن الاختبار الأول',
-            'phone' => '0500000111',
-            'national_id' => '1000000111',
-            'boat_id' => $boat->id,
-        ]);
+        // قارب للمالك الأول بكابتنه الأول وطاقمه، والمالك الثاني بلا شيء — ليُجرَّب الإعداد من الصفر.
+        $owner = $users['0500000101'];
+        $boat = Boat::create(['name' => 'قارب الاختبار', 'boat_number' => 'STG-001', 'port_id' => $port->id, 'owner_id' => $owner->id, 'status' => 'نشط']);
+
+        foreach (self::CAPTAINS as $i => $captain) {
+            $staff->createCaptain($owner, $captain + ['port_id' => $port->id, 'boat_id' => $i === 0 ? $boat->id : null]);
+        }
+
+        foreach (self::CREW as $member) {
+            $staff->createCrew($owner, $member + ['port_id' => $port->id, 'boat_id' => $boat->id]);
+        }
 
         $this->table(['الدور', 'الاسم', 'الجوال'], collect(self::ACCOUNTS)->map(fn ($a) => [$a['role'], $a['name'], $a['phone']])->all());
         $this->info('كلمة مرور الحسابات كلها: STAGING_ACCOUNTS_PASSWORD في .env.');
+        $this->info('كباتن المالك الأول وطاقمه سجلات بلا دخول: '.collect([...self::CAPTAINS, ...self::CREW])->pluck('name')->implode('، ').'.');
 
         return self::SUCCESS;
     }

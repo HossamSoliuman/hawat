@@ -22,7 +22,7 @@
                 <a href="{{ route('panel.owner.consignments.create', ['trip' => $trip->id]) }}" class="btn btn-outline">@include('partials.icon', ['name' => 'send']) إرسال مصيد للدلال</a>
             @endif
             @if ($trip->status === Trip::SCHEDULED)
-                <form method="POST" action="{{ route('panel.owner.trips.start', $trip) }}" onsubmit="return confirm('بدء الرحلة الآن نيابةً عن الكابتن؟')">
+                <form method="POST" action="{{ route('panel.owner.trips.start', $trip) }}" onsubmit="return confirm('بدء الرحلة الآن؟ يصير القارب في البحر.')">
                     @csrf
                     <button class="btn btn-primary">@include('partials.icon', ['name' => 'zap']) ابدأ الرحلة</button>
                 </form>
@@ -73,7 +73,7 @@
             @if ($trip->catchRecords->isNotEmpty())
                 <div class="table-card" style="border:0">
                     <table class="data-table">
-                        <thead><tr><th>الصنف</th><th>الكابتن</th><th>المعدود</th><th>المتاح</th><th>ملاحظات</th></tr></thead>
+                        <thead><tr><th>الصنف</th><th>المعلن</th><th>المعدود</th><th>المتاح</th><th>ملاحظات</th></tr></thead>
                         <tbody>
                             @foreach ($trip->catchRecords as $record)
                                 <tr>
@@ -88,7 +88,7 @@
                     </table>
                 </div>
             @elseif ($trip->status === Trip::AT_SEA)
-                <p class="card-sub" style="margin-bottom:.75rem">الرحلة في البحر — يرسل الكابتن المخرجات من التطبيق عند العودة، أو سجّلها هنا نيابةً عنه.</p>
+                <p class="card-sub" style="margin-bottom:.75rem">الرحلة في البحر — سجّل مخرجاتها هنا عند عودة القارب.</p>
                 <form method="POST" action="{{ route('panel.owner.trips.catch', $trip) }}" id="catchForm">
                     @csrf
                     <table class="data-table lines-table" style="margin-bottom:.75rem">

@@ -6,7 +6,7 @@
 
 @section('settings')
     <form method="GET" class="filter-bar" style="margin-bottom:1.25rem">
-        <label class="field"><span>بحث</span><input class="input" name="search" value="{{ request('search') }}" placeholder="الاسم أو الجوال..."></label>
+        <label class="field"><span>بحث</span><input class="input" name="search" value="{{ request('search') }}" placeholder="الاسم أو الجوال أو الهوية..."></label>
         <button class="btn btn-primary">تصفية</button>
         <a href="{{ route('panel.owner.captains') }}" class="btn btn-outline">إعادة تعيين</a>
     </form>
@@ -14,64 +14,50 @@
     <div class="table-card">
         <table class="data-table">
             <thead>
-                <tr><th>الاسم</th><th>الجوال</th><th>الهوية</th><th>القارب</th><th>الميناء</th><th>آخر دخول</th><th>الحالة</th><th></th></tr>
+                <tr><th>الاسم</th><th>الجوال</th><th>الهوية</th><th>القارب</th><th>الميناء</th><th>الرخصة</th><th>الحالة</th><th></th></tr>
             </thead>
             <tbody>
                 @forelse ($captains as $row)
                     @php
-                        $invitation = $row->invitation_status;
-                        $record = [
-                            'id' => $row->id, 'name' => $row->name, 'phone' => $row->phone, 'email' => $row->email, 'active' => $row->active,
-                            'national_id' => $row->fisher?->national_id, 'id_type_id' => $row->fisher?->id_type_id,
-                            'iqama_issue_date' => $row->fisher?->iqama_issue_date, 'iqama_expiry_date' => $row->fisher?->iqama_expiry_date,
-                            'nationality' => $row->fisher?->nationality, 'boat_id' => $row->fisher?->boat_id, 'port_id' => $row->fisher?->port_id,
-                            'license_number' => $row->fisher?->license_number, 'license_date' => $row->fisher?->license_date,
-                            'license_expiry' => $row->fisher?->license_expiry, 'experience_years' => $row->fisher?->experience_years,
-                            'version' => $row->fisher?->version,
+                        $record = $row->only([
+                            'id', 'name', 'phone', 'email', 'national_id', 'id_type_id', 'nationality', 'boat_id', 'port_id',
+                            'license_number', 'experience_years', 'status', 'version',
+                        ]) + [
+                            'iqama_issue_date' => $row->iqama_issue_date?->toDateString(), 'iqama_expiry_date' => $row->iqama_expiry_date?->toDateString(),
+                            'license_date' => $row->license_date?->toDateString(), 'license_expiry' => $row->license_expiry?->toDateString(),
                         ];
+                        $active = $row->status === \App\Models\Fisher::ACTIVE;
                     @endphp
                     <tr>
                         <td>
                             <div class="person-cell">
-                                @include('partials.person-avatar', ['url' => $row->avatar_path ? asset('storage/'.$row->avatar_path) : null, 'name' => $row->name])
-                                <div style="font-weight:600">{{ $row->name }}@if ($row->email)<div dir="ltr" style="font-size:.7rem;font-weight:400;color:hsl(var(--muted-foreground));text-align:right">{{ $row->email }}</div>@endif</div>
+                                @include('partials.person-avatar', ['url' => $row->avatar_url, 'name' => $row->name])
+                                <div style="font-weight:600">{{ $row->name }}@if ($row->nationality)<div style="font-size:.7rem;font-weight:400;color:hsl(var(--muted-foreground))">{{ $row->nationality }}</div>@endif</div>
                             </div>
                         </td>
-                        <td dir="ltr" class="num" style="text-align:right">{{ $row->phone }}</td>
-                        <td class="num">{{ $row->fisher?->national_id ?? '—' }}</td>
-                        <td>{{ $row->fisher?->boat?->name ?? '—' }}</td>
-                        <td>{{ $row->fisher?->port?->name ?? '—' }}</td>
-                        <td style="font-size:.74rem;color:hsl(var(--muted-foreground))">{{ $row->last_login_at?->diffForHumans() ?? 'لم يدخل بعد' }}</td>
-                        <td>
-                            @if (! $row->active)
-                                <span class="badge badge-danger">معطّل</span>
-                            @elseif ($invitation === \App\Models\User::INVITATION_INVITED)
-                                <span class="badge badge-info">مدعو</span>
-                                <div style="font-size:.68rem;color:hsl(var(--muted-foreground));margin-top:.15rem">تنتهي {{ $row->invitation_expires_at->diffForHumans() }}</div>
-                            @elseif ($invitation === \App\Models\User::INVITATION_EXPIRED)
-                                <span class="badge badge-warn">انتهت الدعوة</span>
-                            @else
-                                <span class="badge badge-ok">مفعّل</span>
-                            @endif
-                        </td>
+                        <td dir="ltr" class="num" style="text-align:right">{{ $row->phone ?? '—' }}</td>
+                        <td class="num">{{ $row->national_id }}</td>
+                        <td>{{ $row->boat?->name ?? '—' }}</td>
+                        <td>{{ $row->port?->name ?? '—' }}</td>
+                        <td class="num" style="font-size:.74rem">{{ $row->license_expiry?->format('Y-m-d') ?? '—' }}</td>
+                        <td><span class="badge {{ $active ? 'badge-ok' : 'badge-danger' }}">{{ $row->status }}</span></td>
                         <td>
                             <div style="display:flex;gap:.25rem;justify-content:flex-end">
                                 <button type="button" class="icon-action" title="تعديل" onclick='openDrawerForm(recordForm, {!! json_encode($record, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!})'>@include('partials.icon', ['name' => 'pencil'])</button>
-                                @if ($row->active && $row->isPendingInvitation())
-                                    <form method="POST" action="{{ route('panel.owner.captains.invitation', $row) }}">
-                                        @csrf
-                                        <button type="submit" class="icon-action" title="إعادة إرسال الدعوة">@include('partials.icon', ['name' => 'send'])</button>
-                                    </form>
-                                @endif
                                 <form method="POST" action="{{ route('panel.owner.captains.toggle', $row) }}">
                                     @csrf
-                                    <button type="submit" class="icon-action" title="{{ $row->active ? 'تعطيل' : 'تفعيل' }}">@include('partials.icon', ['name' => $row->active ? 'ban' : 'check-circle'])</button>
+                                    <button type="submit" class="icon-action" title="{{ $active ? 'تعطيل' : 'تفعيل' }}">@include('partials.icon', ['name' => $active ? 'ban' : 'check-circle'])</button>
+                                </form>
+                                <form method="POST" action="{{ route('panel.owner.captains.destroy', $row) }}" onsubmit="return confirm('حذف الكابتن؟ يُرفع عن قاربه ويبقى اسمه على رحلاته السابقة.')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="icon-action danger" title="حذف">@include('partials.icon', ['name' => 'trash'])</button>
                                 </form>
                             </div>
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="8" style="padding:2rem;text-align:center;color:hsl(var(--muted-foreground))">لا كباتن بعد — أضف كابتنًا ليدخل التطبيق بجواله</td></tr>
+                    <tr><td colspan="8" style="padding:2rem;text-align:center;color:hsl(var(--muted-foreground))">لا كباتن بعد — أضف كابتنًا لتسنده إلى قارب ورحلاته</td></tr>
                 @endforelse
             </tbody>
         </table>
@@ -91,9 +77,7 @@
             <input type="hidden" name="version" value="" data-fill>
             <div class="form-grid cols-2">
                 <label class="field"><span>الاسم *</span><input class="input" name="name" required></label>
-                <label class="field"><span>رقم الجوال *</span><input class="input" name="phone" dir="ltr" inputmode="tel" placeholder="05XXXXXXXX" required></label>
-                <label class="field"><span>البريد الإلكتروني</span><input class="input" name="email" type="email" dir="ltr"></label>
-                <label class="field"><span id="passwordLabel">كلمة المرور</span><input class="input" name="password" type="password" dir="ltr" minlength="8" autocomplete="new-password"></label>
+                <label class="field"><span>رقم الجوال</span><input class="input" name="phone" dir="ltr" inputmode="tel" placeholder="05XXXXXXXX"></label>
                 <label class="field"><span>رقم الهوية *</span><input class="input" name="national_id" dir="ltr" required></label>
                 <label class="field"><span>نوع الهوية</span>
                     <select class="select" name="id_type_id">
@@ -120,17 +104,17 @@
                 <label class="field"><span>رقم رخصة الصيد</span><input class="input" name="license_number" dir="ltr"></label>
                 <label class="field"><span>بداية الرخصة</span><input class="input" name="license_date" type="date" dir="ltr"></label>
                 <label class="field"><span>انتهاء الرخصة</span><input class="input" name="license_expiry" type="date" dir="ltr"></label>
+                <label class="field"><span>البريد الإلكتروني</span><input class="input" name="email" type="email" dir="ltr"></label>
+                <label class="field"><span>الحالة</span>
+                    <select class="select" name="status">
+                        @foreach (\App\Models\Fisher::STATUSES as $s)<option value="{{ $s }}">{{ $s }}</option>@endforeach
+                    </select>
+                </label>
                 <label class="field"><span>الصورة الشخصية (JPG/PNG/WebP حتى 2MB)</span><input class="input" name="avatar" type="file" accept="image/jpeg,image/png,image/webp"></label>
             </div>
-            <p id="inviteHint" style="font-size:.74rem;color:hsl(var(--muted-foreground));margin:0">اترك كلمة المرور فارغة لتُرسل إلى جوال الكابتن دعوة برمز تفعيل يختار بها كلمته بنفسه.</p>
             <label style="display:flex;align-items:center;gap:.5rem;font-size:.78rem;cursor:pointer" id="removeAvatarRow">
                 <input type="checkbox" name="remove_avatar" value="1">
                 حذف الصورة الحالية
-            </label>
-            <label style="display:flex;align-items:center;gap:.5rem;font-size:.78rem;cursor:pointer">
-                <input type="hidden" name="active" value="0">
-                <input type="checkbox" name="active" value="1" checked>
-                الحساب مفعّل
             </label>
             <div style="display:flex;justify-content:flex-end;gap:.5rem;padding-top:.5rem">
                 <button type="button" class="btn btn-outline" onclick="toggleDrawer('recordDrawer', false)">إلغاء</button>
@@ -144,8 +128,6 @@
 @include('panel.partials.drawer-form')
 <script>
     const recordForm = { drawer: 'recordDrawer', form: 'recordFormEl', title: 'recordFormTitle', storeUrl: @json(route('panel.owner.captains.store')), createTitle: 'كابتن جديد', editTitle: 'تعديل الكابتن', after: (record) => {
-        document.getElementById('passwordLabel').textContent = record ? 'كلمة مرور جديدة (اختياري)' : 'كلمة المرور';
-        document.getElementById('inviteHint').hidden = Boolean(record);
         document.getElementById('removeAvatarRow').hidden = !record;
     } };
     @if ($errors->any() && old('name') !== null)

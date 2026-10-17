@@ -28,7 +28,7 @@ class CrewPayController extends Controller
     {
         $owner = $request->user();
         $fishers = Fisher::forOwner($owner)->with(['payType', 'fisherRole'])
-            ->orderByRaw('user_id is null')->orderBy('name')
+            ->orderByDesc('is_captain')->orderBy('name')
             ->get();
 
         return view('panel.owner.crew-pay.index', [

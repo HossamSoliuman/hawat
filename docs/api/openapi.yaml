@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Hawat Mobile API
-  version: 1.6.0
+  version: 1.7.0
   description: |
     Hawat mobile app API (com.os.hawat). All responses are JSON.
 
@@ -12,7 +12,7 @@ info:
     - Throttling: login 6/min, OTP request 3/min per phone number.
     - Lookup lists: `GET /lookups` once after login.
     - The owner portal lives under `/owner/*` and requires the `owner` role; every record is scoped to its owner (`404` otherwise).
-    - The captain portal lives under `/captain/*` and requires the `captain` role; only trips assigned to the captain are visible (`404` otherwise).
+    - Captains have no account: a captain is a fisher record the owner manages (`/owner/captains`, `is_captain: true`), assigned to a boat and to trips. The owner runs every trip step (`/owner/trips/*`: create, start, cancel, submit the catch). There is no `captain` role, portal or login.
     - The counter portal lives under `/counter/*` and requires the `counter` role; only trips that returned to the counter's port are visible (`404` otherwise).
     - The dalal portal lives under `/dalal/*` and requires the `dalal` role; sales, customers, partnership requests and workers of another dalal are `404`.
     - Counter hiring: `GET /hiring-rounds` and `/counter-applications/*` need no token. An applicant applies in an open round, verifies the phone with the SMS code, then follows the application with its `token`. Approval (by the operating company, on the web) creates a `counter` account with the password chosen at signup.
@@ -20,9 +20,8 @@ info:
     - Notifications (`/notifications`) are per account for every role; the app registers its device with `POST /auth/fcm-token` to receive pushes.
     - Paginated lists return `{ data: [...], links: {...}, meta: {...} }` with `?page=` and `?per_page=` (max 100).
     - Retries: every authenticated `POST` accepts an `Idempotency-Key` header. Repeating a request with the same key after a lost response returns the first response (`Idempotency-Replayed: true`) without creating a second record.
-    - Concurrent edits: `Boat`, `Fisher` and `Captain` carry `version` (also sent as the `ETag` header). Send it back in `If-Match` (or a `version` body field) on `PUT`; a stale version gets `409` and nothing is written.
-    - Uniqueness: `boat_number`, fisher `national_id` and account `phone` are unique system-wide, including inactive records; a duplicate is `422` on the same field. Deleted crew free their `national_id`.
-    - Captain invitations: creating a captain without `password` texts an activation code (valid 72 hours); the captain activates with `POST /auth/activate`.
+    - Concurrent edits: `Boat` and `Fisher` (captains and crew) carry `version` (also sent as the `ETag` header). Send it back in `If-Match` (or a `version` body field) on `PUT`; a stale version gets `409` and nothing is written.
+    - Uniqueness: `boat_number`, fisher `national_id` and account `phone` are unique system-wide, including inactive records; a duplicate is `422` on the same field. Deleted captains and crew free their `national_id`. A captain's or crew member's `phone` is not an account and is not unique.
     - Changelog: docs/api/CHANGELOG.md.
 servers:
 - url: /api/v1
@@ -38,13 +37,11 @@ tags:
 - name: owner-contacts
   description: المالك — العملاء والموردون والموظفون
 - name: owner-trips
-  description: المالك — الرحلات
+  description: المالك — الرحلات بدورتها كلها وسجل الصيد
 - name: owner-sales
   description: المالك — البيع والإرسال للدلال
 - name: notifications
   description: إشعارات الحساب — لكل الأدوار
-- name: captain
-  description: بوابة الكابتن — الرئيسة والرحلات وسجل الصيد
 - name: counter
   description: بوابة العدّاد — طابور الميناء والعد والتقرير المفصّل
 - name: dalal
@@ -99,67 +96,6 @@ paths:
                       token:
                         type: string
                         example: 12|Yk3…
-                      token_type:
-                        type: string
-                        example: Bearer
-                      user:
-                        $ref: '#/components/schemas/User'
-                  message:
-                    type: string
-        '422':
-          $ref: '#/components/responses/ValidationError'
-  /auth/activate:
-    post:
-      tags:
-      - auth
-      summary: تفعيل حساب مدعوّ
-      description: |
-        الكابتن الذي أنشأه مالكه بلا كلمة مرور تصله رسالة برمز تفعيل (6 أرقام، صالح 72 ساعة، 5 محاولات). يرسل جواله والرمز وكلمة مرور يختارها، فيُفعَّل حسابه ويدخل مباشرة — الردّ كردّ الدخول.
-        الرمز منتهٍ أو المحاولات استُنفدت → 422 على `code`، ويعيد المالك إرسال الدعوة (`POST /owner/captains/{captain}/invitation`). 10 في الدقيقة.
-        من استعاد كلمة مروره برمز `forgot-password` قبل التفعيل يُعدّ حسابه مفعّلًا أيضًا.
-      security: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-              - phone
-              - code
-              - password
-              - password_confirmation
-              properties:
-                phone:
-                  type: string
-                  example: '0551112233'
-                code:
-                  type: string
-                  example: '123456'
-                password:
-                  type: string
-                  format: password
-                  minLength: 8
-                password_confirmation:
-                  type: string
-                  format: password
-                device_name:
-                  type: string
-                fcm_token:
-                  type: string
-      responses:
-        '200':
-          description: فُعّل الحساب ودخل
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: object
-                    properties:
-                      token:
-                        type: string
                       token_type:
                         type: string
                         example: Bearer
@@ -570,269 +506,6 @@ paths:
           $ref: '#/components/responses/Unauthenticated'
         '404':
           $ref: '#/components/responses/NotFound'
-  /captain/dashboard:
-    get:
-      tags:
-      - captain
-      summary: رئيسة الكابتن — الأعداد، الرحلات التي بانتظاره، النشطة، وآخر رحلاته
-      responses:
-        '200':
-          description: الرئيسة
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    $ref: '#/components/schemas/CaptainDashboard'
-        '401':
-          $ref: '#/components/responses/Unauthenticated'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-  /captain/trips:
-    get:
-      tags:
-      - captain
-      summary: رحلات الكابتن — view=pending (بانتظارك) / active (في البحر) / completed / cancelled
-      parameters:
-      - name: page
-        in: query
-        schema:
-          type: integer
-      - name: per_page
-        in: query
-        schema:
-          type: integer
-          default: 25
-      - name: view
-        in: query
-        schema:
-          type: string
-          enum:
-          - pending
-          - active
-          - completed
-          - cancelled
-      - name: status
-        in: query
-        description: حالة الوزارة
-        schema:
-          type: string
-      - name: search
-        in: query
-        description: رقم الرحلة
-        schema:
-          type: string
-      responses:
-        '200':
-          description: الرحلات
-          content:
-            application/json:
-              schema:
-                allOf:
-                - type: object
-                  properties:
-                    data:
-                      type: array
-                      items:
-                        $ref: '#/components/schemas/Trip'
-                - $ref: '#/components/schemas/Pagination'
-        '401':
-          $ref: '#/components/responses/Unauthenticated'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-  /captain/trips/{trip}:
-    parameters:
-    - name: trip
-      in: path
-      required: true
-      description: معرّف رحلة مسندة إلى الكابتن
-      schema:
-        type: integer
-    get:
-      tags:
-      - captain
-      summary: تفاصيل رحلة مع سطور المصيد
-      responses:
-        '200':
-          description: رحلة
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    $ref: '#/components/schemas/Trip'
-        '401':
-          $ref: '#/components/responses/Unauthenticated'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-  /captain/trips/{trip}/start:
-    parameters:
-    - name: trip
-      in: path
-      required: true
-      description: معرّف الرحلة
-      schema:
-        type: integer
-    post:
-      tags:
-      - captain
-      summary: ابدأ الرحلة → في البحر (يُبلَّغ المالك)
-      responses:
-        '200':
-          description: الرحلة بعد الفعل
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    $ref: '#/components/schemas/Trip'
-        '401':
-          $ref: '#/components/responses/Unauthenticated'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '422':
-          $ref: '#/components/responses/ValidationError'
-  /captain/trips/{trip}/cancel:
-    parameters:
-    - name: trip
-      in: path
-      required: true
-      description: معرّف الرحلة
-      schema:
-        type: integer
-    post:
-      tags:
-      - captain
-      summary: إلغاء الرحلة بسبب إلزامي (قبل إرسال المخرجات)
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                reason:
-                  type: string
-              required:
-              - reason
-      responses:
-        '200':
-          description: الرحلة بعد الفعل
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    $ref: '#/components/schemas/Trip'
-        '401':
-          $ref: '#/components/responses/Unauthenticated'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '422':
-          $ref: '#/components/responses/ValidationError'
-  /captain/trips/{trip}/catch:
-    parameters:
-    - name: trip
-      in: path
-      required: true
-      description: معرّف الرحلة
-      schema:
-        type: integer
-    post:
-      tags:
-      - captain
-      summary: تأكيد المخرجات وإنهاء الرحلة → بانتظار الإحصاء
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CatchInput'
-      responses:
-        '200':
-          description: الرحلة بعد الفعل مع سطور المصيد
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    $ref: '#/components/schemas/Trip'
-        '401':
-          $ref: '#/components/responses/Unauthenticated'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '422':
-          $ref: '#/components/responses/ValidationError'
-  /captain/catch-log:
-    get:
-      tags:
-      - captain
-      summary: سجل الصيد — سطور المصيد على رحلات الكابتن (الأحدث أولًا)
-      parameters:
-      - name: page
-        in: query
-        schema:
-          type: integer
-      - name: per_page
-        in: query
-        schema:
-          type: integer
-          default: 25
-      - name: search
-        in: query
-        description: رقم الرحلة أو اسم الصنف
-        schema:
-          type: string
-      responses:
-        '200':
-          description: السطور
-          content:
-            application/json:
-              schema:
-                allOf:
-                - type: object
-                  properties:
-                    data:
-                      type: array
-                      items:
-                        $ref: '#/components/schemas/CatchLogEntry'
-                - $ref: '#/components/schemas/Pagination'
-        '401':
-          $ref: '#/components/responses/Unauthenticated'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-  /captain/catch-log/summary:
-    get:
-      tags:
-      - captain
-      summary: ملخص سجل الصيد بالصنف
-      responses:
-        '200':
-          description: الملخص
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    $ref: '#/components/schemas/CatchLogSummary'
-        '401':
-          $ref: '#/components/responses/Unauthenticated'
-        '403':
-          $ref: '#/components/responses/Forbidden'
   /counter/dashboard:
     get:
       tags:
@@ -1485,9 +1158,20 @@ paths:
           default: 25
       - name: search
         in: query
-        description: الاسم أو الجوال
+        description: الاسم أو الجوال أو رقم الهوية
         schema:
           type: string
+      - name: boat_id
+        in: query
+        schema:
+          type: integer
+      - name: status
+        in: query
+        schema:
+          type: string
+          enum:
+          - نشط
+          - غير نشط
       responses:
         '200':
           description: الكباتن
@@ -1500,7 +1184,7 @@ paths:
                     data:
                       type: array
                       items:
-                        $ref: '#/components/schemas/Captain'
+                        $ref: '#/components/schemas/Fisher'
                 - $ref: '#/components/schemas/Pagination'
         '401':
           $ref: '#/components/responses/Unauthenticated'
@@ -1532,7 +1216,7 @@ paths:
                 type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/Captain'
+                    $ref: '#/components/schemas/Fisher'
         '401':
           $ref: '#/components/responses/Unauthenticated'
         '403':
@@ -1542,8 +1226,7 @@ paths:
         '422':
           $ref: '#/components/responses/ValidationError'
       description: |
-        ينشئ حساب دخول بدور كابتن يتبع المالك + سجلّ صياد في الوزارة. للتعطيل أرسل active=false في التعديل.
-        بلا `password` يُدعى الكابتن برسالة نصية فيها رمز تفعيل صالح 72 ساعة (`invitation.status = invited`)، ويفعّل حسابه بنفسه من `POST /auth/activate`. الحفظ ليس قبولًا للدعوة.
+        ينشئ سجلّ صياد في الوزارة بـ `is_captain: true` يتبع المالك — بلا حساب دخول ولا رسالة. مع `boat_id` يُسنَد إلى القارب (ويُرفع عن قاربه الآخر، وكابتن القارب السابق ينزل عنه). للتعطيل أرسل `status: غير نشط` في التعديل.
   /owner/captains/{captain}:
     parameters:
     - name: captain
@@ -1568,7 +1251,7 @@ paths:
                 type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/Captain'
+                    $ref: '#/components/schemas/Fisher'
         '401':
           $ref: '#/components/responses/Unauthenticated'
         '403':
@@ -1579,7 +1262,7 @@ paths:
       tags:
       - owner-fleet
       summary: تعديل كابتن
-      description: If-Match بنسخة الكابتن (`version`) القديمة → 409 ولا يُكتب شيء. تغيير جوال كابتن مدعوّ يرسل الدعوة إلى الجوال الجديد.
+      description: If-Match بنسخة الكابتن (`version`) القديمة → 409 ولا يُكتب شيء.
       parameters:
       - $ref: '#/components/parameters/IfMatch'
       requestBody:
@@ -1600,7 +1283,7 @@ paths:
                 type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/Captain'
+                    $ref: '#/components/schemas/Fisher'
         '401':
           $ref: '#/components/responses/Unauthenticated'
         '403':
@@ -1611,37 +1294,20 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/ValidationError'
-  /owner/captains/{captain}/invitation:
-    parameters:
-    - name: captain
-      in: path
-      required: true
-      description: معرّف كابتن
-      schema:
-        type: integer
-    post:
+    delete:
       tags:
       - owner-fleet
-      summary: إعادة إرسال دعوة الكابتن
-      description: رمز جديد يبطل ما قبله وصلاحية 72 ساعة من الآن. 3 في الدقيقة. كابتن فعّل حسابه أو معطّل → 422.
+      summary: حذف كابتن
+      description: يُرفع عن قاربه ورحلاته؛ اسمه يبقى على رحلاته السابقة (`captain.name` منها). رقم هويته يتحرّر.
       responses:
         '200':
-          description: الكابتن بدعوته الجديدة
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    $ref: '#/components/schemas/Captain'
+          $ref: '#/components/responses/Message'
         '401':
           $ref: '#/components/responses/Unauthenticated'
         '403':
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-        '422':
-          $ref: '#/components/responses/ValidationError'
   /owner/captains/{captain}/avatar:
     parameters:
     - name: captain
@@ -1654,7 +1320,7 @@ paths:
       tags:
       - owner-fleet
       summary: رفع صورة الكابتن (multipart)
-      description: صورة حساب الكابتن — هي نفسها التي يراها ويغيّرها من تطبيقه. صورة شخصية فقط.
+      description: صورة الكابتن في سجلّه — صورة شخصية فقط.
       requestBody:
         required: true
         content:
@@ -1670,7 +1336,7 @@ paths:
                 type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/Captain'
+                    $ref: '#/components/schemas/Fisher'
         '401':
           $ref: '#/components/responses/Unauthenticated'
         '403':
@@ -1692,7 +1358,7 @@ paths:
                 type: object
                 properties:
                   data:
-                    $ref: '#/components/schemas/Captain'
+                    $ref: '#/components/schemas/Fisher'
         '401':
           $ref: '#/components/responses/Unauthenticated'
         '403':
@@ -2489,7 +2155,7 @@ paths:
     post:
       tags:
       - owner-trips
-      summary: بدء الرحلة نيابةً عن الكابتن → في البحر
+      summary: بدء الرحلة → في البحر
       responses:
         '200':
           description: الرحلة بعد الفعل
@@ -2560,7 +2226,7 @@ paths:
     post:
       tags:
       - owner-trips
-      summary: إرسال مخرجات المصيد نيابةً عن الكابتن → بانتظار الإحصاء
+      summary: إرسال مخرجات المصيد → بانتظار الإحصاء
       responses:
         '200':
           description: الرحلة بعد الفعل
@@ -2585,6 +2251,82 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/CatchInput'
+  /owner/catch-log:
+    get:
+      tags:
+      - owner-trips
+      summary: سجل الصيد — سطور المصيد على رحلات المالك (الأحدث أولًا)
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+      - name: per_page
+        in: query
+        schema:
+          type: integer
+          default: 25
+      - name: captain_id
+        in: query
+        description: كابتن من كباتن المالك
+        schema:
+          type: integer
+      - name: boat_id
+        in: query
+        schema:
+          type: integer
+      - name: search
+        in: query
+        description: رقم الرحلة أو اسم الصنف
+        schema:
+          type: string
+      responses:
+        '200':
+          description: السطور
+          content:
+            application/json:
+              schema:
+                allOf:
+                - type: object
+                  properties:
+                    data:
+                      type: array
+                      items:
+                        $ref: '#/components/schemas/CatchLogEntry'
+                - $ref: '#/components/schemas/Pagination'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /owner/catch-log/summary:
+    get:
+      tags:
+      - owner-trips
+      summary: ملخص سجل الصيد بالصنف
+      parameters:
+      - name: captain_id
+        in: query
+        description: كابتن من كباتن المالك
+        schema:
+          type: integer
+      - name: boat_id
+        in: query
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: الملخص
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/CatchLogSummary'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
   /owner/sales:
     get:
       tags:
@@ -3993,7 +3735,7 @@ components:
     Setup:
       type: object
       description: |
-        اكتمال إعداد القارب للرحلات. `missing` يمنع الاكتمال (`status` قارب معطّل أو في الصيانة، `captain` بلا كابتن، `captain_inactive` حساب الكابتن معطّل، `crew` لا فرد طاقم نشط). `warnings` لا تمنعه (`captain_not_activated` الكابتن لم يفعّل دعوته — المالك يبدأ الرحلة عنه، `license_expired` رخصة القارب منتهية، `crew_over_capacity` الطاقم أكثر من سعة القارب).
+        اكتمال إعداد القارب للرحلات. `missing` يمنع الاكتمال (`status` قارب معطّل أو في الصيانة، `captain` بلا كابتن، `captain_inactive` الكابتن غير نشط، `crew` لا فرد طاقم نشط). `warnings` لا تمنعه (`license_expired` رخصة القارب منتهية، `crew_over_capacity` الطاقم أكثر من سعة القارب).
         استرشادي: إنشاء الرحلة لا يُرفض اليوم بسببه.
       properties:
         ready:
@@ -4016,33 +3758,10 @@ components:
           - captain
           - captain_inactive
           - crew
-          - captain_not_activated
           - license_expired
           - crew_over_capacity
         label:
           type: string
-    Invitation:
-      type: object
-      description: دعوة الكابتن. `activated` لمن أُنشئ بكلمة مرور أو فعّل دعوته؛ `invited` بانتظار التفعيل حتى `expires_at`؛ `expired` انتهت فيعيد المالك إرسالها.
-      properties:
-        status:
-          type: string
-          enum:
-          - invited
-          - expired
-          - activated
-        invited_at:
-          type: string
-          nullable: true
-          format: date-time
-        expires_at:
-          type: string
-          nullable: true
-          format: date-time
-        activated_at:
-          type: string
-          nullable: true
-          format: date-time
     DalalWorker:
       type: object
       properties:
@@ -4276,7 +3995,6 @@ components:
           enum:
           - super_admin
           - owner
-          - captain
           - crew
           - employee
           - counter
@@ -4306,7 +4024,7 @@ components:
         owner:
           type: object
           nullable: true
-          description: المالك الذي يتبعه الحساب (للكابتن والطاقم والموظف)
+          description: المالك الذي يتبعه الحساب (للموظف)
           properties:
             id:
               type: integer
@@ -4317,7 +4035,7 @@ components:
         port:
           type: object
           nullable: true
-          description: ميناء الكابتن من سجلّ الصياد، وميناء العدّاد من سجلّ موظف الإحصاء
+          description: ميناء العدّاد من سجلّ موظف الإحصاء، وميناء الدلال من ملفه
           properties:
             id:
               type: integer
@@ -4612,7 +4330,7 @@ components:
         captain_id:
           type: integer
           nullable: true
-          description: من كباتن المالك
+          description: من كباتن المالك (`/owner/captains`). يُرفع الكابتن عن قاربه الآخر، وكابتن هذا القارب السابق ينزل عنه.
         status:
           type: string
           enum:
@@ -4788,12 +4506,13 @@ components:
       - date
     Fisher:
       type: object
+      description: كابتن أو فرد طاقم عند المالك — سجلّ صياد في الوزارة بلا حساب دخول.
       properties:
         id:
           type: integer
-        user_id:
-          type: integer
-          nullable: true
+        is_captain:
+          type: boolean
+          description: كابتن يُسند إلى القارب والرحلات (`/owner/captains`)، وإلا فرد طاقم (`/owner/crew`)
         name:
           type: string
         phone:
@@ -4879,40 +4598,6 @@ components:
           type: string
           nullable: true
           format: date-time
-    Captain:
-      type: object
-      properties:
-        id:
-          type: integer
-        name:
-          type: string
-        phone:
-          type: string
-        email:
-          type: string
-          nullable: true
-        avatar_url:
-          type: string
-          nullable: true
-          description: صورة حساب الكابتن — يراها ويغيّرها من تطبيقه أيضًا (/auth/avatar)
-        active:
-          type: boolean
-        last_login_at:
-          type: string
-          nullable: true
-          format: date-time
-        invitation:
-          $ref: '#/components/schemas/Invitation'
-        version:
-          type: integer
-          nullable: true
-          description: نسخة الكابتن (سجلّ صياده) — تُرسل في If-Match عند التعديل
-        updated_at:
-          type: string
-          nullable: true
-          format: date-time
-        fisher:
-          $ref: '#/components/schemas/Fisher'
     CaptainInput:
       type: object
       properties:
@@ -4920,16 +4605,12 @@ components:
           type: string
         phone:
           type: string
+          nullable: true
           example: '0555555555'
+          description: للتواصل فقط — ليس حسابًا ولا يُشترط تفرّده
         email:
           type: string
           nullable: true
-        password:
-          type: string
-          format: password
-          nullable: true
-          description: |
-            اختيارية. بلا كلمة مرور عند الإنشاء يُدعى الكابتن: تصل جواله رسالة برمز تفعيل صالح 72 ساعة، وحالته `invitation.status = invited` حتى يفعّل حسابه بنفسه (`POST /auth/activate`)؛ لا كلمة مرور يعرفها المالك. بكلمة مرور يُنشأ الحساب مفعّلًا. في التعديل: فارغة = كما هي.
         national_id:
           type: string
           description: لا يتكرر على مستوى النظام (صياد واحد في الوزارة)، ويشمل غير النشطين؛ التكرار 422 على الحقل نفسه.
@@ -4973,17 +4654,20 @@ components:
         experience_years:
           type: integer
           nullable: true
-        active:
-          type: boolean
+        status:
+          type: string
+          enum:
+          - نشط
+          - غير نشط
+          description: غيابه = كما هو (نشط عند الإنشاء). الكابتن غير النشط يبقى على قاربه وجاهزية القارب تُظهره ناقصًا.
         version:
           type: integer
           nullable: true
           description: بديل If-Match — نسخة الكابتن التي عدّلت عليها
       required:
       - name
-      - phone
       - national_id
-      description: الجوال لا يتكرر على مستوى النظام (حساب واحد لكل جوال)، والمسجّل لحساب آخر — أيًّا كان دوره — 422 على `phone`.
+      description: الكابتن سجلّ صياد بلا حساب دخول — لا كلمة مرور ولا دعوة.
     CrewInput:
       type: object
       properties:
@@ -5823,6 +5507,9 @@ components:
               type: number
             boats:
               type: number
+            trips_scheduled:
+              type: number
+              description: رحلات أُنشئت ولم يبدأها المالك بعد
             trips_at_sea:
               type: number
             trips_awaiting_count:
@@ -5851,6 +5538,11 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/StockLine'
+        scheduled_trips:
+          type: array
+          description: بانتظار الانطلاق — يبدؤها المالك (`POST /owner/trips/{trip}/start`)
+          items:
+            $ref: '#/components/schemas/Trip'
         active_trips:
           type: array
           items:
@@ -5871,7 +5563,7 @@ components:
               type: integer
             name:
               type: string
-              example: رحلة جديدة بانتظارك
+              example: اكتمل العد
             name_en:
               type: string
               nullable: true
@@ -6058,40 +5750,6 @@ components:
             approved_kg:
               type: number
               nullable: true
-    CaptainDashboard:
-      type: object
-      properties:
-        kpis:
-          type: object
-          properties:
-            pending:
-              type: integer
-            active:
-              type: integer
-            awaiting_count:
-              type: integer
-            completed:
-              type: integer
-            cancelled:
-              type: integer
-            total:
-              type: integer
-            catch_kg:
-              type: number
-            unread_notifications:
-              type: integer
-        pending_trips:
-          type: array
-          items:
-            $ref: '#/components/schemas/Trip'
-        active_trips:
-          type: array
-          items:
-            $ref: '#/components/schemas/Trip'
-        recent_trips:
-          type: array
-          items:
-            $ref: '#/components/schemas/Trip'
     CatchLogEntry:
       type: object
       properties:
@@ -6119,6 +5777,9 @@ components:
             app_status:
               type: string
             boat:
+              type: string
+              nullable: true
+            captain:
               type: string
               nullable: true
             return_time:

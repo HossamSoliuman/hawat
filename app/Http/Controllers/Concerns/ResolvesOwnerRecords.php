@@ -19,7 +19,6 @@ use App\Models\MonthClosing;
 use App\Models\OwnerEmployee;
 use App\Models\Payroll;
 use App\Models\PayrollLine;
-use App\Models\Role;
 use App\Models\Sale;
 use App\Models\Trip;
 use App\Models\User;
@@ -50,12 +49,9 @@ trait ResolvesOwnerRecords
         return Fisher::forOwner($owner)->crew()->lockForUpdate()->findOrFail($id);
     }
 
-    /**
-     * سجلّ صياد الكابتن مقفولًا — نسخته نسخة الكابتن.
-     */
-    protected function lockedCaptainFisher(User $captain): ?Fisher
+    protected function lockedCaptain(User $owner, int|string $id): Fisher
     {
-        return Fisher::where('user_id', $captain->id)->lockForUpdate()->first();
+        return Fisher::forOwner($owner)->captains()->lockForUpdate()->findOrFail($id);
     }
 
     protected function ownedMaintenance(User $owner, int|string $id): BoatMaintenance
@@ -63,9 +59,12 @@ trait ResolvesOwnerRecords
         return BoatMaintenance::whereHas('boat', fn ($q) => $q->where('owner_id', $owner->id))->findOrFail($id);
     }
 
-    protected function ownedCaptain(User $owner, int|string $id): User
+    /**
+     * كابتن المالك — سجلّ صياد بـ is_captain، لا حساب دخول.
+     */
+    protected function ownedCaptain(User $owner, int|string $id): Fisher
     {
-        return $owner->staff()->whereHas('appRole', fn ($q) => $q->where('key', Role::CAPTAIN))->findOrFail($id);
+        return Fisher::forOwner($owner)->captains()->findOrFail($id);
     }
 
     protected function ownedCrew(User $owner, int|string $id): Fisher

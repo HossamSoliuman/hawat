@@ -32,9 +32,12 @@ class FisherFactory extends Factory
         return $this->state(fn () => ['owner_id' => $owner->id]);
     }
 
-    public function forUser(User $user): static
+    /**
+     * كابتن المالك — سجلّ صياد بـ is_captain بلا حساب دخول.
+     */
+    public function captain(): static
     {
-        return $this->state(fn () => ['user_id' => $user->id, 'name' => $user->name, 'phone' => $user->phone, 'role' => Fisher::CAPTAIN_ROLE]);
+        return $this->state(fn () => ['is_captain' => true, 'role' => Fisher::CAPTAIN_ROLE]);
     }
 
     public function onBoat(Boat $boat): static

@@ -13,7 +13,6 @@ use App\Models\PaymentMethod;
 use App\Models\Payroll;
 use App\Models\PayType;
 use App\Models\Port;
-use App\Models\Role;
 use App\Models\Sale;
 use App\Models\SaleItem;
 use App\Models\Species;
@@ -73,9 +72,7 @@ class OwnerCrewMoneyTest extends TestCase
 
     private function captain(array $attributes = []): Fisher
     {
-        $user = User::factory()->role(Role::CAPTAIN)->ownedBy($this->owner)->create();
-
-        return Fisher::factory()->ownedBy($this->owner)->onBoat($this->boat)->forUser($user)->create($attributes + [
+        return Fisher::factory()->captain()->ownedBy($this->owner)->onBoat($this->boat)->create($attributes + [
             'pay_type_id' => PayType::named(PayType::SHARE)->id,
         ]);
     }

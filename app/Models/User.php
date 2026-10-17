@@ -10,7 +10,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Support\Carbon;
 use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
@@ -36,19 +35,7 @@ class User extends Authenticatable
         'avatar_path',
         'fcm_token',
         'last_login_at',
-        'invited_at',
-        'activated_at',
     ];
-
-    /** حالة الدعوة: أُنشئ الحساب بدعوة ولم يُفعَّل، أو انتهت صلاحيتها، أو فُعّل. */
-    public const INVITATION_INVITED = 'invited';
-
-    public const INVITATION_EXPIRED = 'expired';
-
-    public const INVITATION_ACTIVATED = 'activated';
-
-    /** صلاحية رمز الدعوة من آخر إرسال. */
-    public const INVITATION_HOURS = 72;
 
     /**
      * The attributes that should be hidden for serialization.
@@ -71,8 +58,6 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'last_login_at' => 'datetime',
-            'invited_at' => 'datetime',
-            'activated_at' => 'datetime',
             'password' => 'hashed',
             'active' => 'boolean',
         ];
@@ -88,7 +73,7 @@ class User extends Authenticatable
     }
 
     /**
-     * دور التطبيق (مالك، كابتن، عدّاد، دلال…) — غير دور الوزارة أعلاه: هذا لمن
+     * دور التطبيق (مالك، عدّاد، دلال…) — غير دور الوزارة أعلاه: هذا لمن
      * يعمل في البحر والسوق ويدخل من /admin أو من التطبيق، وذاك لموظفي الوزارة.
      */
     public function appRole(): BelongsTo
@@ -97,7 +82,7 @@ class User extends Authenticatable
     }
 
     /**
-     * المالك الذي يتبعه هذا الحساب (للكابتن والطاقم والموظف).
+     * المالك الذي يتبعه هذا الحساب (الأدوار في Role::OWNER_MANAGED).
      */
     public function owner(): BelongsTo
     {
@@ -151,11 +136,11 @@ class User extends Authenticatable
     }
 
     /**
-     * الرحلات المسندة إلى هذا الحساب كابتنًا.
+     * كباتن المالك وطاقمه — سجلات صيادين بلا حساب دخول.
      */
-    public function captainedTrips(): HasMany
+    public function fishers(): HasMany
     {
-        return $this->hasMany(Trip::class, 'captain_id');
+        return $this->hasMany(Fisher::class, 'owner_id');
     }
 
     /**
@@ -164,14 +149,6 @@ class User extends Authenticatable
     public function appNotifications(): HasMany
     {
         return $this->hasMany(AppNotification::class);
-    }
-
-    /**
-     * سجلّ الصياد في الوزارة لحساب الكابتن (الهوية والرخصة والميناء).
-     */
-    public function fisher(): HasOne
-    {
-        return $this->hasOne(Fisher::class);
     }
 
     /**
@@ -234,12 +211,12 @@ class User extends Authenticatable
     }
 
     /**
-     * ميناء الحساب: من سجلّ الصياد للكابتن، ومن سجلّ موظف الإحصاء للعدّاد،
-     * ومن ملف الدلال للدلال. يُعرض في الملف الشخصي ويُحسب عليه طابور العدّاد.
+     * ميناء الحساب: من سجلّ موظف الإحصاء للعدّاد، ومن ملف الدلال للدلال.
+     * يُعرض في الملف الشخصي ويُحسب عليه طابور العدّاد.
      */
     public function getPortAttribute(): ?Port
     {
-        return $this->fisher?->port ?? $this->statisticsOfficer?->port ?? $this->dalalProfile?->port;
+        return $this->statisticsOfficer?->port ?? $this->dalalProfile?->port;
     }
 
     /**
@@ -251,29 +228,6 @@ class User extends Authenticatable
     public function counterPortIds(): array
     {
         return array_values(array_filter([$this->statisticsOfficer?->port_id]));
-    }
-
-    /**
-     * الحساب الذي لم يُدعَ قط (أُنشئ بكلمة مرور) مفعّل؛ المدعوّ مفعّل حين يختار
-     * كلمة مروره، ودعوته تنتهي بعد INVITATION_HOURS من آخر إرسال.
-     */
-    public function getInvitationStatusAttribute(): string
-    {
-        return match (true) {
-            $this->invited_at === null, $this->activated_at !== null => self::INVITATION_ACTIVATED,
-            $this->invitation_expires_at->isPast() => self::INVITATION_EXPIRED,
-            default => self::INVITATION_INVITED,
-        };
-    }
-
-    public function getInvitationExpiresAtAttribute(): ?Carbon
-    {
-        return $this->invited_at?->copy()->addHours(self::INVITATION_HOURS);
-    }
-
-    public function isPendingInvitation(): bool
-    {
-        return $this->invited_at !== null && $this->activated_at === null;
     }
 
     /**

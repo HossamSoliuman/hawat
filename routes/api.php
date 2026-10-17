@@ -1,12 +1,8 @@
 <?php
 
-use App\Http\Controllers\Api\V1\Auth\ActivationController;
 use App\Http\Controllers\Api\V1\Auth\LoginController;
 use App\Http\Controllers\Api\V1\Auth\MeController;
 use App\Http\Controllers\Api\V1\Auth\PasswordResetController;
-use App\Http\Controllers\Api\V1\Captain\CatchLogController as CaptainCatchLogController;
-use App\Http\Controllers\Api\V1\Captain\DashboardController as CaptainDashboardController;
-use App\Http\Controllers\Api\V1\Captain\TripController as CaptainTripController;
 use App\Http\Controllers\Api\V1\Counter\DashboardController as CounterDashboardController;
 use App\Http\Controllers\Api\V1\CounterApplicationController;
 use App\Http\Controllers\Api\V1\Counter\TripController as CounterTripController;
@@ -23,6 +19,7 @@ use App\Http\Controllers\Api\V1\LookupController;
 use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\Owner\BoatController as OwnerBoatController;
 use App\Http\Controllers\Api\V1\Owner\CaptainController as OwnerCaptainController;
+use App\Http\Controllers\Api\V1\Owner\CatchLogController as OwnerCatchLogController;
 use App\Http\Controllers\Api\V1\Owner\ConsignmentController as OwnerConsignmentController;
 use App\Http\Controllers\Api\V1\Owner\CrewController as OwnerCrewController;
 use App\Http\Controllers\Api\V1\Owner\CustomerController as OwnerCustomerController;
@@ -42,8 +39,9 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 |
 | رموز Sanctum في ترويسة Authorization: Bearer، والردّ JSON دائمًا (ForceJsonResponse).
-| المسارات مجمّعة بالدور كما شاشات التطبيق: auth للجميع، ثم owner و captain
-| و counter و dalal كلٌّ تحت وسيط دوره — تُضاف مع بناء بوابة كل دور.
+| المسارات مجمّعة بالدور كما شاشات التطبيق: auth للجميع، ثم owner و counter
+| و dalal كلٌّ تحت وسيط دوره — تُضاف مع بناء بوابة كل دور. الكابتن لا حساب
+| له: سجلّ عند المالك، والمالك يدير الرحلة عنه من مسارات owner.
 |
 | التوثيق: docs/api/openapi.yaml ويُعرض على /api/docs.
 |
@@ -57,9 +55,6 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         Route::post('forgot-password', [PasswordResetController::class, 'sendCode'])->middleware('throttle:otp')->name('forgot-password');
         Route::post('verify-otp', [PasswordResetController::class, 'verifyCode'])->middleware('throttle:10,1')->name('verify-otp');
         Route::post('reset-password', [PasswordResetController::class, 'reset'])->middleware('throttle:10,1')->name('reset-password');
-
-        // تفعيل حساب أنشأه المالك بدعوة: الجوال ورمز الدعوة وكلمة مرور يختارها صاحبه.
-        Route::post('activate', [ActivationController::class, 'store'])->middleware('throttle:10,1,activate')->name('activate');
 
         Route::middleware(['auth:sanctum', 'api.active'])->group(function (): void {
             Route::post('logout', [LoginController::class, 'destroy'])->name('logout');
@@ -108,8 +103,8 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
 
             Route::apiResource('boats', OwnerBoatController::class);
             Route::apiResource('maintenance', OwnerMaintenanceController::class)->except('show');
-            Route::apiResource('captains', OwnerCaptainController::class)->except('destroy');
-            Route::post('captains/{captain}/invitation', [OwnerCaptainController::class, 'invitation'])->middleware('throttle:3,1,captain-invitation')->name('captains.invitation');
+            // الكابتن سجلّ صياد بلا حساب دخول — يُعطَّل بـ status ويُحذف.
+            Route::apiResource('captains', OwnerCaptainController::class);
             Route::post('captains/{captain}/avatar', [OwnerCaptainController::class, 'updateAvatar'])->name('captains.avatar');
             Route::delete('captains/{captain}/avatar', [OwnerCaptainController::class, 'removeAvatar'])->name('captains.avatar.remove');
             Route::apiResource('crew', OwnerCrewController::class);
@@ -123,6 +118,8 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
             Route::post('trips/{trip}/start', [OwnerTripController::class, 'start'])->name('trips.start');
             Route::post('trips/{trip}/cancel', [OwnerTripController::class, 'cancel'])->name('trips.cancel');
             Route::post('trips/{trip}/catch', [OwnerTripController::class, 'submitCatch'])->name('trips.catch');
+            Route::get('catch-log', [OwnerCatchLogController::class, 'index'])->name('catch-log');
+            Route::get('catch-log/summary', [OwnerCatchLogController::class, 'summary'])->name('catch-log.summary');
 
             Route::apiResource('sales', OwnerSaleController::class)->only(['index', 'store', 'show']);
             Route::apiResource('consignments', OwnerConsignmentController::class)->only(['index', 'store', 'show']);
@@ -131,23 +128,6 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
             Route::post('dalals/{dalal}/partnership', [OwnerDalalController::class, 'partnership'])->name('dalals.partnership');
             Route::get('stock', [OwnerStockController::class, 'index'])->name('stock');
             Route::get('stock/movements', [OwnerStockController::class, 'movements'])->name('stock.movements');
-        });
-
-        /*
-         * بوابة الكابتن: رئيسته، ورحلاته المسندة إليه بأفعاله الثلاثة،
-         * وسجل صيده. الرحلة المسندة لغيره 404.
-         */
-        Route::prefix('captain')->name('captain.')->middleware('api.role:captain')->group(function (): void {
-            Route::get('dashboard', [CaptainDashboardController::class, 'index'])->name('dashboard');
-
-            Route::get('trips', [CaptainTripController::class, 'index'])->name('trips.index');
-            Route::get('trips/{trip}', [CaptainTripController::class, 'show'])->name('trips.show');
-            Route::post('trips/{trip}/start', [CaptainTripController::class, 'start'])->name('trips.start');
-            Route::post('trips/{trip}/cancel', [CaptainTripController::class, 'cancel'])->name('trips.cancel');
-            Route::post('trips/{trip}/catch', [CaptainTripController::class, 'submitCatch'])->name('trips.catch');
-
-            Route::get('catch-log', [CaptainCatchLogController::class, 'index'])->name('catch-log');
-            Route::get('catch-log/summary', [CaptainCatchLogController::class, 'summary'])->name('catch-log.summary');
         });
 
         /*

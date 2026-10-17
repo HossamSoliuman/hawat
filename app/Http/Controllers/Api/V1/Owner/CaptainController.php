@@ -6,40 +6,41 @@ use App\Http\Controllers\Concerns\ResolvesOwnerRecords;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Account\AvatarRequest;
 use App\Http\Requests\Owner\CaptainRequest;
-use App\Http\Resources\Api\CaptainResource;
-use App\Models\Role;
-use App\Models\User;
+use App\Http\Resources\Api\FisherResource;
+use App\Models\Fisher;
 use App\Services\Owner\StaffService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * كباتن المالك: سجلات صيادين بلا حساب دخول (is_captain) بشكل فرد الطاقم
+ * نفسه. المالك يسندهم إلى القوارب والرحلات ويدير الرحلة عنهم.
+ */
 class CaptainController extends Controller
 {
     use ResolvesOwnerRecords;
 
-    private const WITH = ['fisher.boat', 'fisher.port', 'fisher.idType', 'fisher.fisherRole'];
+    private const WITH = ['boat', 'port', 'idType', 'fisherRole'];
 
     public function __construct(private readonly StaffService $staff) {}
 
     public function index(Request $request): AnonymousResourceCollection
     {
-        $captains = $request->user()->staff()
-            ->whereHas('appRole', fn ($q) => $q->where('key', Role::CAPTAIN))
-            ->with(self::WITH)
+        $captains = Fisher::forOwner($request->user())->captains()->with(self::WITH)
+            ->when($request->filled('boat_id'), fn ($q) => $q->where('boat_id', $request->query('boat_id')))
+            ->when($request->filled('status'), fn ($q) => $q->where('status', $request->query('status')))
             ->when($request->filled('search'), fn ($q) => $q->where(fn ($w) => $w
                 ->where('name', 'like', '%'.$request->query('search').'%')
-                ->orWhere('phone', 'like', '%'.$request->query('search').'%')))
+                ->orWhere('phone', 'like', '%'.$request->query('search').'%')
+                ->orWhere('national_id', 'like', '%'.$request->query('search').'%')))
             ->orderBy('name')
             ->paginate(min((int) $request->query('per_page', 25), 100));
 
-        return CaptainResource::collection($captains);
+        return FisherResource::collection($captains);
     }
 
-    /**
-     * بلا password يُدعى الكابتن برمز تفعيل إلى جواله (حالته invited).
-     */
     public function store(CaptainRequest $request): JsonResponse
     {
         return $this->respond($this->staff->createCaptain($request->user(), $request->validated()), 201);
@@ -56,8 +57,8 @@ class CaptainController extends Controller
     public function update(CaptainRequest $request, int $captain): JsonResponse
     {
         $model = DB::transaction(function () use ($request, $captain) {
-            $model = $this->ownedCaptain($request->user(), $captain);
-            $this->lockedCaptainFisher($model)?->assertVersion($request);
+            $model = $this->lockedCaptain($request->user(), $captain);
+            $model->assertVersion($request);
 
             return $this->staff->updateCaptain($model, $request->validated());
         });
@@ -65,26 +66,28 @@ class CaptainController extends Controller
         return $this->respond($model);
     }
 
-    public function invitation(Request $request, int $captain): JsonResponse
+    /**
+     * يُرفع عن قاربه ورحلاته، واسمه يبقى على رحلاته السابقة.
+     */
+    public function destroy(Request $request, int $captain): JsonResponse
     {
-        return $this->respond($this->staff->resendInvitation($this->ownedCaptain($request->user(), $captain)));
+        $this->staff->deleteCaptain($this->ownedCaptain($request->user(), $captain));
+
+        return response()->json(['message' => 'تم حذف الكابتن.']);
     }
 
     public function updateAvatar(AvatarRequest $request, int $captain): JsonResponse
     {
-        return $this->respond($this->staff->storeCaptainAvatar($this->ownedCaptain($request->user(), $captain), $request->file('avatar')));
+        return $this->respond($this->staff->storeAvatar($this->ownedCaptain($request->user(), $captain), $request->file('avatar')));
     }
 
     public function removeAvatar(Request $request, int $captain): JsonResponse
     {
-        return $this->respond($this->staff->removeCaptainAvatar($this->ownedCaptain($request->user(), $captain)));
+        return $this->respond($this->staff->removeAvatar($this->ownedCaptain($request->user(), $captain)));
     }
 
-    private function respond(User $captain, int $status = 200): JsonResponse
+    private function respond(Fisher $captain, int $status = 200): JsonResponse
     {
-        $captain->load(self::WITH);
-        $response = (new CaptainResource($captain))->response()->setStatusCode($status);
-
-        return $captain->fisher ? $response->header('ETag', $captain->fisher->etag()) : $response;
+        return (new FisherResource($captain->load(self::WITH)))->response()->setStatusCode($status)->header('ETag', $captain->etag());
     }
 }

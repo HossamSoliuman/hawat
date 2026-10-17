@@ -19,8 +19,6 @@ class Role extends BaseModel
 
     public const OWNER = 'owner';
 
-    public const CAPTAIN = 'captain';
-
     public const CREW = 'crew';
 
     public const EMPLOYEE = 'employee';
@@ -38,8 +36,9 @@ class Role extends BaseModel
 
     /**
      * الأدوار التي ينشئها مالك لحسابه: تتبعه في owner_id ولا تُنشأ من المدير العام.
+     * الكابتن ليس منها ولا دور له: سجلّ صياد عند المالك (Fisher::is_captain).
      */
-    public const OWNER_MANAGED = [self::CAPTAIN, self::CREW, self::EMPLOYEE];
+    public const OWNER_MANAGED = [self::CREW, self::EMPLOYEE];
 
     protected $casts = [
         'has_portal' => 'boolean',

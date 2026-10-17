@@ -5,6 +5,7 @@ namespace Database\Factories;
 use App\Models\Boat;
 use App\Models\BoatCategory;
 use App\Models\BoatType;
+use App\Models\Fisher;
 use App\Models\Port;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -34,7 +35,7 @@ class BoatFactory extends Factory
         return $this->state(fn () => ['owner_id' => $owner->id, 'owner' => $owner->name]);
     }
 
-    public function captainedBy(User $captain): static
+    public function captainedBy(Fisher $captain): static
     {
         return $this->state(fn () => ['captain_id' => $captain->id, 'captain' => $captain->name]);
     }

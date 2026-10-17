@@ -254,7 +254,7 @@ class PayrollService
             ->where('boat_id', $boatId)
             ->where('status', 'نشط')
             ->whereNotNull('pay_type_id')
-            ->orderByRaw('user_id is null')
+            ->orderByDesc('is_captain')
             ->orderBy('name')
             ->get();
     }

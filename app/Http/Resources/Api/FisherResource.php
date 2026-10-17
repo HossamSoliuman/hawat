@@ -6,8 +6,8 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
- * سجلّ صياد (كابتن أو طاقم) كما يراه المالك. `version` يُرسل في If-Match عند
- * تعديل فرد الطاقم.
+ * سجلّ صياد (كابتن أو طاقم) كما يراه المالك — بلا حساب دخول. `version`
+ * يُرسل في If-Match عند التعديل.
  */
 class FisherResource extends JsonResource
 {
@@ -15,7 +15,7 @@ class FisherResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'user_id' => $this->user_id,
+            'is_captain' => (bool) $this->is_captain,
             'name' => $this->name,
             'phone' => $this->phone,
             'email' => $this->email,

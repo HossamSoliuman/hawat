@@ -8,9 +8,9 @@ use App\Http\Requests\Owner\CancelTripRequest;
 use App\Http\Requests\Owner\CatchRequest;
 use App\Http\Requests\Owner\TripRequest;
 use App\Models\Boat;
+use App\Models\Fisher;
 use App\Models\GearType;
 use App\Models\Port;
-use App\Models\Role;
 use App\Models\Species;
 use App\Models\Trip;
 use App\Models\TripType;
@@ -21,8 +21,8 @@ use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 /**
- * رحلات المالك: إنشاء وإسناد، ومتابعة الدورة، والتصرّف نيابةً عن الكابتن
- * (بدء/إلغاء/إرسال المخرجات) حين لا يكون على التطبيق.
+ * رحلات المالك بدورتها كلها: إنشاء وإسناد لكابتن، ثم البدء والإلغاء
+ * وإرسال المخرجات — الكابتن سجلّ بلا حساب، والمالك يدير رحلته عنه.
  */
 class TripController extends Controller
 {
@@ -55,8 +55,8 @@ class TripController extends Controller
                 'counting' => Trip::forOwner($owner)->whereIn('status', [Trip::RETURNED, Trip::AWAITING_COUNT, Trip::COUNTING])->count(),
                 'for_sale' => Trip::forOwner($owner)->where('sale_status', Trip::SALE_OPEN)->count(),
             ],
-            'boats' => Boat::forOwner($owner)->with('captainUser')->orderBy('name')->get(['id', 'name', 'port_id', 'captain_id', 'crew_count', 'license_number']),
-            'captains' => $owner->staff()->whereHas('appRole', fn ($q) => $q->where('key', Role::CAPTAIN))->where('active', true)->orderBy('name')->get(['id', 'name']),
+            'boats' => Boat::forOwner($owner)->with('captainFisher:id,name')->orderBy('name')->get(['id', 'name', 'port_id', 'captain_id', 'crew_count', 'license_number']),
+            'captains' => Fisher::forOwner($owner)->captains()->active()->orderBy('name')->get(['id', 'name']),
             'ports' => Port::orderBy('name')->get(['id', 'name']),
             'tripTypes' => TripType::options(),
             'gearTypes' => GearType::where('status', 'نشط')->orderBy('name')->pluck('name'),
@@ -68,7 +68,7 @@ class TripController extends Controller
     {
         $trip = $this->trips->create($request->user(), $request->validated());
 
-        return redirect()->route('panel.owner.trips.show', $trip)->with('status', "أُنشئت الرحلة {$trip->trip_number} وأُسندت للكابتن.");
+        return redirect()->route('panel.owner.trips.show', $trip)->with('status', "أُنشئت الرحلة {$trip->trip_number} — ابدأها حين ينطلق القارب.");
     }
 
     public function update(TripRequest $request, int $trip): RedirectResponse
@@ -91,7 +91,7 @@ class TripController extends Controller
             'trip' => $model,
             'available' => $this->ledger->availableByTrip($owner, $model),
             'species' => Species::where('directory_status', 'نشط')->orderBy('name_ar')->get(['id', 'name_ar']),
-            'captains' => $owner->staff()->whereHas('appRole', fn ($q) => $q->where('key', Role::CAPTAIN))->where('active', true)->orderBy('name')->get(['id', 'name']),
+            'captains' => Fisher::forOwner($owner)->captains()->active()->orderBy('name')->get(['id', 'name']),
         ]);
     }
 

@@ -91,6 +91,33 @@
         </div>
     </div>
 
+    @if ($scheduled_trips->isNotEmpty())
+        <div class="card" style="margin-bottom:1.25rem">
+            @include('partials.section-head', ['icon' => 'calendar', 'title' => 'بانتظار الانطلاق'])
+            <div class="table-card" style="border:0">
+                <table class="data-table">
+                    <thead><tr><th>الرحلة</th><th>القارب</th><th>الكابتن</th><th>موعد الانطلاق</th><th></th></tr></thead>
+                    <tbody>
+                        @foreach ($scheduled_trips as $trip)
+                            <tr>
+                                <td><a href="{{ route('panel.owner.trips.show', $trip) }}" class="num" style="font-weight:700">{{ $trip->trip_number }}</a></td>
+                                <td>{{ $trip->boat?->name }}</td>
+                                <td>{{ $trip->captain?->name ?? $trip->captain_name ?? '—' }}</td>
+                                <td class="num" style="font-size:.74rem">{{ $trip->departure_time?->format('Y-m-d H:i') ?? '—' }}</td>
+                                <td style="text-align:left">
+                                    <form method="POST" action="{{ route('panel.owner.trips.start', $trip) }}">
+                                        @csrf
+                                        <button class="btn btn-primary">@include('partials.icon', ['name' => 'zap']) ابدأ الرحلة</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    @endif
+
     <div class="grid-2">
         <div class="card">
             @include('partials.section-head', ['icon' => 'route', 'title' => 'الرحلات النشطة'])

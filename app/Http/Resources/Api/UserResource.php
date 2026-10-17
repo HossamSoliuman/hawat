@@ -31,10 +31,10 @@ class UserResource extends JsonResource
                 'name' => $this->owner->name,
                 'phone' => $this->owner->phone,
             ] : null),
-            // الميناء يُعرض في الملف الشخصي (الهفوف — المحافظة): للكابتن من سجلّ
-            // الصياد، وللعدّاد من سجلّ موظف الإحصاء، وللدلال من ملفه — انظر User::getPortAttribute.
+            // الميناء يُعرض في الملف الشخصي (الهفوف — المحافظة): للعدّاد من سجلّ
+            // موظف الإحصاء، وللدلال من ملفه — انظر User::getPortAttribute.
             'port' => $this->when(
-                $this->relationLoaded('fisher') || $this->relationLoaded('statisticsOfficer'),
+                $this->relationLoaded('statisticsOfficer') || $this->relationLoaded('dalalProfile'),
                 fn () => $this->port ? [
                     'id' => $this->port->id,
                     'name' => $this->port->name,

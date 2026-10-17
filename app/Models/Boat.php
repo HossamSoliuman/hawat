@@ -20,7 +20,7 @@ class Boat extends BaseModel
 
     public const STATUSES = ['نشط', 'غير نشط', 'صيانة', 'في البحر'];
 
-    /** تضبطه الرحلات وحدها: يبدأ الكابتن الرحلة فيصير القارب في البحر. */
+    /** تضبطه الرحلات وحدها: يبدأ المالك الرحلة فيصير القارب في البحر. */
     public const AT_SEA = 'في البحر';
 
     protected $casts = [
@@ -37,10 +37,34 @@ class Boat extends BaseModel
                 $boat->owner = User::find($boat->owner_id)?->name ?? $boat->owner;
             }
             if ($boat->isDirty('captain_id')) {
-                $boat->captain = $boat->captain_id ? User::find($boat->captain_id)?->name : null;
+                $boat->captain = $boat->captain_id ? Fisher::find($boat->captain_id)?->name : null;
             }
             if ($boat->isDirty('boat_type_id') && $boat->boat_type_id) {
                 $boat->boat_type = BoatType::find($boat->boat_type_id)?->name ?? $boat->boat_type;
+            }
+        });
+
+        // الإسناد من نموذج القارب أو من نموذج الكابتن سواء: للقارب كابتن واحد
+        // والكابتن على قارب واحد، وسجلّ الكابتن يتبع قاربه (boat_id والميناء).
+        static::saved(function (Boat $boat) {
+            if (! ($boat->wasRecentlyCreated ? $boat->captain_id : $boat->wasChanged('captain_id'))) {
+                return;
+            }
+
+            if ($boat->captain_id) {
+                static::where('captain_id', $boat->captain_id)->whereKeyNot($boat->id)->get()->each->update(['captain_id' => null]);
+            }
+
+            $previous = $boat->wasRecentlyCreated ? null : $boat->getOriginal('captain_id');
+            if ($previous) {
+                Fisher::whereKey($previous)->where('boat_id', $boat->id)->first()?->update(['boat_id' => null]);
+            }
+
+            if ($boat->captain_id) {
+                $captain = Fisher::find($boat->captain_id);
+                if ($captain && (int) $captain->boat_id !== (int) $boat->id) {
+                    $captain->update(['boat_id' => $boat->id, 'port_id' => $boat->port_id]);
+                }
             }
         });
     }
@@ -55,9 +79,13 @@ class Boat extends BaseModel
         return $this->belongsTo(User::class, 'owner_id');
     }
 
-    public function captainUser(): BelongsTo
+    /**
+     * كابتن القارب: سجلّ صياد عند المالك (is_captain). ليس `captain` لأن
+     * العمود النصي القديم بهذا الاسم تقرؤه صفحات الوزارة.
+     */
+    public function captainFisher(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'captain_id');
+        return $this->belongsTo(Fisher::class, 'captain_id');
     }
 
     public function category(): BelongsTo
@@ -115,7 +143,7 @@ class Boat extends BaseModel
             return;
         }
 
-        $count = $this->fishers()->whereNull('user_id')->where('status', 'نشط')->count();
+        $count = $this->fishers()->crew()->active()->count();
 
         if ((int) $this->crew_count !== $count) {
             $this->update(['crew_count' => $count]);
@@ -129,9 +157,9 @@ class Boat extends BaseModel
 
     /**
      * اكتمال إعداد القارب للرحلات. "ناقص" يمنع الاكتمال: قارب معطّل أو في
-     * الصيانة، أو بلا كابتن، أو كابتنه معطّل، أو بلا فرد طاقم نشط. "تنبيه" لا
-     * يمنعه: كابتن لم يفعّل حسابه بعد (المالك يبدأ الرحلة عنه)، أو رخصة
-     * منتهية، أو طاقم أكثر من سعة القارب. يقرأ captainUser — حمّله مع القائمة.
+     * الصيانة، أو بلا كابتن، أو كابتنه غير نشط، أو بلا فرد طاقم نشط. "تنبيه"
+     * لا يمنعه: رخصة منتهية، أو طاقم أكثر من سعة القارب. يقرأ captainFisher —
+     * حمّله مع القائمة.
      *
      * @return array{ready: bool, missing: list<array{key: string, label: string}>, warnings: list<array{key: string, label: string}>}
      */
@@ -139,7 +167,7 @@ class Boat extends BaseModel
     {
         $missing = [];
         $warnings = [];
-        $captain = $this->captainUser;
+        $captain = $this->captainFisher;
 
         if (in_array($this->status, ['غير نشط', 'صيانة'], true)) {
             $missing[] = ['key' => 'status', 'label' => $this->status === 'صيانة' ? 'القارب في الصيانة' : 'القارب غير نشط'];
@@ -147,10 +175,8 @@ class Boat extends BaseModel
 
         if (! $captain) {
             $missing[] = ['key' => 'captain', 'label' => 'لم يُسند إليه كابتن'];
-        } elseif (! $captain->active) {
-            $missing[] = ['key' => 'captain_inactive', 'label' => 'حساب الكابتن معطّل'];
-        } elseif ($captain->invitation_status !== User::INVITATION_ACTIVATED) {
-            $warnings[] = ['key' => 'captain_not_activated', 'label' => 'الكابتن لم يفعّل حسابه بعد'];
+        } elseif ($captain->status !== Fisher::ACTIVE) {
+            $missing[] = ['key' => 'captain_inactive', 'label' => 'الكابتن غير نشط'];
         }
 
         if ((int) $this->crew_count < 1) {

@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
- * سطر في سجل صيد الكابتن: الصنف ووزنه المعلن والمعدود ورحلته.
+ * سطر في سجل صيد المالك: الصنف ووزنه المعلن والمعدود ورحلته وقاربها وكابتنها.
  *
  * @mixin CatchRecord
  */
@@ -24,6 +24,7 @@ class CatchLogEntryResource extends JsonResource
                 'status' => $this->trip->status,
                 'app_status' => $this->trip->app_status,
                 'boat' => $this->trip->boat?->name,
+                'captain' => $this->trip->captain?->name ?? $this->trip->captain_name,
                 'return_time' => $this->trip->return_time?->toIso8601String(),
             ]),
             'captain_kg' => $this->captain_kg !== null ? (float) $this->captain_kg : null,

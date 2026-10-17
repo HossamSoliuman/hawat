@@ -5,6 +5,7 @@ namespace App\Services\Trips;
 use App\Models\AuditLog;
 use App\Models\Boat;
 use App\Models\CatchRecord;
+use App\Models\Fisher;
 use App\Models\Trip;
 use App\Models\User;
 use App\Services\Notifications\Notifier;
@@ -13,10 +14,13 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 /**
- * دورة الرحلة من الإنشاء إلى اكتمال العد — مسار واحد تستدعيه بوابتا المالك
- * والكابتن وواجهة التطبيق وصفحة الإحصاء الميداني، فتبقى الرحلة الواحدة صادقة
- * في كل لوحة: الحالة بمفردات الوزارة، والمخزون في الدفتر، وحالة القارب،
- * والإشعار للطرف الآخر عند كل انتقال (Notifier).
+ * دورة الرحلة من الإنشاء إلى اكتمال العد — مسار واحد تستدعيه بوابة المالك
+ * وواجهة التطبيق وبوابة العدّاد وصفحة الإحصاء الميداني، فتبقى الرحلة الواحدة
+ * صادقة في كل لوحة: الحالة بمفردات الوزارة، والمخزون في الدفتر، وحالة
+ * القارب، والإشعار عند كل انتقال (Notifier).
+ *
+ * الكابتن سجلّ صياد عند المالك بلا حساب: المالك ينشئ الرحلة ويبدؤها ويرسل
+ * مخرجاتها أو يلغيها عنه.
  */
 class TripService
 {
@@ -26,8 +30,9 @@ class TripService
     ) {}
 
     /**
-     * ينشئ المالك الرحلة ويسندها لكابتن → مجدولة. القارب يحدّد الميناء
-     * والمالك، والكابتن يُملأ اسمه في العمود النصي الذي تقرؤه صفحات الوزارة.
+     * ينشئ المالك الرحلة ويسندها لكابتن (كابتن القارب إن لم يختر) → مجدولة.
+     * القارب يحدّد الميناء والمالك، والكابتن يُملأ اسمه في العمود النصي الذي
+     * تقرؤه صفحات الوزارة.
      */
     public function create(User $owner, array $data): Trip
     {
@@ -53,9 +58,7 @@ class TripService
             'sale_status' => Trip::SALE_NOT_STARTED,
         ]);
 
-        $this->notifier->tripAssigned($trip->setRelation('boat', $boat)->setRelation('captain', $captain));
-
-        return $trip;
+        return $trip->setRelation('boat', $boat)->setRelation('captain', $captain);
     }
 
     /**
@@ -64,8 +67,6 @@ class TripService
     public function update(Trip $trip, array $data): Trip
     {
         $this->assertStatus($trip, [Trip::SCHEDULED], 'لا يمكن تعديل رحلة انطلقت.');
-
-        $previousCaptain = $trip->captain_id;
 
         if (array_key_exists('captain_id', $data)) {
             $captain = $this->captainOf($trip->owner, $data['captain_id']);
@@ -77,16 +78,11 @@ class TripService
             'crew_count', 'departure_time', 'planned_days', 'gear_type', 'license_number', 'notes',
         ])->all());
 
-        // كابتن جديد على الرحلة يُبلَّغ بها كأنها أُسندت إليه الآن.
-        if ($trip->captain_id !== null && $trip->captain_id !== $previousCaptain) {
-            $this->notifier->tripAssigned($trip->unsetRelation('captain')->unsetRelation('boat'));
-        }
-
-        return $trip;
+        return $trip->unsetRelation('captain')->unsetRelation('boat');
     }
 
     /**
-     * الكابتن يبدأ الرحلة → في البحر، والقارب يظهر "في البحر" على الخريطة.
+     * المالك يبدأ الرحلة → في البحر، والقارب يظهر "في البحر" على الخريطة.
      */
     public function start(Trip $trip, ?User $by = null): Trip
     {
@@ -135,8 +131,9 @@ class TripService
     }
 
     /**
-     * الكابتن يرسل مخرجات المصيد → بانتظار الإحصاء. سطر لكل صنف بوزن الكابتن،
-     * والمجموع يُكتب في captain_input_kg الذي يقرؤه الإحصاء الميداني.
+     * المالك يرسل مخرجات المصيد عن كابتنه → بانتظار الإحصاء. سطر لكل صنف
+     * بالوزن المعلن (captain_kg: ما أعلنته الرحلة قبل العد)، والمجموع يُكتب في
+     * captain_input_kg الذي يقرؤه الإحصاء الميداني.
      *
      * @param  array<int, array{species_id:int, weight_kg:float|string, notes?:string|null}>  $items
      */
@@ -340,19 +337,14 @@ class TripService
     /**
      * الكابتن لا بدّ أن يكون من كباتن هذا المالك.
      */
-    private function captainOf(User $owner, ?int $captainId): ?User
+    private function captainOf(User $owner, ?int $captainId): ?Fisher
     {
         if ($captainId === null) {
             return null;
         }
 
-        $captain = $owner->staff()->whereKey($captainId)->first();
-
-        if ($captain === null || ! $captain->hasAppRole('captain')) {
-            throw ValidationException::withMessages(['captain_id' => 'الكابتن المختار ليس من كباتنك.']);
-        }
-
-        return $captain;
+        return Fisher::forOwner($owner)->captains()->find($captainId)
+            ?? throw ValidationException::withMessages(['captain_id' => 'الكابتن المختار ليس من كباتنك.']);
     }
 
     /**

@@ -8,8 +8,8 @@ use App\Http\Requests\Owner\BoatRequest;
 use App\Models\Boat;
 use App\Models\BoatCategory;
 use App\Models\BoatType;
+use App\Models\Fisher;
 use App\Models\Port;
-use App\Models\Role;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -26,7 +26,7 @@ class BoatController extends Controller
     {
         $owner = $request->user();
 
-        $boats = Boat::forOwner($owner)->with(['port', 'category', 'type', 'captainUser'])->withCount('trips')
+        $boats = Boat::forOwner($owner)->with(['port', 'category', 'type', 'captainFisher'])->withCount('trips')
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->query('status')))
             ->when($request->filled('search'), fn ($q) => $q->where(fn ($w) => $w
                 ->where('name', 'like', '%'.$request->query('search').'%')
@@ -45,7 +45,7 @@ class BoatController extends Controller
             'ports' => Port::orderBy('name')->get(['id', 'name']),
             'categories' => BoatCategory::options(),
             'types' => BoatType::options(),
-            'captains' => $owner->staff()->whereHas('appRole', fn ($q) => $q->where('key', Role::CAPTAIN))->orderBy('name')->get(['id', 'name']),
+            'captains' => Fisher::forOwner($owner)->captains()->orderBy('name')->get(['id', 'name']),
             'statuses' => Boat::STATUSES,
         ]);
     }

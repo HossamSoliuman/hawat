@@ -152,30 +152,36 @@ class AdminPanelTest extends TestCase
         $this->assertAuthenticatedAs($owner);
     }
 
-    public function test_a_captain_must_belong_to_an_owner_and_a_duplicate_phone_is_refused(): void
+    public function test_an_owner_employee_must_belong_to_an_owner_and_a_duplicate_phone_is_refused(): void
     {
         $this->actingAs($this->superAdmin());
         $owner = User::factory()->owner()->create(['phone' => '0511111111']);
 
-        $captain = [
-            'name' => 'الكابتن',
+        $employee = [
+            'name' => 'الموظف',
             'phone' => '0522222222',
-            'role_id' => Role::key(Role::CAPTAIN)->id,
+            'role_id' => Role::key(Role::EMPLOYEE)->id,
             'password' => 'secret-123',
         ];
 
-        $this->from(route('panel.users'))->post(route('panel.users.store'), $captain)
+        $this->from(route('panel.users'))->post(route('panel.users.store'), $employee)
             ->assertRedirect(route('panel.users'))
             ->assertSessionHasErrors('owner_id');
 
-        $this->post(route('panel.users.store'), $captain + ['owner_id' => $owner->id])
+        $this->post(route('panel.users.store'), $employee + ['owner_id' => $owner->id])
             ->assertSessionHasNoErrors();
 
         $this->assertSame($owner->id, User::where('phone', '0522222222')->firstOrFail()->owner_id);
 
         // الجوال نفسه بصيغة أخرى هو الجوال نفسه.
-        $this->from(route('panel.users'))->post(route('panel.users.store'), $captain + ['owner_id' => $owner->id, 'phone' => '+966522222222'])
+        $this->from(route('panel.users'))->post(route('panel.users.store'), $employee + ['owner_id' => $owner->id, 'phone' => '+966522222222'])
             ->assertSessionHasErrors('phone');
+    }
+
+    public function test_the_captain_is_not_an_app_role(): void
+    {
+        $this->assertDatabaseMissing('roles', ['key' => 'captain']);
+        $this->assertNotContains('captain', Role::OWNER_MANAGED);
     }
 
     public function test_updating_without_a_password_keeps_the_old_one_and_toggling_revokes_tokens(): void

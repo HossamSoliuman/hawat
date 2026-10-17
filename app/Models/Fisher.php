@@ -11,9 +11,10 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Facades\Storage;
 
 /**
- * الصياد سجلّ الوزارة (الهوية والرخصة والميناء). الكابتن له فوقه حساب دخول
- * (`user_id`) لأنه يعمل من التطبيق؛ الطاقم سجلّ فقط. `role` النصي يبقى
- * لصفحات الوزارة ويُملأ من `fisher_role_id`.
+ * الصياد سجلّ الوزارة (الهوية والرخصة والميناء). كباتن المالك وطاقمه كلهم
+ * سجلات هنا بلا حساب دخول — المالك يدير الرحلة عنهم؛ `is_captain` يميّز
+ * الكابتن الذي يُسند إلى القارب والرحلة. `role` النصي يبقى لصفحات الوزارة
+ * ويُملأ من `fisher_role_id`.
  */
 class Fisher extends BaseModel
 {
@@ -21,7 +22,12 @@ class Fisher extends BaseModel
 
     public const CAPTAIN_ROLE = 'قبطان';
 
+    public const ACTIVE = 'نشط';
+
+    public const STATUSES = [self::ACTIVE, 'غير نشط'];
+
     protected $casts = [
+        'is_captain' => 'boolean',
         'license_date' => 'date',
         'license_expiry' => 'date',
         'iqama_issue_date' => 'date',
@@ -42,7 +48,7 @@ class Fisher extends BaseModel
         // عدد طاقم القارب مشتق من سجلات أفراده: يُعاد حسابه للقارب الذي دخله
         // الفرد والقارب الذي تركه.
         static::saved(function (Fisher $fisher) {
-            if ($fisher->wasRecentlyCreated || $fisher->wasChanged(['boat_id', 'status', 'user_id'])) {
+            if ($fisher->wasRecentlyCreated || $fisher->wasChanged(['boat_id', 'status', 'is_captain'])) {
                 Boat::refreshCrewCountFor($fisher->boat_id, $fisher->getOriginal('boat_id'));
             }
         });
@@ -65,9 +71,17 @@ class Fisher extends BaseModel
         return $this->belongsTo(User::class, 'owner_id');
     }
 
-    public function user(): BelongsTo
+    /**
+     * القوارب والرحلات المسندة إلى هذا الكابتن.
+     */
+    public function captainedBoats(): HasMany
     {
-        return $this->belongsTo(User::class);
+        return $this->hasMany(Boat::class, 'captain_id');
+    }
+
+    public function captainedTrips(): HasMany
+    {
+        return $this->hasMany(Trip::class, 'captain_id');
     }
 
     public function fisherRole(): BelongsTo
@@ -100,19 +114,9 @@ class Fisher extends BaseModel
         return $this->hasMany(PayrollLine::class);
     }
 
-    public function getIsCaptainAttribute(): bool
-    {
-        return $this->user_id !== null;
-    }
-
-    /**
-     * صورة الفرد: صورة الطاقم في سجلّه، وصورة الكابتن في حسابه.
-     */
     public function getAvatarUrlAttribute(): ?string
     {
-        $path = $this->avatar_path ?? ($this->user_id ? $this->user?->avatar_path : null);
-
-        return $path ? Storage::disk('public')->url($path) : null;
+        return $this->avatar_path ? Storage::disk('public')->url($this->avatar_path) : null;
     }
 
     public function scopeForOwner(Builder $query, User $owner): Builder
@@ -122,11 +126,16 @@ class Fisher extends BaseModel
 
     public function scopeCaptains(Builder $query): Builder
     {
-        return $query->whereNotNull('user_id');
+        return $query->where('is_captain', true);
     }
 
     public function scopeCrew(Builder $query): Builder
     {
-        return $query->whereNull('user_id');
+        return $query->where('is_captain', false);
+    }
+
+    public function scopeActive(Builder $query): Builder
+    {
+        return $query->where('status', self::ACTIVE);
     }
 }

@@ -32,6 +32,14 @@ abstract class OwnerRequest extends FormRequest
         return Rule::exists($table, 'id')->where($column, $this->owner()->id);
     }
 
+    /**
+     * كابتن من كباتن هذا المالك — سجلّ صياد بـ is_captain.
+     */
+    protected function ownedCaptain(): Exists
+    {
+        return $this->owned('fishers')->where('is_captain', true);
+    }
+
     protected function lookup(string $table): Exists
     {
         return Rule::exists($table, 'id')->where('active', true);

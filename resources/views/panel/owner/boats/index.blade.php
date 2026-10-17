@@ -46,7 +46,7 @@
                         <td class="num">{{ $boat->boat_number }}</td>
                         <td>{{ $boat->port?->name }}</td>
                         <td style="font-size:.74rem">{{ $boat->category?->name ?? '—' }} / {{ $boat->type?->name ?? $boat->boat_type ?? '—' }}</td>
-                        <td>{{ $boat->captainUser?->name ?? $boat->captain ?? '—' }}</td>
+                        <td>{{ $boat->captainFisher?->name ?? $boat->captain ?? '—' }}</td>
                         <td class="num" style="text-align:center">{{ $boat->crew_count }}</td>
                         <td class="num" style="text-align:center">{{ $boat->trips_count }}</td>
                         <td class="num" style="font-size:.74rem">{{ $boat->next_inspection_date?->format('Y-m-d') ?? '—' }}</td>

@@ -3,6 +3,28 @@
 المواصفة الكاملة: `docs/api/openapi.yaml` (تُعرض على `/api/docs`، وتُستورد في Postman من `/api/openapi.yaml`).
 كل ردّ في الاختبارات يُطابَق مع المواصفة (Spectator)، فما هنا هو ما يعمل فعلًا.
 
+## 1.7.0 — 2026-10-17 — الكابتن سجلّ عند المالك بلا حساب
+
+الكابتن لا يدخل حوات ولا يفعل شيئًا بنفسه: صار سجلّ صياد عند المالك كفرد الطاقم (`Fisher` بـ`is_captain: true`)، يُسند إلى القارب والرحلات، والمالك يدير الرحلة كلها من مسارات `/owner/*`. **تغيير كاسر** لما يخصّ الكابتن.
+
+### أُزيل
+- دور `captain` من الأدوار (`Role.key`)، وبوابة الكابتن كلها: `/captain/dashboard`، `/captain/trips`، `/captain/trips/{trip}` و`start` و`cancel` و`catch`، `/captain/catch-log` و`/catch-log/summary`. حسابات الكباتن القائمة حُذفت مع رموزها.
+- دعوة الكابتن: `POST /auth/activate` و`POST /owner/captains/{captain}/invitation`، و`password` و`invitation` و`active` و`last_login_at` من الكابتن.
+- مخطط `Captain` و`Invitation` و`CaptainDashboard`، و`Fisher.user_id`، وتنبيه الجاهزية `captain_not_activated`.
+- إشعارا الكابتن «رحلة جديدة بانتظارك» و«الرحلة مكتملة» — لا أحد يستقبلهما.
+
+### تغيّر
+- `GET|POST /owner/captains` و`GET|PUT /owner/captains/{captain}` ترجع `Fisher` (كشكل فرد الطاقم) بـ`is_captain: true`، و`{captain}` معرّف سجلّ الصياد. `CaptainInput` = حقول `CrewInput` بلا `fisher_role_id`: `name` و`national_id` مطلوبان، و`phone` اختياري للتواصل فقط (ليس حسابًا ولا يُشترط تفرّده)، والتعطيل بـ`status: غير نشط` بدل `active`. فلاتر القائمة: `search` (الاسم أو الجوال أو الهوية) و`boat_id` و`status`.
+- `boats.captain_id` و`trips.captain_id` (و`BoatInput.captain_id` و`TripInput.captain_id`) صارت معرّف سجلّ الكابتن من `/owner/captains`. الكابتن على قارب واحد وللقارب كابتن واحد: إسناده من نموذج القارب أو من نموذج الكابتن يرفعه عن قاربه الآخر ويُنزل كابتن القارب السابق. `Boat.captain` و`Trip.captain` بالشكل نفسه (`id`, `name`, `phone`).
+- صورة الكابتن (`POST|DELETE /owner/captains/{captain}/avatar`) في سجلّه كصورة فرد الطاقم.
+- جاهزية القارب: `captain_inactive` = الكابتن غير نشط (يبقى على قاربه حتى يُفعَّل أو يُستبدل).
+- `GET /owner/dashboard`: `kpis.trips_scheduled` و`scheduled_trips` (رحلات بانتظار الانطلاق — يبدؤها المالك).
+- إشعارات بدء الرحلة وإلغائها وإرسال مخرجاتها لا تصل المالك حين يكون هو الفاعل؛ «اكتمل العد» يصله كما كان.
+
+### جديد
+- `DELETE /owner/captains/{captain}` — يُرفع عن قاربه ورحلاته، واسمه يبقى على الرحلات السابقة (`captain.name`)، ورقم هويته يتحرّر.
+- `GET /owner/catch-log` و`GET /owner/catch-log/summary` — سجل الصيد على رحلات المالك (كان للكابتن)، بفلتر `captain_id` و`boat_id` (و`search` للسطور). `CatchLogEntry.trip.captain` اسم كابتن الرحلة.
+
 ## 1.6.0 — 2026-10-17 — طلبات حوات 1: إعداد القارب والكباتن والطاقم
 
 ### جديد

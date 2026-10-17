@@ -5,7 +5,7 @@ namespace App\Http\Requests\Owner;
 use Illuminate\Validation\Rule;
 
 /**
- * مخرجات المصيد: سطر لكل صنف. يستعمله الكابتن من التطبيق والمالك من الويب.
+ * مخرجات المصيد: سطر لكل صنف. يرسلها المالك عن رحلته من التطبيق أو الويب.
  */
 class CatchRequest extends OwnerRequest
 {

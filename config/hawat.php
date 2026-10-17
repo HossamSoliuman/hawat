@@ -316,6 +316,7 @@ return [
                 'items' => [
                     ['label' => 'الرئيسية', 'route' => 'panel.home', 'icon' => 'layout-dashboard'],
                     ['label' => 'الرحلات', 'route' => 'panel.owner.trips', 'icon' => 'route'],
+                    ['label' => 'سجل الصيد', 'route' => 'panel.owner.catch-log', 'icon' => 'fish'],
                     ['label' => 'المبيعات', 'route' => 'panel.owner.sales', 'icon' => 'coins'],
                 ],
             ],
@@ -359,23 +360,6 @@ return [
                         'label' => 'الإعدادات', 'route' => 'panel.owner.settings', 'icon' => 'settings',
                         'active' => ['panel.owner.settings', ...array_column($ownerSettings, 'route')],
                     ],
-                    ['label' => 'الإشعارات', 'route' => 'panel.notifications', 'icon' => 'bell'],
-                    ['label' => 'الملف الشخصي', 'route' => 'panel.profile', 'icon' => 'user'],
-                ],
-            ],
-        ],
-        'captain' => [
-            [
-                'title' => 'الكابتن',
-                'items' => [
-                    ['label' => 'الرئيسية', 'route' => 'panel.home', 'icon' => 'layout-dashboard'],
-                    ['label' => 'الرحلات', 'route' => 'panel.captain.trips', 'icon' => 'route'],
-                    ['label' => 'سجل الصيد', 'route' => 'panel.captain.catch-log', 'icon' => 'fish'],
-                ],
-            ],
-            [
-                'title' => 'الحساب',
-                'items' => [
                     ['label' => 'الإشعارات', 'route' => 'panel.notifications', 'icon' => 'bell'],
                     ['label' => 'الملف الشخصي', 'route' => 'panel.profile', 'icon' => 'user'],
                 ],

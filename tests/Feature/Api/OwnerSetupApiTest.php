@@ -8,7 +8,6 @@ use App\Models\Fisher;
 use App\Models\IdempotencyKey;
 use App\Models\IdType;
 use App\Models\Port;
-use App\Models\Role;
 use App\Models\User;
 use App\Services\Sms\ArraySmsSender;
 use App\Services\Sms\SmsSender;
@@ -16,6 +15,7 @@ use Database\Seeders\LookupSeeder;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
 use Spectator\Spectator;
@@ -23,8 +23,8 @@ use Tests\TestCase;
 
 /**
  * طلبات حوات 1 لإعداد القارب (CHANGELOG 1.6.0): تواريخ الإقامة والرخصة،
- * وصور الكابتن والطاقم، ودعوة الكابتن، ومنع التكرار، والتعديل المتزامن،
- * وعدد الطاقم المحسوب، وحالة "في البحر"، واكتمال الإعداد.
+ * وصور الكابتن والطاقم، ومنع التكرار، والتعديل المتزامن، وعدد الطاقم
+ * المحسوب، وحالة "في البحر"، واكتمال الإعداد. الكابتن سجلّ بلا حساب (1.7.0).
  */
 class OwnerSetupApiTest extends TestCase
 {
@@ -56,16 +56,6 @@ class OwnerSetupApiTest extends TestCase
     {
         $this->app['auth']->forgetGuards();
         Sanctum::actingAs($user ?? $this->owner);
-
-        return $this;
-    }
-
-    /**
-     * الطلبات التالية بلا رمز (الدخول والتفعيل).
-     */
-    private function asGuest(): static
-    {
-        $this->app['auth']->forgetGuards();
 
         return $this;
     }
@@ -135,14 +125,13 @@ class OwnerSetupApiTest extends TestCase
             ->assertJsonPath('data.iqama_issue_date', null);
 
         $captain = $this->asOwner()->postJson('/api/v1/owner/captains', $this->captainPayload([
-            'password' => 'captain-123',
             'iqama_issue_date' => '2025-02-01',
             'iqama_expiry_date' => '2026-02-01',
             'license_date' => '2025-06-01',
             'license_expiry' => '2026-06-01',
         ]))->assertValidRequest()->assertValidResponse(201)
-            ->assertJsonPath('data.fisher.iqama_issue_date', '2025-02-01')
-            ->assertJsonPath('data.fisher.license_date', '2025-06-01');
+            ->assertJsonPath('data.iqama_issue_date', '2025-02-01')
+            ->assertJsonPath('data.license_date', '2025-06-01');
 
         $this->asOwner()->putJson('/api/v1/owner/captains/'.$captain->json('data.id'), $this->captainPayload(['iqama_issue_date' => '2025-02-01', 'iqama_expiry_date' => '2024-02-01']))
             ->assertValidResponse(422)
@@ -159,8 +148,7 @@ class OwnerSetupApiTest extends TestCase
         Storage::fake('public');
 
         $fisher = Fisher::factory()->ownedBy($this->owner)->create(['port_id' => $this->port->id]);
-        $captain = User::factory()->role(Role::CAPTAIN)->ownedBy($this->owner)->create();
-        Fisher::factory()->ownedBy($this->owner)->forUser($captain)->create(['port_id' => $this->port->id]);
+        $captain = Fisher::factory()->captain()->ownedBy($this->owner)->create(['port_id' => $this->port->id]);
         $headers = ['Accept' => 'application/json', 'Content-Type' => 'multipart/form-data'];
 
         $this->asOwner()->post("/api/v1/owner/crew/{$fisher->id}/avatar", ['avatar' => UploadedFile::fake()->image('a.jpg', 512, 512)], $headers)
@@ -186,16 +174,15 @@ class OwnerSetupApiTest extends TestCase
             ->assertValidRequest()->assertValidResponse(200)
             ->assertJsonPath('data.avatar_url', null);
 
-        // صورة الكابتن صورة حسابه — يراها في تطبيقه.
+        // صورة الكابتن في سجلّه كصورة فرد الطاقم.
         $this->asOwner()->post("/api/v1/owner/captains/{$captain->id}/avatar", ['avatar' => UploadedFile::fake()->image('c.png', 512, 512)], $headers)
             ->assertValidRequest()->assertValidResponse(200)
-            ->assertJsonPath('data.avatar_url', fn ($url) => str_contains($url, '/storage/avatars/'))
-            ->assertJsonPath('data.fisher.avatar_url', fn ($url) => $url !== null);
-        $this->assertNotNull($captain->fresh()->avatar_path);
-
-        $this->asOwner($captain->fresh())->getJson('/api/v1/auth/me')->assertJsonPath('data.avatar_url', fn ($url) => $url !== null);
+            ->assertJsonPath('data.avatar_url', fn ($url) => str_contains($url, '/storage/avatars/captains/'));
+        $path = $captain->fresh()->avatar_path;
+        Storage::disk('public')->assertExists($path);
 
         $this->asOwner()->deleteJson("/api/v1/owner/captains/{$captain->id}/avatar")->assertValidResponse(200)->assertJsonPath('data.avatar_url', null);
+        Storage::disk('public')->assertMissing($path);
 
         // مالك آخر 404.
         $stranger = User::factory()->owner()->create();
@@ -203,85 +190,26 @@ class OwnerSetupApiTest extends TestCase
         $this->asOwner($stranger)->post("/api/v1/owner/captains/{$captain->id}/avatar", ['avatar' => UploadedFile::fake()->image('x.jpg')], $headers)->assertValidResponse(404);
     }
 
-    public function test_a_captain_created_without_a_password_is_invited_and_activates_with_the_texted_code(): void
+    public function test_a_captain_is_a_record_without_an_account_or_an_invitation(): void
     {
-        $created = $this->asOwner()->postJson('/api/v1/owner/captains', $this->captainPayload())
-            ->assertValidRequest()->assertValidResponse(201)
-            ->assertJsonPath('data.invitation.status', 'invited')
-            ->assertJsonPath('data.invitation.activated_at', null);
-
-        $captain = User::find($created->json('data.id'));
-        $this->assertTrue($captain->isPendingInvitation());
-        $this->assertNotNull($created->json('data.invitation.expires_at'));
-
-        $message = (string) $this->sms->lastTo('0551112233');
-        $this->assertStringContainsString($this->owner->name, $message);
-        preg_match('/\d{6}/', $message, $m);
-        $code = $m[0];
-
-        // لا أحد يدخل بالحساب قبل التفعيل.
-        $this->asGuest()->postJson('/api/v1/auth/login', ['phone' => '0551112233', 'password' => 'anything-123'])->assertStatus(422);
-
-        $this->asGuest()->postJson('/api/v1/auth/activate', ['phone' => '0551112233', 'code' => '000000', 'password' => 'my-own-pass', 'password_confirmation' => 'my-own-pass'])
-            ->assertValidRequest()->assertValidResponse(422)->assertJsonValidationErrors('code');
-
-        $this->asGuest()->postJson('/api/v1/auth/activate', ['phone' => '0551112233', 'code' => $code, 'password' => 'my-own-pass', 'password_confirmation' => 'my-own-pass', 'device_name' => 'جوال الكابتن'])
-            ->assertValidRequest()->assertValidResponse(200)
-            ->assertJsonPath('data.user.role.key', 'captain')
-            ->assertJsonPath('data.token', fn ($token) => $token !== null);
-
-        $this->asGuest()->postJson('/api/v1/auth/login', ['phone' => '0551112233', 'password' => 'my-own-pass'])->assertOk();
-
-        $this->asOwner()->getJson("/api/v1/owner/captains/{$captain->id}")
-            ->assertValidResponse(200)
-            ->assertJsonPath('data.invitation.status', 'activated');
-
-        // الرمز لمرة واحدة، وإعادة الإرسال لكابتن مفعّل مرفوضة.
-        $this->asGuest()->postJson('/api/v1/auth/activate', ['phone' => '0551112233', 'code' => $code, 'password' => 'again-pass', 'password_confirmation' => 'again-pass'])->assertStatus(422);
-        $this->asOwner()->postJson("/api/v1/owner/captains/{$captain->id}/invitation")->assertValidResponse(422);
-    }
-
-    public function test_an_invitation_expires_after_72_hours_and_the_owner_resends_it(): void
-    {
-        $created = $this->asOwner()->postJson('/api/v1/owner/captains', $this->captainPayload())->assertCreated();
-        $id = $created->json('data.id');
-        preg_match('/\d{6}/', (string) $this->sms->lastTo('0551112233'), $m);
-
-        $this->travel(73)->hours();
-
-        $this->asOwner()->getJson("/api/v1/owner/captains/{$id}")->assertJsonPath('data.invitation.status', 'expired');
-        $this->asGuest()->postJson('/api/v1/auth/activate', ['phone' => '0551112233', 'code' => $m[0], 'password' => 'my-own-pass', 'password_confirmation' => 'my-own-pass'])
-            ->assertStatus(422)->assertJsonValidationErrors(['code' => 'انتهت صلاحية الدعوة — اطلب من المالك إعادة إرسالها.']);
-
-        $this->asOwner()->postJson("/api/v1/owner/captains/{$id}/invitation")
-            ->assertValidRequest()->assertValidResponse(200)
-            ->assertJsonPath('data.invitation.status', 'invited');
-
-        preg_match('/\d{6}/', (string) $this->sms->lastTo('0551112233'), $fresh);
-        $this->asGuest()->postJson('/api/v1/auth/activate', ['phone' => '0551112233', 'code' => $fresh[0], 'password' => 'my-own-pass', 'password_confirmation' => 'my-own-pass'])->assertOk();
-    }
-
-    public function test_resetting_the_password_by_phone_code_activates_a_pending_invitation(): void
-    {
-        $id = $this->asOwner()->postJson('/api/v1/owner/captains', $this->captainPayload())->assertCreated()->json('data.id');
-
-        $this->asGuest()->postJson('/api/v1/auth/forgot-password', ['phone' => '0551112233'])->assertOk();
-        preg_match('/\d{6}/', (string) $this->sms->lastTo('0551112233'), $m);
-        $this->asGuest()->postJson('/api/v1/auth/reset-password', ['phone' => '0551112233', 'code' => $m[0], 'password' => 'chosen-pass', 'password_confirmation' => 'chosen-pass'])->assertOk();
-
-        $this->assertSame(User::INVITATION_ACTIVATED, User::find($id)->invitation_status);
-        $this->asGuest()->postJson('/api/v1/auth/login', ['phone' => '0551112233', 'password' => 'chosen-pass'])->assertOk();
-    }
-
-    public function test_a_phone_registered_to_another_account_is_refused_on_the_phone_field(): void
-    {
+        // جوال الكابتن ليس حسابًا: يُقبل وإن كان لحساب آخر، ولا رسالة تُرسل.
         User::factory()->dalal()->create(['phone' => '0551112233']);
 
         $this->asOwner()->postJson('/api/v1/owner/captains', $this->captainPayload())
-            ->assertValidResponse(422)
-            ->assertJsonValidationErrors(['phone' => 'رقم الجوال مسجّل لحساب آخر في حوات.']);
+            ->assertValidRequest()->assertValidResponse(201)
+            ->assertJsonPath('data.is_captain', true);
 
-        $this->assertNull($this->sms->lastTo('0551112233'));
+        $this->asOwner()->postJson('/api/v1/owner/captains', $this->captainPayload(['phone' => null, 'national_id' => '1098765433']))
+            ->assertValidRequest()->assertValidResponse(201)
+            ->assertJsonPath('data.phone', null);
+
+        $this->assertSame([], $this->sms->sent);
+        $this->assertSame(1, User::where('phone', '0551112233')->count());
+
+        // لا دعوة ولا تفعيل ولا بوابة كابتن.
+        foreach (['api.v1.auth.activate', 'api.v1.owner.captains.invitation', 'api.v1.captain.dashboard', 'api.v1.captain.trips.index'] as $route) {
+            $this->assertFalse(Route::has($route), $route);
+        }
     }
 
     public function test_a_repeated_post_with_the_same_idempotency_key_creates_one_record(): void
@@ -310,10 +238,10 @@ class OwnerSetupApiTest extends TestCase
         $this->asOwner()->postJson('/api/v1/owner/crew', $this->crewPayload(), ['Idempotency-Key' => 'crew-1'])->assertValidResponse(201)->assertHeader('Idempotency-Replayed', 'true');
         $this->assertSame(1, Fisher::where('national_id', '2234567890')->count());
 
-        // دعوة الكابتن لا تُرسل مرتين.
+        // والكابتن كذلك لا يُكرَّر.
         $this->asOwner()->postJson('/api/v1/owner/captains', $this->captainPayload(), ['Idempotency-Key' => 'captain-1'])->assertValidResponse(201);
-        $this->asOwner()->postJson('/api/v1/owner/captains', $this->captainPayload(), ['Idempotency-Key' => 'captain-1'])->assertValidResponse(201);
-        $this->assertCount(1, $this->sms->sent);
+        $this->asOwner()->postJson('/api/v1/owner/captains', $this->captainPayload(), ['Idempotency-Key' => 'captain-1'])->assertValidResponse(201)->assertHeader('Idempotency-Replayed', 'true');
+        $this->assertSame(1, Fisher::captains()->where('national_id', '1098765432')->count());
 
         // المفتاح لكل حساب: مالك آخر بالمفتاح نفسه طلب مستقل.
         $other = User::factory()->owner()->create();
@@ -361,14 +289,13 @@ class OwnerSetupApiTest extends TestCase
         $this->asOwner()->putJson("/api/v1/owner/crew/{$fisher->id}", $this->crewPayload(['name' => 'ثانٍ']), ['If-Match' => 'W/"1"'])->assertValidResponse(409);
         $this->assertSame('أول', $fisher->fresh()->name);
 
-        // الكابتن: تعديل يمسّ الحساب وحده (الجوال) يرفع نسخته أيضًا.
-        $captain = $this->asOwner()->postJson('/api/v1/owner/captains', $this->captainPayload(['password' => 'captain-123']))->assertCreated();
+        // الكابتن.
+        $captain = $this->asOwner()->postJson('/api/v1/owner/captains', $this->captainPayload())->assertCreated()->assertHeader('ETag', '"1"');
         $id = $captain->json('data.id');
-        $version = $captain->json('data.version');
-        $this->asOwner()->putJson("/api/v1/owner/captains/{$id}", $this->captainPayload(['phone' => '0551112299']), ['If-Match' => (string) $version])
-            ->assertValidResponse(200)->assertJsonPath('data.version', $version + 1);
-        $this->asOwner()->putJson("/api/v1/owner/captains/{$id}", $this->captainPayload(['name' => 'متأخر']), ['If-Match' => (string) $version])->assertValidResponse(409);
-        $this->assertSame('أحمد الشمري', User::find($id)->name);
+        $this->asOwner()->putJson("/api/v1/owner/captains/{$id}", $this->captainPayload(['phone' => '0551112299']), ['If-Match' => '"1"'])
+            ->assertValidRequest()->assertValidResponse(200)->assertJsonPath('data.version', 2);
+        $this->asOwner()->putJson("/api/v1/owner/captains/{$id}", $this->captainPayload(['name' => 'متأخر']), ['If-Match' => '"1"'])->assertValidResponse(409);
+        $this->assertSame('أحمد الشمري', Fisher::find($id)->name);
     }
 
     public function test_crew_count_is_derived_from_active_crew_and_capacity_is_in_tons(): void
@@ -393,7 +320,7 @@ class OwnerSetupApiTest extends TestCase
         $this->asOwner()->putJson('/api/v1/owner/crew/'.$first->json('data.id'), $this->crewPayload(['boat_id' => $boat->id, 'status' => 'غير نشط']))->assertOk();
         $this->assertSame(1, $boat->fresh()->crew_count);
 
-        $this->asOwner()->postJson('/api/v1/owner/captains', $this->captainPayload(['password' => 'captain-123', 'boat_id' => $boat->id]))->assertCreated();
+        $this->asOwner()->postJson('/api/v1/owner/captains', $this->captainPayload(['boat_id' => $boat->id]))->assertCreated();
         $this->assertSame(1, $boat->fresh()->crew_count);
 
         $this->asOwner()->deleteJson('/api/v1/owner/crew/'.Fisher::where('national_id', '2234567891')->value('id'))->assertOk();
@@ -431,12 +358,19 @@ class OwnerSetupApiTest extends TestCase
             ->assertJsonPath('data.setup.missing.*.key', ['captain', 'crew'])
             ->assertJsonPath('data.setup.warnings.0.key', 'license_expired');
 
-        $this->asOwner()->postJson('/api/v1/owner/captains', $this->captainPayload(['boat_id' => $boat->id]))->assertCreated();
+        $captain = $this->asOwner()->postJson('/api/v1/owner/captains', $this->captainPayload(['boat_id' => $boat->id]))->assertCreated()->json('data.id');
         $this->asOwner()->postJson('/api/v1/owner/crew', $this->crewPayload(['boat_id' => $boat->id]))->assertCreated();
 
         $this->asOwner()->getJson("/api/v1/owner/boats/{$boat->id}")
             ->assertJsonPath('data.setup.ready', true)
-            ->assertJsonPath('data.setup.warnings.*.key', ['captain_not_activated', 'license_expired']);
+            ->assertJsonPath('data.setup.warnings.*.key', ['license_expired']);
+
+        // كابتن معطّل يبقى على القارب لكن الإعداد ناقص حتى يُفعَّل أو يُستبدل.
+        $this->asOwner()->putJson("/api/v1/owner/captains/{$captain}", $this->captainPayload(['boat_id' => $boat->id, 'status' => 'غير نشط']))->assertOk();
+        $this->asOwner()->getJson("/api/v1/owner/boats/{$boat->id}")
+            ->assertJsonPath('data.setup.ready', false)
+            ->assertJsonPath('data.setup.missing.*.key', ['captain_inactive']);
+        $this->asOwner()->putJson("/api/v1/owner/captains/{$captain}", $this->captainPayload(['boat_id' => $boat->id, 'status' => 'نشط']))->assertOk();
 
         $this->asOwner()->putJson("/api/v1/owner/boats/{$boat->id}", ['name' => 'صيانة', 'boat_number' => 'B-3', 'port_id' => $this->port->id, 'status' => 'صيانة'])
             ->assertJsonPath('data.setup.ready', false)
@@ -452,7 +386,7 @@ class OwnerSetupApiTest extends TestCase
             ->assertHeader('ETag', '"1"')
             ->assertJsonPath('data.id', $fisher->id);
 
-        $captainFisher = Fisher::factory()->ownedBy($this->owner)->forUser(User::factory()->role(Role::CAPTAIN)->ownedBy($this->owner)->create())->create();
+        $captainFisher = Fisher::factory()->captain()->ownedBy($this->owner)->create(['port_id' => $this->port->id]);
         $this->asOwner()->getJson("/api/v1/owner/crew/{$captainFisher->id}")->assertValidResponse(404);
 
         $types = $this->asOwner()->getJson('/api/v1/lookups')->assertValidResponse(200)->json('data.customer_types.*.name');

@@ -6,7 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
- * الرحلة كما يراها المالك والكابتن: الحالة بمفردات الوزارة وتسميتها في التطبيق وخطوة التقدّم.
+ * الرحلة كما يراها المالك والعدّاد: الحالة بمفردات الوزارة وتسميتها في التطبيق وخطوة التقدّم.
  */
 class TripResource extends JsonResource
 {

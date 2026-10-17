@@ -7,10 +7,9 @@ use App\Http\Controllers\Concerns\ResolvesOwnerRecords;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Owner\CaptainRequest;
 use App\Models\Boat;
+use App\Models\Fisher;
 use App\Models\IdType;
 use App\Models\Port;
-use App\Models\Role;
-use App\Models\User;
 use App\Services\Owner\StaffService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -18,8 +17,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 /**
- * كباتن المالك: حساب دخول للتطبيق فوق سجلّ صياد في الوزارة. بلا كلمة مرور
- * يُدعى الكابتن برمز تفعيل إلى جواله.
+ * كباتن المالك: سجلات صيادين بلا حساب دخول — المالك يسندهم إلى القوارب
+ * والرحلات ويدير الرحلة عنهم.
  */
 class CaptainController extends Controller
 {
@@ -31,12 +30,12 @@ class CaptainController extends Controller
     {
         $owner = $request->user();
 
-        $captains = $owner->staff()
-            ->whereHas('appRole', fn ($q) => $q->where('key', Role::CAPTAIN))
-            ->with(['fisher.boat', 'fisher.port', 'fisher.idType'])
+        $captains = Fisher::forOwner($owner)->captains()
+            ->with(['boat', 'port', 'idType'])
             ->when($request->filled('search'), fn ($q) => $q->where(fn ($w) => $w
                 ->where('name', 'like', '%'.$request->query('search').'%')
-                ->orWhere('phone', 'like', '%'.$request->query('search').'%')))
+                ->orWhere('phone', 'like', '%'.$request->query('search').'%')
+                ->orWhere('national_id', 'like', '%'.$request->query('search').'%')))
             ->orderBy('name')
             ->paginate(25)->withQueryString();
 
@@ -55,9 +54,7 @@ class CaptainController extends Controller
         $captain = $this->staff->createCaptain($request->user(), $request->validated());
         $this->syncAvatar($request, $captain);
 
-        return redirect()->route('panel.owner.captains')->with('status', $captain->isPendingInvitation()
-            ? 'تمت إضافة الكابتن وأُرسلت إلى جواله دعوة برمز تفعيل — يختار كلمة مروره بنفسه.'
-            : 'تمت إضافة الكابتن — يدخل التطبيق بجواله وكلمة المرور.');
+        return redirect()->route('panel.owner.captains')->with('status', 'تمت إضافة الكابتن.');
     }
 
     public function update(CaptainRequest $request, int $captain): RedirectResponse
@@ -65,8 +62,8 @@ class CaptainController extends Controller
         $this->validateFormAvatar($request);
 
         $model = DB::transaction(function () use ($request, $captain) {
-            $model = $this->ownedCaptain($request->user(), $captain);
-            $this->lockedCaptainFisher($model)?->assertVersion($request);
+            $model = $this->lockedCaptain($request->user(), $captain);
+            $model->assertVersion($request);
 
             return $this->staff->updateCaptain($model, $request->validated());
         });
@@ -78,24 +75,25 @@ class CaptainController extends Controller
     public function toggle(Request $request, int $captain): RedirectResponse
     {
         $model = $this->ownedCaptain($request->user(), $captain);
-        $this->staff->setCaptainActive($model, ! $model->active);
+        $active = $model->status !== Fisher::ACTIVE;
+        $this->staff->setCaptainStatus($model, $active ? Fisher::ACTIVE : 'غير نشط');
 
-        return redirect()->route('panel.owner.captains')->with('status', $model->active ? 'تم تفعيل حساب الكابتن.' : 'تم تعطيل حساب الكابتن.');
+        return redirect()->route('panel.owner.captains')->with('status', $active ? 'تم تفعيل الكابتن.' : 'تم تعطيل الكابتن.');
     }
 
-    public function invitation(Request $request, int $captain): RedirectResponse
+    public function destroy(Request $request, int $captain): RedirectResponse
     {
-        $this->staff->resendInvitation($this->ownedCaptain($request->user(), $captain));
+        $this->staff->deleteCaptain($this->ownedCaptain($request->user(), $captain));
 
-        return redirect()->route('panel.owner.captains')->with('status', 'أُعيد إرسال الدعوة برمز جديد صالح ثلاثة أيام.');
+        return redirect()->route('panel.owner.captains')->with('status', 'تم حذف الكابتن.');
     }
 
-    private function syncAvatar(Request $request, User $captain): void
+    private function syncAvatar(Request $request, Fisher $captain): void
     {
         $this->syncFormAvatar(
             $request,
-            fn ($file) => $this->staff->storeCaptainAvatar($captain, $file),
-            fn () => $this->staff->removeCaptainAvatar($captain),
+            fn ($file) => $this->staff->storeAvatar($captain, $file),
+            fn () => $this->staff->removeAvatar($captain),
         );
     }
 }

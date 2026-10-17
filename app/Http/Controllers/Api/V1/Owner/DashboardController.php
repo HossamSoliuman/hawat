@@ -19,6 +19,7 @@ class DashboardController extends Controller
             'kpis' => $data['kpis'],
             'revenue_by_month' => $data['revenue_by_month'],
             'stock' => $data['stock'],
+            'scheduled_trips' => TripResource::collection($data['scheduled_trips']),
             'active_trips' => TripResource::collection($data['active_trips']),
             'recent_sales' => SaleResource::collection($data['recent_sales']),
         ]]);

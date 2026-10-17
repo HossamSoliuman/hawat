@@ -18,7 +18,7 @@ class BoatResource extends JsonResource
             'port' => $this->whenLoaded('port', fn () => ['id' => $this->port->id, 'name' => $this->port->name]),
             'category' => $this->whenLoaded('category', fn () => $this->category ? ['id' => $this->category->id, 'name' => $this->category->name] : null),
             'type' => $this->whenLoaded('type', fn () => $this->type ? ['id' => $this->type->id, 'name' => $this->type->name] : null),
-            'captain' => $this->whenLoaded('captainUser', fn () => $this->captainUser ? ['id' => $this->captainUser->id, 'name' => $this->captainUser->name, 'phone' => $this->captainUser->phone] : null),
+            'captain' => $this->whenLoaded('captainFisher', fn () => $this->captainFisher ? ['id' => $this->captainFisher->id, 'name' => $this->captainFisher->name, 'phone' => $this->captainFisher->phone] : null),
             'length_m' => $this->length_m !== null ? (float) $this->length_m : null,
             'width_m' => $this->width_m !== null ? (float) $this->width_m : null,
             'color' => $this->color,
@@ -31,7 +31,7 @@ class BoatResource extends JsonResource
             'serial_number' => $this->serial_number,
             'capacity' => $this->capacity,
             'crew_count' => (int) $this->crew_count,
-            'setup' => $this->when($this->relationLoaded('captainUser'), fn () => $this->setup()),
+            'setup' => $this->when($this->relationLoaded('captainFisher'), fn () => $this->setup()),
             'crew_capacity' => (int) $this->crew_capacity,
             'license' => [
                 'type' => $this->license_type,

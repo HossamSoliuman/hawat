@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Panel;
 
-use App\Http\Controllers\Concerns\ResolvesCaptainRecords;
 use App\Http\Controllers\Controller;
 use App\Models\AppNotification;
 use App\Models\DalalPayout;
@@ -18,8 +17,6 @@ use Illuminate\View\View;
  */
 class NotificationController extends Controller
 {
-    use ResolvesCaptainRecords;
-
     public function index(Request $request): View
     {
         $user = $request->user();
@@ -36,7 +33,8 @@ class NotificationController extends Controller
 
     public function read(Request $request, int $notification): RedirectResponse
     {
-        $model = $this->ownNotification($request->user(), $notification);
+        // إشعار حساب آخر 404.
+        $model = AppNotification::forUser($request->user())->findOrFail($notification);
         $model->markRead();
 
         return redirect($this->targetUrl($request->user(), $model) ?? route('panel.notifications'));
@@ -79,7 +77,6 @@ class NotificationController extends Controller
         }
 
         return match ($user->app_role_key) {
-            Role::CAPTAIN => route('panel.captain.trips.show', $notification->trip_id),
             Role::OWNER => route('panel.owner.trips.show', $notification->trip_id),
             Role::COUNTER => route('panel.counter.trips.show', $notification->trip_id),
             default => null,

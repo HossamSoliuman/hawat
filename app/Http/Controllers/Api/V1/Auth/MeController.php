@@ -17,7 +17,7 @@ use Illuminate\Http\Request;
  */
 class MeController extends Controller
 {
-    private const WITH = ['appRole', 'owner', 'fisher.port.governorate', 'statisticsOfficer.port.governorate', 'dalalProfile.port.governorate'];
+    private const WITH = ['appRole', 'owner', 'statisticsOfficer.port.governorate', 'dalalProfile.port.governorate'];
 
     public function __construct(private readonly ProfileService $profile) {}
 

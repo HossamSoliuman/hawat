@@ -16,7 +16,7 @@ class BoatController extends Controller
 {
     use ResolvesOwnerRecords;
 
-    private const WITH = ['port', 'category', 'type', 'captainUser'];
+    private const WITH = ['port', 'category', 'type', 'captainFisher'];
 
     public function index(Request $request): AnonymousResourceCollection
     {
@@ -74,6 +74,9 @@ class BoatController extends Controller
 
     private function respond(Boat $boat, int $status = 200): JsonResponse
     {
-        return (new BoatResource($boat->load(self::WITH)))->response()->setStatusCode($status)->header('ETag', $boat->etag());
+        // الإسناد يحدّث سجلّ الكابتن وقد يعيد حساب عدد الطاقم — الردّ أحدث ما كُتب.
+        $boat->refresh()->load(self::WITH);
+
+        return (new BoatResource($boat))->response()->setStatusCode($status)->header('ETag', $boat->etag());
     }
 }

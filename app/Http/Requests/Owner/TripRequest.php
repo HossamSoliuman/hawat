@@ -10,7 +10,7 @@ class TripRequest extends OwnerRequest
     {
         return [
             'boat_id' => ['required', $this->owned('boats')],
-            'captain_id' => ['nullable', Rule::exists('users', 'id')->where('owner_id', $this->owner()->id)],
+            'captain_id' => ['nullable', $this->ownedCaptain()],
             'departure_port_id' => ['nullable', Rule::exists('ports', 'id')],
             'return_port_id' => ['nullable', Rule::exists('ports', 'id')],
             'trip_type_id' => ['nullable', $this->lookup('trip_types')],

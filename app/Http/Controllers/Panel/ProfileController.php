@@ -22,7 +22,7 @@ class ProfileController extends Controller
     public function show(Request $request): View
     {
         return view('panel.profile.show', [
-            'user' => $request->user()->load(['appRole', 'owner', 'fisher.port.governorate', 'statisticsOfficer.port.governorate', 'dalalProfile.port.governorate']),
+            'user' => $request->user()->load(['appRole', 'owner', 'statisticsOfficer.port.governorate', 'dalalProfile.port.governorate']),
         ]);
     }
 

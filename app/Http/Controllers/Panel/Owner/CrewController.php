@@ -71,8 +71,8 @@ class CrewController extends Controller
     {
         $this->syncFormAvatar(
             $request,
-            fn ($file) => $this->staff->storeCrewAvatar($fisher, $file),
-            fn () => $this->staff->removeCrewAvatar($fisher),
+            fn ($file) => $this->staff->storeAvatar($fisher, $file),
+            fn () => $this->staff->removeAvatar($fisher),
         );
     }
 

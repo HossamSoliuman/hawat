@@ -67,9 +67,9 @@ class OwnerApiTest extends TestCase
 
     public function test_owner_endpoints_refuse_other_roles(): void
     {
-        $captain = User::factory()->role(Role::CAPTAIN)->ownedBy($this->owner)->create();
+        $dalal = User::factory()->role(Role::DALAL)->create();
 
-        $this->asOwner($captain)->getJson('/api/v1/owner/dashboard')
+        $this->asOwner($dalal)->getJson('/api/v1/owner/dashboard')
             ->assertValidRequest()
             ->assertValidResponse(403);
     }
@@ -118,39 +118,94 @@ class OwnerApiTest extends TestCase
             ->assertValidRequest()->assertValidResponse(422);
     }
 
-    public function test_owner_creates_a_captain_account_with_a_ministry_fisher_record(): void
+    public function test_owner_adds_a_captain_as_a_ministry_fisher_record_without_an_account(): void
     {
         $boat = $this->boat();
 
         $response = $this->asOwner()->postJson('/api/v1/owner/captains', [
             'name' => 'أحمد الشمري',
             'phone' => '+966 55 111 2233',
-            'password' => 'captain-123',
             'national_id' => '1098765432',
             'boat_id' => $boat->id,
             'nationality' => 'سعودي',
         ])->assertValidRequest()->assertValidResponse(201)
+            ->assertJsonPath('data.is_captain', true)
             ->assertJsonPath('data.phone', '0551112233')
-            ->assertJsonPath('data.fisher.boat.id', $boat->id)
-            ->assertJsonPath('data.fisher.role.name', 'قبطان');
+            ->assertJsonPath('data.boat.id', $boat->id)
+            ->assertJsonPath('data.port.id', $this->port->id)
+            ->assertJsonPath('data.role.name', 'قبطان')
+            ->assertJsonPath('data.status', 'نشط');
 
-        $captain = User::find($response->json('data.id'));
-        $this->assertTrue($captain->hasAppRole(Role::CAPTAIN));
+        $captain = Fisher::findOrFail($response->json('data.id'));
+        $this->assertTrue($captain->is_captain);
         $this->assertSame($this->owner->id, $captain->owner_id);
-        $this->assertSame('1098765432', Fisher::where('user_id', $captain->id)->value('national_id'));
         $this->assertSame($captain->id, $boat->fresh()->captain_id);
         $this->assertSame('أحمد الشمري', $boat->fresh()->captain);
 
-        // الكابتن يدخل التطبيق بجواله فورًا.
-        $this->app['auth']->forgetGuards();
-        $this->postJson('/api/v1/auth/login', ['phone' => '0551112233', 'password' => 'captain-123'])
-            ->assertOk()->assertJsonPath('data.user.role.key', 'captain');
+        // لا حساب دخول للكابتن: الجوال ليس حسابًا في حوات.
+        $this->assertDatabaseMissing('users', ['phone' => '0551112233']);
 
-        // تعطيله يُسقط رموزه ويُطفئ سجلّ الصياد.
+        // التعطيل بالحالة، والقائمة تصفّيه.
         $this->asOwner()->putJson("/api/v1/owner/captains/{$captain->id}", [
-            'name' => 'أحمد الشمري', 'phone' => '0551112233', 'national_id' => '1098765432', 'boat_id' => $boat->id, 'active' => false,
-        ])->assertValidRequest()->assertValidResponse(200)->assertJsonPath('data.active', false);
-        $this->assertSame('غير نشط', Fisher::where('user_id', $captain->id)->value('status'));
+            'name' => 'أحمد الشمري', 'national_id' => '1098765432', 'boat_id' => $boat->id, 'status' => 'غير نشط', 'version' => 1,
+        ])->assertValidRequest()->assertValidResponse(200)->assertJsonPath('data.status', 'غير نشط');
+
+        $this->asOwner()->getJson('/api/v1/owner/captains?status=نشط')
+            ->assertValidRequest()->assertValidResponse(200)->assertJsonCount(0, 'data');
+
+        // كابتن مالك آخر 404، والكابتن لا يظهر في الطاقم.
+        $other = User::factory()->owner()->create();
+        $this->asOwner($other)->getJson("/api/v1/owner/captains/{$captain->id}")->assertValidRequest()->assertValidResponse(404);
+        $this->asOwner()->getJson("/api/v1/owner/crew/{$captain->id}")->assertValidRequest()->assertValidResponse(404);
+        $this->asOwner()->getJson('/api/v1/owner/crew')->assertValidRequest()->assertValidResponse(200)->assertJsonCount(0, 'data');
+    }
+
+    public function test_deleting_a_captain_frees_the_boat_and_keeps_the_name_on_past_trips(): void
+    {
+        $captain = Fisher::factory()->captain()->ownedBy($this->owner)->create(['name' => 'كابتن قديم', 'port_id' => $this->port->id]);
+        $boat = $this->boat(['captain_id' => $captain->id]);
+        $trip = Trip::factory()->onBoat($boat)->captainedBy($captain)->create(['status' => Trip::APPROVED]);
+
+        $this->asOwner()->deleteJson("/api/v1/owner/captains/{$captain->id}")
+            ->assertValidRequest()->assertValidResponse(200);
+
+        $this->assertModelMissing($captain);
+        $this->assertNull($boat->fresh()->captain_id);
+        $this->assertNull($boat->fresh()->captain);
+        $this->assertNull($trip->fresh()->captain_id);
+        $this->assertSame('كابتن قديم', $trip->fresh()->captain_name);
+    }
+
+    public function test_one_captain_per_boat_and_one_boat_per_captain(): void
+    {
+        $first = Fisher::factory()->captain()->ownedBy($this->owner)->create(['port_id' => $this->port->id]);
+        $second = Fisher::factory()->captain()->ownedBy($this->owner)->create(['port_id' => $this->port->id]);
+        $boatA = $this->boat(['captain_id' => $first->id]);
+        $boatB = $this->boat();
+
+        $this->assertSame($boatA->id, $first->fresh()->boat_id);
+
+        // الكابتن الثاني على القارب الأول من نموذج القارب: الأول ينزل عنه.
+        $this->asOwner()->putJson("/api/v1/owner/boats/{$boatA->id}", [
+            'name' => $boatA->name, 'boat_number' => $boatA->boat_number, 'port_id' => $this->port->id, 'captain_id' => $second->id, 'version' => $boatA->fresh()->version,
+        ])->assertValidRequest()->assertValidResponse(200)->assertJsonPath('data.captain.id', $second->id);
+
+        $this->assertSame($boatA->id, $second->fresh()->boat_id);
+        $this->assertNull($first->fresh()->boat_id);
+
+        // والكابتن الثاني إلى القارب الثاني من نموذج الكابتن: يُرفع عن الأول.
+        $this->asOwner()->putJson("/api/v1/owner/captains/{$second->id}", [
+            'name' => $second->name, 'national_id' => $second->national_id, 'boat_id' => $boatB->id, 'version' => $second->fresh()->version,
+        ])->assertValidRequest()->assertValidResponse(200)->assertJsonPath('data.boat.id', $boatB->id);
+
+        $this->assertNull($boatA->fresh()->captain_id);
+        $this->assertSame($second->id, $boatB->fresh()->captain_id);
+
+        // القارب لا يقبل كابتنًا ليس كابتنًا لهذا المالك.
+        $crew = Fisher::factory()->ownedBy($this->owner)->create(['port_id' => $this->port->id]);
+        $this->asOwner()->putJson("/api/v1/owner/boats/{$boatB->id}", [
+            'name' => $boatB->name, 'boat_number' => $boatB->boat_number, 'port_id' => $this->port->id, 'captain_id' => $crew->id,
+        ])->assertValidRequest()->assertValidResponse(422)->assertJsonValidationErrors('captain_id');
     }
 
     public function test_owner_manages_crew_customers_employees_and_vendors(): void
@@ -185,7 +240,7 @@ class OwnerApiTest extends TestCase
 
     public function test_trip_runs_from_creation_to_sale_through_the_ministry_count(): void
     {
-        $captain = User::factory()->role(Role::CAPTAIN)->ownedBy($this->owner)->create(['name' => 'كابتن الرحلة']);
+        $captain = Fisher::factory()->captain()->ownedBy($this->owner)->create(['name' => 'كابتن الرحلة', 'port_id' => $this->port->id]);
         $boat = $this->boat(['captain_id' => $captain->id]);
         $customer = Customer::factory()->ofAccount($this->owner)->create();
         $dalal = User::factory()->role(Role::DALAL)->create();
@@ -207,7 +262,7 @@ class OwnerApiTest extends TestCase
             ->assertJsonPath('data.progress_step', 1);
         $this->assertSame(Trip::AT_SEA, $boat->fresh()->status);
 
-        // 3. مخرجات الكابتن → بانتظار الإحصاء، والمجموع في captain_input_kg.
+        // 3. المالك يرسل المخرجات → بانتظار الإحصاء، والمجموع في captain_input_kg.
         $this->asOwner()->postJson("/api/v1/owner/trips/{$trip['id']}/catch", ['items' => [
             ['species_id' => $this->hamour->id, 'weight_kg' => 100],
             ['species_id' => $this->shaari->id, 'weight_kg' => 40.5],

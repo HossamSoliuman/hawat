@@ -32,8 +32,6 @@ use App\Http\Controllers\MonthlyReportsController;
 use App\Http\Controllers\MyWorkspaceController;
 use App\Http\Controllers\NationalIndicatorsController;
 use App\Http\Controllers\OrgStructureController;
-use App\Http\Controllers\Panel\Captain\CatchLogController as CaptainCatchLogController;
-use App\Http\Controllers\Panel\Captain\TripController as CaptainTripController;
 use App\Http\Controllers\Panel\Counter\TripController as CounterTripController;
 use App\Http\Controllers\Panel\Dalal\CustomerController as DalalCustomerController;
 use App\Http\Controllers\Panel\Dalal\OwnerController as DalalOwnerController;
@@ -49,6 +47,7 @@ use App\Http\Controllers\Panel\Owner\AdvanceController as OwnerAdvanceController
 use App\Http\Controllers\Panel\Owner\AssetController as OwnerAssetController;
 use App\Http\Controllers\Panel\Owner\BoatController as OwnerBoatController;
 use App\Http\Controllers\Panel\Owner\CaptainController as OwnerCaptainController;
+use App\Http\Controllers\Panel\Owner\CatchLogController as OwnerCatchLogController;
 use App\Http\Controllers\Panel\Owner\ConsignmentController as OwnerConsignmentController;
 use App\Http\Controllers\Panel\Owner\CrewController as OwnerCrewController;
 use App\Http\Controllers\Panel\Owner\CrewPayController as OwnerCrewPayController;
@@ -395,7 +394,7 @@ $adminPanel = function () use ($operationsConsole): void {
             Route::post('/captains', [OwnerCaptainController::class, 'store'])->name('captains.store');
             Route::put('/captains/{captain}', [OwnerCaptainController::class, 'update'])->name('captains.update');
             Route::post('/captains/{captain}/toggle', [OwnerCaptainController::class, 'toggle'])->name('captains.toggle');
-            Route::post('/captains/{captain}/invitation', [OwnerCaptainController::class, 'invitation'])->middleware('throttle:3,1,captain-invitation')->name('captains.invitation');
+            Route::delete('/captains/{captain}', [OwnerCaptainController::class, 'destroy'])->name('captains.destroy');
 
             Route::get('/crew', [OwnerCrewController::class, 'index'])->name('crew');
             Route::post('/crew', [OwnerCrewController::class, 'store'])->name('crew.store');
@@ -416,6 +415,7 @@ $adminPanel = function () use ($operationsConsole): void {
             Route::post('/trips/{trip}/start', [OwnerTripController::class, 'start'])->name('trips.start');
             Route::post('/trips/{trip}/cancel', [OwnerTripController::class, 'cancel'])->name('trips.cancel');
             Route::post('/trips/{trip}/catch', [OwnerTripController::class, 'submitCatch'])->name('trips.catch');
+            Route::get('/catch-log', [OwnerCatchLogController::class, 'index'])->name('catch-log');
 
             Route::get('/sales', [OwnerSaleController::class, 'index'])->name('sales');
             Route::get('/sales/create', [OwnerSaleController::class, 'create'])->name('sales.create');
@@ -516,21 +516,6 @@ $adminPanel = function () use ($operationsConsole): void {
                 ->whereIn('report', array_keys(OwnerReports::REPORTS))
                 ->whereIn('mode', ['print'])
                 ->name('reports.show');
-        });
-
-        /*
-         * بوابة الكابتن: الرحلات المسندة إليه (بانتظارك / النشطة / القائمة)
-         * بأفعاله الثلاثة، وسجل الصيد. الرحلة المسندة لغيره 404 — انظر
-         * ResolvesCaptainRecords.
-         */
-        Route::prefix('captain')->name('panel.captain.')->middleware('panel:captain')->group(function (): void {
-            Route::get('/trips', [CaptainTripController::class, 'index'])->name('trips');
-            Route::get('/trips/{trip}', [CaptainTripController::class, 'show'])->name('trips.show');
-            Route::post('/trips/{trip}/start', [CaptainTripController::class, 'start'])->name('trips.start');
-            Route::post('/trips/{trip}/cancel', [CaptainTripController::class, 'cancel'])->name('trips.cancel');
-            Route::post('/trips/{trip}/catch', [CaptainTripController::class, 'submitCatch'])->name('trips.catch');
-
-            Route::get('/catch-log', [CaptainCatchLogController::class, 'index'])->name('catch-log');
         });
 
         /*

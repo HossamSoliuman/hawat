@@ -33,7 +33,7 @@ class AdvanceController extends Controller
             ->when($request->filled('from'), fn ($q) => $q->whereDate('date', '>=', $request->query('from')))
             ->when($request->filled('to'), fn ($q) => $q->whereDate('date', '<=', $request->query('to')));
 
-        $fishers = Fisher::forOwner($owner)->with('boat:id,name')->orderByRaw('user_id is null')->orderBy('name')->get(['id', 'name', 'boat_id', 'user_id']);
+        $fishers = Fisher::forOwner($owner)->with('boat:id,name')->orderByDesc('is_captain')->orderBy('name')->get(['id', 'name', 'boat_id', 'is_captain']);
         $balances = $this->crewPay->advanceBalances($fishers->pluck('id'));
 
         return view('panel.owner.advances.index', [

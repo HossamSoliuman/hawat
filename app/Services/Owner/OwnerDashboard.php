@@ -29,6 +29,7 @@ class OwnerDashboard
                 'catch_kg' => round($countedKg, 2),
                 'active_boats' => Boat::forOwner($owner)->whereIn('status', ['نشط', Trip::AT_SEA])->count(),
                 'boats' => Boat::forOwner($owner)->count(),
+                'trips_scheduled' => (clone $trips)->scheduled()->count(),
                 'trips_at_sea' => (clone $trips)->where('status', Trip::AT_SEA)->count(),
                 'trips_awaiting_count' => (clone $trips)->whereIn('status', [Trip::RETURNED, Trip::AWAITING_COUNT, Trip::COUNTING])->count(),
                 'trips_for_sale' => (clone $trips)->where('sale_status', Trip::SALE_OPEN)->count(),
@@ -40,6 +41,8 @@ class OwnerDashboard
             'stock' => $this->ledger->stockBySpecies($owner)
                 ->map(fn ($row) => ['species_id' => $row->species_id, 'species' => $row->species?->name_ar, 'name_sci' => $row->species?->name_sci, 'weight_kg' => round((float) $row->kg, 2)])
                 ->values(),
+            // الكابتن لا يبدأ رحلته بنفسه: المالك يبدؤها حين ينطلق القارب.
+            'scheduled_trips' => (clone $trips)->scheduled()->with(['boat', 'captain'])->orderBy('departure_time')->orderBy('id')->limit(6)->get(),
             'active_trips' => (clone $trips)->activeForOwner()->with(['boat', 'captain'])->orderByDesc('updated_at')->limit(6)->get(),
             'recent_sales' => (clone $sales)->with(['customer', 'trip'])->latest('sold_at')->limit(6)->get(),
         ];

@@ -3,7 +3,6 @@
 namespace App\Http\Requests\Owner;
 
 use App\Models\Boat;
-use App\Models\Role;
 use Closure;
 use Illuminate\Validation\Rule;
 
@@ -28,7 +27,7 @@ class BoatRequest extends OwnerRequest
             'port_id' => ['required', Rule::exists('ports', 'id')],
             'boat_category_id' => ['nullable', $this->lookup('boat_categories')],
             'boat_type_id' => ['nullable', $this->lookup('boat_types')],
-            'captain_id' => ['nullable', Rule::exists('users', 'id')->where('owner_id', $this->owner()->id)->where('role_id', Role::key(Role::CAPTAIN)->id)],
+            'captain_id' => ['nullable', $this->ownedCaptain()],
             'status' => ['nullable', Rule::in(Boat::STATUSES), $this->statusRule($current)],
             'length_m' => ['nullable', 'numeric', 'min:0', 'max:999'],
             'width_m' => ['nullable', 'numeric', 'min:0', 'max:999'],

@@ -225,8 +225,8 @@ class ReportController extends Controller
         abort_if($print && $person === null, 404);
 
         return [
-            'captains' => Fisher::forOwner($owner)->captains()->orderBy('name')->get(['id', 'name', 'user_id']),
-            'fishers' => Fisher::forOwner($owner)->crew()->orderBy('name')->get(['id', 'name', 'user_id']),
+            'captains' => Fisher::forOwner($owner)->captains()->orderBy('name')->get(['id', 'name', 'is_captain']),
+            'fishers' => Fisher::forOwner($owner)->crew()->orderBy('name')->get(['id', 'name', 'is_captain']),
             'person' => $person,
             'from' => $from,
             'to' => $to,

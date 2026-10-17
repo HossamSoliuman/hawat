@@ -43,8 +43,9 @@ use Illuminate\Database\Seeder;
 
 /**
  * يجهّز المالك التجريبي (0500000001) ليُختبر مسار الرحلة كاملًا من أول دخول:
- * قاربان من الأسطول المبذور يُنسبان إليه مع رحلاتهما، وكابتن يدخل التطبيق
- * بجواله 0500000002، وعدّاد على ميناء القارب الأول بجواله 0500000003،
+ * قاربان من الأسطول المبذور يُنسبان إليه مع رحلاتهما، وكابتن على قاربه الأول
+ * (سجلّ صياد بلا دخول — المالك يدير الرحلة عنه)، وعدّاد على ميناء القارب
+ * الأول بجواله 0500000003،
  * وزبونان، ودلال بجواله 0500000004 باتفاق مقبول ومخزون مرسَل إليه، وبضعة
  * مصروفات وأصول أسطول. لا يُنشئ قوارب جديدة.
  */
@@ -60,35 +61,37 @@ class DemoOwnerSeeder extends Seeder
 
         $password = env('SEED_PASSWORD', 'hawat@2026');
 
-        $captain = User::firstOrCreate(
-            ['phone' => '0500000002'],
-            [
-                'name' => 'كابتن تجريبي',
-                'password' => $password,
-                'role_id' => Role::key(Role::CAPTAIN)->id,
-                'owner_id' => $owner->id,
-            ],
-        );
-
         $boats = Boat::whereNull('owner_id')->orderBy('id')->limit(2)->get();
 
-        foreach ($boats as $i => $boat) {
-            $boat->update(['owner_id' => $owner->id] + ($i === 0 ? ['captain_id' => $captain->id] : []));
+        foreach ($boats as $boat) {
+            $boat->update(['owner_id' => $owner->id]);
             Trip::where('boat_id', $boat->id)->whereNull('owner_id')->update(['owner_id' => $owner->id]);
-
-            // رحلات القارب الأول تُسند للكابتن التجريبي حتى تمتلئ بوابته من أول دخول.
-            if ($i === 0) {
-                Trip::where('boat_id', $boat->id)->whereNull('captain_id')->update(['captain_id' => $captain->id, 'captain_name' => $captain->name]);
-            }
         }
 
         // قارب المالك الأول — يُقرأ من أسطوله لا من الأسطول الحرّ حتى يعمل
         // البذّار في التشغيل الثاني أيضًا (البذر الأول أسند القوارب إليه).
         $homeBoat = Boat::forOwner($owner)->orderBy('id')->first();
 
-        // رحلة بانتظار الكابتن دائمًا — ليُجرَّب البدء والإلغاء وإرسال المخرجات.
-        if ($homeBoat !== null && ! Trip::forCaptain($captain)->awaitingCaptain()->exists()) {
-            app(TripService::class)->create($owner, ['boat_id' => $homeBoat->id, 'captain_id' => $captain->id, 'planned_days' => 3]);
+        if ($homeBoat !== null) {
+            $captain = Fisher::updateOrCreate(['national_id' => '1000000002'], [
+                'owner_id' => $owner->id,
+                'is_captain' => true,
+                'port_id' => $homeBoat->port_id,
+                'boat_id' => $homeBoat->id,
+                'name' => 'كابتن تجريبي',
+                'phone' => '0500000002',
+                'fisher_role_id' => FisherRole::named(Fisher::CAPTAIN_ROLE)->id,
+                'role' => Fisher::CAPTAIN_ROLE,
+                'status' => Fisher::ACTIVE,
+            ]);
+            $homeBoat->update(['captain_id' => $captain->id]);
+
+            Trip::where('boat_id', $homeBoat->id)->whereNull('captain_id')->update(['captain_id' => $captain->id, 'captain_name' => $captain->name]);
+
+            // رحلة بانتظار الانطلاق دائمًا — ليُجرَّب البدء والإلغاء وإرسال المخرجات.
+            if (! Trip::forOwner($owner)->scheduled()->exists()) {
+                app(TripService::class)->create($owner, ['boat_id' => $homeBoat->id, 'captain_id' => $captain->id, 'planned_days' => 3]);
+            }
         }
 
         // الرحلات المبذورة التي عُدّت قبل أن يكون لها مالك: يُفتح مصيدها للبيع
@@ -118,17 +121,6 @@ class DemoOwnerSeeder extends Seeder
                 'employee_number' => StatisticsOfficer::numberFor($counter),
                 'shift' => 'صباحية',
                 'status' => 'نشط',
-            ]);
-
-            Fisher::updateOrCreate(['user_id' => $captain->id], [
-                'owner_id' => $owner->id,
-                'port_id' => $homeBoat->port_id,
-                'boat_id' => $homeBoat->id,
-                'name' => $captain->name,
-                'phone' => $captain->phone,
-                'national_id' => '1000000002',
-                'fisher_role_id' => FisherRole::named(Fisher::CAPTAIN_ROLE)->id,
-                'role' => Fisher::CAPTAIN_ROLE,
             ]);
         }
 
@@ -201,7 +193,7 @@ class DemoOwnerSeeder extends Seeder
         $share = PayType::named(PayType::SHARE)->id;
         $fixed = PayType::named(PayType::FIXED)->id;
 
-        Fisher::forOwner($owner)->whereNotNull('user_id')->where('boat_id', $homeBoat->id)
+        Fisher::forOwner($owner)->captains()->where('boat_id', $homeBoat->id)
             ->update(['pay_type_id' => $share, 'custom_share_percent' => 20]);
 
         $crew = [];
@@ -278,7 +270,7 @@ class DemoOwnerSeeder extends Seeder
             'result' => 'مطابق',
         ]);
 
-        $captainFisher = Fisher::forOwner($owner)->whereNotNull('user_id')->first();
+        $captainFisher = Fisher::forOwner($owner)->captains()->first();
 
         $fleet->saveDocument($owner, [
             'holder_type' => 'boat', 'holder_id' => $homeBoat->id,
