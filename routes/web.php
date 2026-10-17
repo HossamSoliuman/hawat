@@ -745,7 +745,15 @@ $mainSite = function () use ($adminPanel, $govUrl, $fromInfoPortal): void {
 
 Route::domain(config('hawat.gov_domain'))->group($ministrySite);
 
-Route::domain(config('hawat.domain'))->group($mainSite);
+/*
+ * بيئة الاختبار تُخدم تحت مسار (hawat.sa/staging): المسار المقيّد بمضيف يُبنى
+ * عنوانه من المضيف وحده فتسقط البادئة ويشير إلى الإنتاج، فلا يُقيَّد هناك.
+ */
+if (parse_url((string) config('app.url'), PHP_URL_PATH)) {
+    Route::group([], $mainSite);
+} else {
+    Route::domain(config('hawat.domain'))->group($mainSite);
+}
 
 // مضيف بوابة المعلومات القديم: كل صفحة منه إلى موضعها في إدارة النظام.
 Route::domain('info.'.config('hawat.domain'))->group(function () use ($fromInfoPortal): void {

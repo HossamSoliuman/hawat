@@ -11,9 +11,12 @@ use App\Models\Sale;
 use App\Models\Species;
 use App\Models\Trip;
 use App\Models\User;
+use App\Services\Sms\ArraySmsSender;
+use App\Services\Sms\SmsSender;
 use Database\Seeders\LookupSeeder;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Tests\TestCase;
 
 /**
@@ -170,8 +173,8 @@ class OwnerPortalTest extends TestCase
 
     public function test_the_web_invites_a_captain_without_a_password_and_resends_the_invitation(): void
     {
-        $sms = new \App\Services\Sms\ArraySmsSender;
-        $this->app->instance(\App\Services\Sms\SmsSender::class, $sms);
+        $sms = new ArraySmsSender;
+        $this->app->instance(SmsSender::class, $sms);
 
         $this->asOwner()->post('/admin/owner/captains', [
             'name' => 'كابتن مدعو',
@@ -180,7 +183,7 @@ class OwnerPortalTest extends TestCase
             'port_id' => $this->port->id,
             'iqama_issue_date' => '2025-01-01',
             'iqama_expiry_date' => '2026-01-01',
-            'avatar' => \Illuminate\Http\UploadedFile::fake()->image('c.jpg', 300, 300),
+            'avatar' => UploadedFile::fake()->image('c.jpg', 300, 300),
             'active' => 1,
         ])->assertRedirect(route('panel.owner.captains'))->assertSessionHasNoErrors();
 
