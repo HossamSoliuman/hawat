@@ -10,6 +10,8 @@ class CustomerTypeSeeder extends Seeder
     public const ROWS = [
         ['منتظم', 'Regular'],
         ['دلال', 'Broker'],
+        ['سوق سمك', 'Fish market'],
+        ['محل سمك', 'Fish shop'],
     ];
 
     public function run(): void

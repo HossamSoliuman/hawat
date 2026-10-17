@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Hawat Mobile API
-  version: 1.5.0
+  version: 1.6.0
   description: |
     Hawat mobile app API (com.os.hawat). All responses are JSON.
 
@@ -19,6 +19,10 @@ info:
     - Printed invoices: every `Sale` carries `invoice_url`, a signed A4 page the app opens in the browser to print or save as PDF (no token needed).
     - Notifications (`/notifications`) are per account for every role; the app registers its device with `POST /auth/fcm-token` to receive pushes.
     - Paginated lists return `{ data: [...], links: {...}, meta: {...} }` with `?page=` and `?per_page=` (max 100).
+    - Retries: every authenticated `POST` accepts an `Idempotency-Key` header. Repeating a request with the same key after a lost response returns the first response (`Idempotency-Replayed: true`) without creating a second record.
+    - Concurrent edits: `Boat`, `Fisher` and `Captain` carry `version` (also sent as the `ETag` header). Send it back in `If-Match` (or a `version` body field) on `PUT`; a stale version gets `409` and nothing is written.
+    - Uniqueness: `boat_number`, fisher `national_id` and account `phone` are unique system-wide, including inactive records; a duplicate is `422` on the same field. Deleted crew free their `national_id`.
+    - Captain invitations: creating a captain without `password` texts an activation code (valid 72 hours); the captain activates with `POST /auth/activate`.
     - Changelog: docs/api/CHANGELOG.md.
 servers:
 - url: /api/v1
@@ -95,6 +99,67 @@ paths:
                       token:
                         type: string
                         example: 12|Yk3…
+                      token_type:
+                        type: string
+                        example: Bearer
+                      user:
+                        $ref: '#/components/schemas/User'
+                  message:
+                    type: string
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /auth/activate:
+    post:
+      tags:
+      - auth
+      summary: تفعيل حساب مدعوّ
+      description: |
+        الكابتن الذي أنشأه مالكه بلا كلمة مرور تصله رسالة برمز تفعيل (6 أرقام، صالح 72 ساعة، 5 محاولات). يرسل جواله والرمز وكلمة مرور يختارها، فيُفعَّل حسابه ويدخل مباشرة — الردّ كردّ الدخول.
+        الرمز منتهٍ أو المحاولات استُنفدت → 422 على `code`، ويعيد المالك إرسال الدعوة (`POST /owner/captains/{captain}/invitation`). 10 في الدقيقة.
+        من استعاد كلمة مروره برمز `forgot-password` قبل التفعيل يُعدّ حسابه مفعّلًا أيضًا.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - phone
+              - code
+              - password
+              - password_confirmation
+              properties:
+                phone:
+                  type: string
+                  example: '0551112233'
+                code:
+                  type: string
+                  example: '123456'
+                password:
+                  type: string
+                  format: password
+                  minLength: 8
+                password_confirmation:
+                  type: string
+                  format: password
+                device_name:
+                  type: string
+                fcm_token:
+                  type: string
+      responses:
+        '200':
+          description: فُعّل الحساب ودخل
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      token:
+                        type: string
                       token_type:
                         type: string
                         example: Bearer
@@ -1168,6 +1233,8 @@ paths:
       tags:
       - owner-fleet
       summary: إضافة قارب
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -1177,6 +1244,11 @@ paths:
       responses:
         '201':
           description: أُنشئ
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
           content:
             application/json:
               schema:
@@ -1188,6 +1260,8 @@ paths:
           $ref: '#/components/responses/Unauthenticated'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/ValidationError'
   /owner/boats/{boat}:
@@ -1205,6 +1279,9 @@ paths:
       responses:
         '200':
           description: قارب
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
           content:
             application/json:
               schema:
@@ -1222,6 +1299,9 @@ paths:
       tags:
       - owner-fleet
       summary: تعديل قارب
+      description: النموذج كاملًا. `status` اختيارية (غيابها = كما هي). If-Match بنسخة قديمة → 409 ولا يُكتب شيء.
+      parameters:
+      - $ref: '#/components/parameters/IfMatch'
       requestBody:
         required: true
         content:
@@ -1231,6 +1311,9 @@ paths:
       responses:
         '200':
           description: حُدّث
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
           content:
             application/json:
               schema:
@@ -1244,6 +1327,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/ValidationError'
     delete:
@@ -1425,6 +1510,8 @@ paths:
       tags:
       - owner-fleet
       summary: إضافة كابتن
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -1434,6 +1521,11 @@ paths:
       responses:
         '201':
           description: أُنشئ
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
           content:
             application/json:
               schema:
@@ -1445,9 +1537,13 @@ paths:
           $ref: '#/components/responses/Unauthenticated'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/ValidationError'
-      description: ينشئ حساب دخول بدور كابتن يتبع المالك + سجلّ صياد في الوزارة. للتعطيل أرسل active=false في التعديل.
+      description: |
+        ينشئ حساب دخول بدور كابتن يتبع المالك + سجلّ صياد في الوزارة. للتعطيل أرسل active=false في التعديل.
+        بلا `password` يُدعى الكابتن برسالة نصية فيها رمز تفعيل صالح 72 ساعة (`invitation.status = invited`)، ويفعّل حسابه بنفسه من `POST /auth/activate`. الحفظ ليس قبولًا للدعوة.
   /owner/captains/{captain}:
     parameters:
     - name: captain
@@ -1463,6 +1559,9 @@ paths:
       responses:
         '200':
           description: كابتن
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
           content:
             application/json:
               schema:
@@ -1480,6 +1579,9 @@ paths:
       tags:
       - owner-fleet
       summary: تعديل كابتن
+      description: If-Match بنسخة الكابتن (`version`) القديمة → 409 ولا يُكتب شيء. تغيير جوال كابتن مدعوّ يرسل الدعوة إلى الجوال الجديد.
+      parameters:
+      - $ref: '#/components/parameters/IfMatch'
       requestBody:
         required: true
         content:
@@ -1489,6 +1591,42 @@ paths:
       responses:
         '200':
           description: حُدّث
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Captain'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /owner/captains/{captain}/invitation:
+    parameters:
+    - name: captain
+      in: path
+      required: true
+      description: معرّف كابتن
+      schema:
+        type: integer
+    post:
+      tags:
+      - owner-fleet
+      summary: إعادة إرسال دعوة الكابتن
+      description: رمز جديد يبطل ما قبله وصلاحية 72 ساعة من الآن. 3 في الدقيقة. كابتن فعّل حسابه أو معطّل → 422.
+      responses:
+        '200':
+          description: الكابتن بدعوته الجديدة
           content:
             application/json:
               schema:
@@ -1504,6 +1642,63 @@ paths:
           $ref: '#/components/responses/NotFound'
         '422':
           $ref: '#/components/responses/ValidationError'
+  /owner/captains/{captain}/avatar:
+    parameters:
+    - name: captain
+      in: path
+      required: true
+      description: معرّف كابتن
+      schema:
+        type: integer
+    post:
+      tags:
+      - owner-fleet
+      summary: رفع صورة الكابتن (multipart)
+      description: صورة حساب الكابتن — هي نفسها التي يراها ويغيّرها من تطبيقه. صورة شخصية فقط.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AvatarUpload'
+      responses:
+        '200':
+          description: الكابتن
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Captain'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+    delete:
+      tags:
+      - owner-fleet
+      summary: حذف صورة الكابتن
+      responses:
+        '200':
+          description: الكابتن
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Captain'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
   /owner/crew:
     get:
       tags:
@@ -1553,6 +1748,8 @@ paths:
       tags:
       - owner-fleet
       summary: إضافة عضو طاقم
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -1562,6 +1759,11 @@ paths:
       responses:
         '201':
           description: أُنشئ
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
           content:
             application/json:
               schema:
@@ -1573,6 +1775,8 @@ paths:
           $ref: '#/components/responses/Unauthenticated'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/ValidationError'
   /owner/crew/{crew}:
@@ -1583,10 +1787,36 @@ paths:
       description: معرّف عضو طاقم
       schema:
         type: integer
+    get:
+      tags:
+      - owner-fleet
+      summary: تفاصيل عضو طاقم
+      responses:
+        '200':
+          description: عضو الطاقم
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Fisher'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
     put:
       tags:
       - owner-fleet
       summary: تعديل عضو طاقم
+      description: If-Match بنسخة قديمة → 409 ولا يُكتب شيء.
+      parameters:
+      - $ref: '#/components/parameters/IfMatch'
       requestBody:
         required: true
         content:
@@ -1596,6 +1826,61 @@ paths:
       responses:
         '200':
           description: حُدّث
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Fisher'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+    delete:
+      tags:
+      - owner-fleet
+      summary: حذف عضو طاقم
+      responses:
+        '200':
+          $ref: '#/components/responses/Message'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /owner/crew/{crew}/avatar:
+    parameters:
+    - name: crew
+      in: path
+      required: true
+      description: معرّف عضو طاقم
+      schema:
+        type: integer
+    post:
+      tags:
+      - owner-fleet
+      summary: رفع صورة عضو الطاقم (multipart)
+      description: صورة شخصية فقط.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AvatarUpload'
+      responses:
+        '200':
+          description: عضو الطاقم
           content:
             application/json:
               schema:
@@ -1614,10 +1899,17 @@ paths:
     delete:
       tags:
       - owner-fleet
-      summary: حذف عضو طاقم
+      summary: حذف صورة عضو الطاقم
       responses:
         '200':
-          $ref: '#/components/responses/Message'
+          description: عضو الطاقم
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Fisher'
         '401':
           $ref: '#/components/responses/Unauthenticated'
         '403':
@@ -3245,7 +3537,9 @@ paths:
     put:
       tags:
       - dalal
-      summary: عمالة الدكة — القائمة كاملةً تستبدل ما قبلها
+      deprecated: true
+      summary: أعداد العمالة القديمة — القائمة كاملةً تستبدل ما قبلها
+      description: مهجور. العمال يُسجَّلون أفرادًا في `/dalal/workers` والأعداد تُحسب منهم؛ بعد تسجيل أول عامل يُرفض هذا المسار بـ422.
       requestBody:
         required: true
         content:
@@ -3291,6 +3585,198 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '422':
           $ref: '#/components/responses/ValidationError'
+  /dalal/workers:
+    get:
+      tags:
+      - dalal
+      summary: عمال الدكة
+      parameters:
+      - name: page
+        in: query
+        description: رقم الصفحة
+        schema:
+          type: integer
+      - name: per_page
+        in: query
+        description: حجم الصفحة (حتى 100)
+        schema:
+          type: integer
+          default: 25
+      - name: search
+        in: query
+        description: الاسم أو الجوال أو رقم الهوية
+        schema:
+          type: string
+      - name: status
+        in: query
+        description: نشط / غير نشط
+        schema:
+          type: string
+      - name: dalal_worker_type_id
+        in: query
+        description: نوع العامل
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: العمال
+          content:
+            application/json:
+              schema:
+                allOf:
+                - type: object
+                  properties:
+                    data:
+                      type: array
+                      items:
+                        $ref: '#/components/schemas/DalalWorker'
+                - $ref: '#/components/schemas/Pagination'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    post:
+      tags:
+      - dalal
+      summary: إضافة عامل
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DalalWorkerInput'
+      responses:
+        '201':
+          description: أُنشئ
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/DalalWorker'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /dalal/workers/{worker}:
+    parameters:
+    - name: worker
+      in: path
+      required: true
+      description: معرّف عامل
+      schema:
+        type: integer
+    get:
+      tags:
+      - dalal
+      summary: تفاصيل عامل
+      responses:
+        '200':
+          description: العامل
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/DalalWorker'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags:
+      - dalal
+      summary: تعديل عامل — والتعطيل بـ status = غير نشط (لا حذف)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DalalWorkerInput'
+      responses:
+        '200':
+          description: حُدّث
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/DalalWorker'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /dalal/workers/{worker}/avatar:
+    parameters:
+    - name: worker
+      in: path
+      required: true
+      description: معرّف عامل
+      schema:
+        type: integer
+    post:
+      tags:
+      - dalal
+      summary: رفع صورة العامل (multipart)
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AvatarUpload'
+      responses:
+        '200':
+          description: العامل
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/DalalWorker'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+    delete:
+      tags:
+      - dalal
+      summary: حذف صورة العامل
+      responses:
+        '200':
+          description: العامل
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/DalalWorker'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
   /hiring-rounds:
     get:
       tags:
@@ -3467,7 +3953,170 @@ components:
       description: مفتاح الطلب من ردّ التقديم (`data.token`)
       schema:
         type: string
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: false
+      description: |
+        مفتاح فريد لكل عملية (UUID مثلًا، حتى 255 حرفًا بلا مسافات). أعد الطلب بالمفتاح نفسه إن ضاع ردّه: يعود الردّ الأول نفسه بترويسة `Idempotency-Replayed: true` ولا يُنشأ سجلّ ثانٍ. المفتاح لكل حساب ويُحفظ ردّه 24 ساعة.
+        المفتاح نفسه لطلب مختلف → `422`؛ والطلب الأول ما زال يُنفَّذ → `409`. الردّ غير الناجح (`422`) لا يُحفظ، فصحّح وأعد بالمفتاح نفسه. يُقبل على كل طلب POST يحمل رمزًا.
+      schema:
+        type: string
+        maxLength: 255
+    IfMatch:
+      name: If-Match
+      in: header
+      required: false
+      description: |
+        نسخة السجل التي عدّلت عليها (`version` من الردّ، أو ترويسة `ETag`): `"3"` أو `3`. إن تغيّر السجل منذ قرأته يُرفض التعديل بـ`409` ولا تُكتب قيمه. يمكن إرسالها بدلًا من ذلك حقل `version` في الجسم. بلا نسخة يُقبل التعديل كما كان.
+      schema:
+        type: string
+  headers:
+    ETag:
+      description: نسخة السجل بين علامتي تنصيص (`"3"`) — هي ما يُرسل في If-Match.
+      schema:
+        type: string
+    IdempotencyReplayed:
+      description: '`true` حين يكون هذا الردّ المحفوظ لطلب سابق بالمفتاح نفسه.'
+      schema:
+        type: string
   schemas:
+    AvatarUpload:
+      type: object
+      required:
+      - avatar
+      properties:
+        avatar:
+          type: string
+          format: binary
+          description: صورة JPG/PNG/WebP حتى 2MB و4096 بكسل للضلع — صورة شخصية فقط.
+    Setup:
+      type: object
+      description: |
+        اكتمال إعداد القارب للرحلات. `missing` يمنع الاكتمال (`status` قارب معطّل أو في الصيانة، `captain` بلا كابتن، `captain_inactive` حساب الكابتن معطّل، `crew` لا فرد طاقم نشط). `warnings` لا تمنعه (`captain_not_activated` الكابتن لم يفعّل دعوته — المالك يبدأ الرحلة عنه، `license_expired` رخصة القارب منتهية، `crew_over_capacity` الطاقم أكثر من سعة القارب).
+        استرشادي: إنشاء الرحلة لا يُرفض اليوم بسببه.
+      properties:
+        ready:
+          type: boolean
+        missing:
+          type: array
+          items:
+            $ref: '#/components/schemas/SetupItem'
+        warnings:
+          type: array
+          items:
+            $ref: '#/components/schemas/SetupItem'
+    SetupItem:
+      type: object
+      properties:
+        key:
+          type: string
+          enum:
+          - status
+          - captain
+          - captain_inactive
+          - crew
+          - captain_not_activated
+          - license_expired
+          - crew_over_capacity
+        label:
+          type: string
+    Invitation:
+      type: object
+      description: دعوة الكابتن. `activated` لمن أُنشئ بكلمة مرور أو فعّل دعوته؛ `invited` بانتظار التفعيل حتى `expires_at`؛ `expired` انتهت فيعيد المالك إرسالها.
+      properties:
+        status:
+          type: string
+          enum:
+          - invited
+          - expired
+          - activated
+        invited_at:
+          type: string
+          nullable: true
+          format: date-time
+        expires_at:
+          type: string
+          nullable: true
+          format: date-time
+        activated_at:
+          type: string
+          nullable: true
+          format: date-time
+    DalalWorker:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        phone:
+          type: string
+          nullable: true
+        nationality:
+          type: string
+          nullable: true
+        id_type:
+          $ref: '#/components/schemas/NamedRef'
+        id_number:
+          type: string
+          nullable: true
+        type:
+          $ref: '#/components/schemas/NamedRef'
+        status:
+          type: string
+          enum:
+          - نشط
+          - غير نشط
+        avatar_url:
+          type: string
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          nullable: true
+          format: date-time
+        updated_at:
+          type: string
+          nullable: true
+          format: date-time
+    DalalWorkerInput:
+      type: object
+      properties:
+        name:
+          type: string
+        phone:
+          type: string
+          nullable: true
+          example: '0555555555'
+        nationality:
+          type: string
+          nullable: true
+        id_type_id:
+          type: integer
+          nullable: true
+          description: من lookups.id_types
+        id_number:
+          type: string
+          nullable: true
+          description: لا يتكرر في دكة الدلال نفسه
+        dalal_worker_type_id:
+          type: integer
+          description: من lookups.dalal_worker_types
+        status:
+          type: string
+          enum:
+          - نشط
+          - غير نشط
+          description: التعطيل بدل الحذف. غيابها في التعديل = كما هي.
+        notes:
+          type: string
+          nullable: true
+      required:
+      - name
+      - dalal_worker_type_id
     IdName:
       type: object
       properties:
@@ -3885,12 +4534,17 @@ components:
           type: string
           nullable: true
         capacity:
-          type: integer
+          type: number
           nullable: true
+          description: الحمولة بالطن (تقبل الكسور)
         crew_count:
           type: integer
+          description: عدد أفراد الطاقم النشطين المسجّلين على القارب (بلا الكابتن) — يُحسب من سجلات الطاقم ولا يُدخل.
         crew_capacity:
           type: integer
+          description: أقصى عدد للطاقم يسعه القارب
+        setup:
+          $ref: '#/components/schemas/Setup'
         license:
           type: object
           properties:
@@ -3913,6 +4567,7 @@ components:
               type: string
               nullable: true
               format: date
+              description: تاريخ بداية الرخصة (إصدارها)
             expiry:
               type: string
               nullable: true
@@ -3925,7 +4580,14 @@ components:
           type: integer
         total_catch_kg:
           type: number
+        version:
+          type: integer
+          description: نسخة السجل — تُرسل في If-Match عند التعديل
         created_at:
+          type: string
+          nullable: true
+          format: date-time
+        updated_at:
           type: string
           nullable: true
           format: date-time
@@ -3957,6 +4619,9 @@ components:
           - نشط
           - غير نشط
           - صيانة
+          - في البحر
+          description: |
+            اختيارية في التعديل (غيابها = كما هي). «في البحر» تضبطه الرحلات وحدها فلا يُختار يدويًا، والقارب في رحلة لا تتغيّر حالته حتى تنتهي — إرسال حالته الحالية كما هي مقبول دائمًا.
         length_m:
           type: number
           nullable: true
@@ -3988,14 +4653,13 @@ components:
           type: string
           nullable: true
         capacity:
-          type: integer
+          type: number
           nullable: true
-        crew_count:
-          type: integer
-          nullable: true
+          description: الحمولة بالطن (2.5 مثلًا)
         crew_capacity:
           type: integer
           nullable: true
+          description: أقصى عدد للطاقم. `crew_count` لا يُرسل — يُحسب من سجلات الطاقم.
         license_type:
           type: string
           nullable: true
@@ -4015,18 +4679,25 @@ components:
           type: string
           nullable: true
           format: date
+          description: تاريخ بداية الرخصة (إصدارها)
         license_expiry:
           type: string
           nullable: true
           format: date
+          description: لا يسبق license_date (وإلا 422 على هذا الحقل)
         next_inspection_date:
           type: string
           nullable: true
           format: date
+        version:
+          type: integer
+          nullable: true
+          description: بديل If-Match — نسخة السجل التي عدّلت عليها
       required:
       - name
       - boat_number
       - port_id
+      description: '`boat_number` لا يتكرر على مستوى النظام كله (رقم تسجيل القارب)، ويشمل القوارب غير النشطة؛ التكرار 422 على الحقل نفسه.'
     Maintenance:
       type: object
       properties:
@@ -4131,6 +4802,10 @@ components:
         email:
           type: string
           nullable: true
+        avatar_url:
+          type: string
+          nullable: true
+          description: صورة الفرد — للكابتن صورة حسابه نفسها
         national_id:
           type: string
         nationality:
@@ -4144,6 +4819,14 @@ components:
             name:
               type: string
           nullable: true
+        iqama_issue_date:
+          type: string
+          nullable: true
+          format: date
+        iqama_expiry_date:
+          type: string
+          nullable: true
+          format: date
         role:
           type: object
           properties:
@@ -4174,6 +4857,11 @@ components:
         license_status:
           type: string
           nullable: true
+        license_date:
+          type: string
+          nullable: true
+          format: date
+          description: بداية رخصة الصيد
         license_expiry:
           type: string
           nullable: true
@@ -4184,6 +4872,13 @@ components:
           type: integer
         status:
           type: string
+        version:
+          type: integer
+          description: نسخة السجل — تُرسل في If-Match عند تعديل فرد الطاقم
+        updated_at:
+          type: string
+          nullable: true
+          format: date-time
     Captain:
       type: object
       properties:
@@ -4196,9 +4891,23 @@ components:
         email:
           type: string
           nullable: true
+        avatar_url:
+          type: string
+          nullable: true
+          description: صورة حساب الكابتن — يراها ويغيّرها من تطبيقه أيضًا (/auth/avatar)
         active:
           type: boolean
         last_login_at:
+          type: string
+          nullable: true
+          format: date-time
+        invitation:
+          $ref: '#/components/schemas/Invitation'
+        version:
+          type: integer
+          nullable: true
+          description: نسخة الكابتن (سجلّ صياده) — تُرسل في If-Match عند التعديل
+        updated_at:
           type: string
           nullable: true
           format: date-time
@@ -4218,12 +4927,25 @@ components:
         password:
           type: string
           format: password
-          description: مطلوبة عند الإنشاء؛ اختيارية عند التعديل
+          nullable: true
+          description: |
+            اختيارية. بلا كلمة مرور عند الإنشاء يُدعى الكابتن: تصل جواله رسالة برمز تفعيل صالح 72 ساعة، وحالته `invitation.status = invited` حتى يفعّل حسابه بنفسه (`POST /auth/activate`)؛ لا كلمة مرور يعرفها المالك. بكلمة مرور يُنشأ الحساب مفعّلًا. في التعديل: فارغة = كما هي.
         national_id:
           type: string
+          description: لا يتكرر على مستوى النظام (صياد واحد في الوزارة)، ويشمل غير النشطين؛ التكرار 422 على الحقل نفسه.
         id_type_id:
           type: integer
           nullable: true
+        iqama_issue_date:
+          type: string
+          nullable: true
+          format: date
+          description: بداية الإقامة — اختيارية لأي نوع هوية
+        iqama_expiry_date:
+          type: string
+          nullable: true
+          format: date
+          description: انتهاء الإقامة — لا يسبق البداية (وإلا 422 على هذا الحقل)
         nationality:
           type: string
           nullable: true
@@ -4238,19 +4960,30 @@ components:
         license_number:
           type: string
           nullable: true
+        license_date:
+          type: string
+          nullable: true
+          format: date
+          description: بداية رخصة الصيد
         license_expiry:
           type: string
           nullable: true
           format: date
+          description: لا يسبق license_date (وإلا 422 على هذا الحقل)
         experience_years:
           type: integer
           nullable: true
         active:
           type: boolean
+        version:
+          type: integer
+          nullable: true
+          description: بديل If-Match — نسخة الكابتن التي عدّلت عليها
       required:
       - name
       - phone
       - national_id
+      description: الجوال لا يتكرر على مستوى النظام (حساب واحد لكل جوال)، والمسجّل لحساب آخر — أيًّا كان دوره — 422 على `phone`.
     CrewInput:
       type: object
       properties:
@@ -4264,9 +4997,19 @@ components:
           nullable: true
         national_id:
           type: string
+          description: لا يتكرر على مستوى النظام، ويشمل غير النشطين؛ المحذوف يُحرّر رقمه.
         id_type_id:
           type: integer
           nullable: true
+        iqama_issue_date:
+          type: string
+          nullable: true
+          format: date
+        iqama_expiry_date:
+          type: string
+          nullable: true
+          format: date
+          description: لا يسبق iqama_issue_date (وإلا 422 على هذا الحقل)
         nationality:
           type: string
           nullable: true
@@ -4283,10 +5026,16 @@ components:
         license_number:
           type: string
           nullable: true
+        license_date:
+          type: string
+          nullable: true
+          format: date
+          description: بداية رخصة الصيد
         license_expiry:
           type: string
           nullable: true
           format: date
+          description: لا يسبق license_date (وإلا 422 على هذا الحقل)
         experience_years:
           type: integer
           nullable: true
@@ -4295,6 +5044,10 @@ components:
           enum:
           - نشط
           - غير نشط
+        version:
+          type: integer
+          nullable: true
+          description: بديل If-Match — نسخة السجل التي عدّلت عليها
       required:
       - name
       - national_id
@@ -5865,13 +6618,22 @@ components:
         logo_url:
           type: string
           nullable: true
+        workers_source:
+          type: string
+          enum:
+          - records
+          - counts
+          description: '`records` = الأعداد محسوبة من العمال النشطين (/dalal/workers)؛ `counts` = سطور الأعداد القديمة قبل تسجيل أول عامل فردًا.'
         workers:
           type: array
+          description: أعداد العمالة حسب النوع والجنسية
           items:
             type: object
             properties:
               id:
                 type: integer
+                nullable: true
+                description: سطر الأعداد القديم، أو null للأعداد المحسوبة
               type:
                 $ref: '#/components/schemas/NamedRef'
               nationality:
@@ -6025,6 +6787,20 @@ components:
             properties:
               message:
                 type: string
+    Conflict:
+      description: تعارض — If-Match بنسخة قديمة (`current_version` النسخة الحالية، أعد القراءة)، أو الطلب نفسه بمفتاح Idempotency-Key ما زال يُنفَّذ.
+      headers:
+        ETag:
+          $ref: '#/components/headers/ETag'
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+              current_version:
+                type: integer
     Forbidden:
       description: الدور لا يخوّل هذه الواجهة أو الحساب معطّل
       content:

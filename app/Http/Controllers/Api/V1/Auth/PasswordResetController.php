@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\OtpCode;
 use App\Models\User;
+use App\Services\Account\InvitationService;
 use App\Services\Sms\SmsSender;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -19,7 +20,10 @@ use Illuminate\Validation\ValidationException;
  */
 class PasswordResetController extends Controller
 {
-    public function __construct(private readonly SmsSender $sms) {}
+    public function __construct(
+        private readonly SmsSender $sms,
+        private readonly InvitationService $invitations,
+    ) {}
 
     public function sendCode(Request $request): JsonResponse
     {
@@ -63,6 +67,7 @@ class PasswordResetController extends Controller
 
         $user = User::where('phone', $phone)->firstOrFail();
         $user->update(['password' => $data['password']]);
+        $this->invitations->markActivatedByPasswordReset($user);
 
         // الرمز استُهلك، وكل الأجهزة تخرج حتى يدخل من يعرف الكلمة الجديدة.
         $otp->forceFill(['used_at' => now()])->save();

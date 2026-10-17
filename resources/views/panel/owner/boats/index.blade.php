@@ -6,7 +6,7 @@
         'id', 'name', 'name_en', 'boat_number', 'port_id', 'boat_category_id', 'boat_type_id', 'captain_id', 'status',
         'length_m', 'width_m', 'color', 'hull_number', 'body_type', 'engine_type', 'engine_power', 'engine_status',
         'call_sign', 'serial_number', 'capacity', 'crew_count', 'crew_capacity', 'license_type', 'license_number',
-        'license_status', 'license_process', 'license_area', 'license_date', 'license_expiry', 'next_inspection_date',
+        'license_status', 'license_process', 'license_area', 'license_date', 'license_expiry', 'next_inspection_date', 'version',
     ];
 @endphp
 
@@ -37,7 +37,7 @@
     <div class="table-card">
         <table class="data-table">
             <thead>
-                <tr><th>القارب</th><th>الرقم</th><th>الميناء</th><th>التصنيف / النوع</th><th>الكابتن</th><th>الرحلات</th><th>الفحص القادم</th><th>الحالة</th><th></th></tr>
+                <tr><th>القارب</th><th>الرقم</th><th>الميناء</th><th>التصنيف / النوع</th><th>الكابتن</th><th>الطاقم</th><th>الرحلات</th><th>الفحص القادم</th><th>الإعداد</th><th>الحالة</th><th></th></tr>
             </thead>
             <tbody>
                 @forelse ($boats as $boat)
@@ -47,8 +47,20 @@
                         <td>{{ $boat->port?->name }}</td>
                         <td style="font-size:.74rem">{{ $boat->category?->name ?? '—' }} / {{ $boat->type?->name ?? $boat->boat_type ?? '—' }}</td>
                         <td>{{ $boat->captainUser?->name ?? $boat->captain ?? '—' }}</td>
+                        <td class="num" style="text-align:center">{{ $boat->crew_count }}</td>
                         <td class="num" style="text-align:center">{{ $boat->trips_count }}</td>
                         <td class="num" style="font-size:.74rem">{{ $boat->next_inspection_date?->format('Y-m-d') ?? '—' }}</td>
+                        @php $setup = $boat->setup(); @endphp
+                        <td style="font-size:.72rem">
+                            @if ($setup['ready'])
+                                <span class="badge badge-ok">جاهز</span>
+                            @else
+                                <span class="badge badge-warn">ناقص</span>
+                            @endif
+                            @foreach ([...$setup['missing'], ...$setup['warnings']] as $item)
+                                <div style="color:hsl(var(--muted-foreground));margin-top:.15rem">{{ $item['label'] }}</div>
+                            @endforeach
+                        </td>
                         <td><span class="badge {{ $boat->status === 'نشط' ? 'badge-ok' : ($boat->status === 'في البحر' ? 'badge-info' : ($boat->status === 'صيانة' ? 'badge-warn' : 'badge-danger')) }}">{{ $boat->status }}</span></td>
                         <td>
                             <div style="display:flex;gap:.25rem;justify-content:flex-end">
@@ -62,7 +74,7 @@
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="9" style="padding:2rem;text-align:center;color:hsl(var(--muted-foreground))">لا قوارب بعد — أضف أول قارب</td></tr>
+                    <tr><td colspan="11" style="padding:2rem;text-align:center;color:hsl(var(--muted-foreground))">لا قوارب بعد — أضف أول قارب</td></tr>
                 @endforelse
             </tbody>
         </table>
@@ -79,6 +91,7 @@
             @csrf
             <input type="hidden" name="_method" value="POST">
             <input type="hidden" name="id" value="">
+            <input type="hidden" name="version" value="" data-fill>
 
             @include('partials.section-head', ['icon' => 'ship', 'title' => 'التعريف'])
             <div class="form-grid cols-2">
@@ -111,7 +124,7 @@
                 </label>
                 <label class="field"><span>الحالة</span>
                     <select class="select" name="status">
-                        @foreach ($statuses as $s)<option value="{{ $s }}">{{ $s }}</option>@endforeach
+                        @foreach ($statuses as $s)<option value="{{ $s }}" @if ($s === \App\Models\Boat::AT_SEA) hidden @endif>{{ $s }}</option>@endforeach
                     </select>
                 </label>
             </div>
@@ -128,8 +141,8 @@
                 <label class="field"><span>قوة المحرك</span><input class="input" name="engine_power" dir="ltr"></label>
                 <label class="field"><span>حالة المحرك</span><input class="input" name="engine_status"></label>
                 <label class="field"><span>رمز النداء</span><input class="input" name="call_sign" dir="ltr"></label>
-                <label class="field"><span>الحمولة</span><input class="input" name="capacity" type="number" min="0" dir="ltr"></label>
-                <label class="field"><span>عدد الصيادين</span><input class="input" name="crew_count" type="number" min="0" dir="ltr"></label>
+                <label class="field"><span>الحمولة (طن)</span><input class="input" name="capacity" type="number" step="0.01" min="0" dir="ltr"></label>
+                <label class="field"><span>عدد الطاقم (من سجلات الطاقم)</span><input class="input" name="crew_count" type="number" dir="ltr" disabled></label>
                 <label class="field"><span>سعة الطاقم</span><input class="input" name="crew_capacity" type="number" min="0" dir="ltr"></label>
                 <label class="field"><span>الفحص القادم</span><input class="input" name="next_inspection_date" type="date" dir="ltr"></label>
             </div>
@@ -160,7 +173,8 @@
 @push('scripts')
 @include('panel.partials.drawer-form')
 <script>
-    const boatForm = { drawer: 'boatDrawer', form: 'boatFormEl', title: 'boatFormTitle', storeUrl: @json(route('panel.owner.boats.store')), createTitle: 'قارب جديد', editTitle: 'تعديل القارب' };
+    // "في البحر" تضبطه الرحلات: لا يُختار، والقارب في رحلة لا تتغيّر حالته من هنا.
+    const boatForm = { drawer: 'boatDrawer', form: 'boatFormEl', title: 'boatFormTitle', storeUrl: @json(route('panel.owner.boats.store')), createTitle: 'قارب جديد', editTitle: 'تعديل القارب', after: (record, form) => { form.status.disabled = Boolean(record) && record.status === @json(\App\Models\Boat::AT_SEA); } };
     @if ($errors->any() && old('name') !== null)
         openDrawerForm(boatForm, {!! json_encode(['id' => old('id') ?: null] + old(), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!});
     @endif

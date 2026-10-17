@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Carbon;
 use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
@@ -35,7 +36,19 @@ class User extends Authenticatable
         'avatar_path',
         'fcm_token',
         'last_login_at',
+        'invited_at',
+        'activated_at',
     ];
+
+    /** حالة الدعوة: أُنشئ الحساب بدعوة ولم يُفعَّل، أو انتهت صلاحيتها، أو فُعّل. */
+    public const INVITATION_INVITED = 'invited';
+
+    public const INVITATION_EXPIRED = 'expired';
+
+    public const INVITATION_ACTIVATED = 'activated';
+
+    /** صلاحية رمز الدعوة من آخر إرسال. */
+    public const INVITATION_HOURS = 72;
 
     /**
      * The attributes that should be hidden for serialization.
@@ -58,6 +71,8 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'last_login_at' => 'datetime',
+            'invited_at' => 'datetime',
+            'activated_at' => 'datetime',
             'password' => 'hashed',
             'active' => 'boolean',
         ];
@@ -198,6 +213,14 @@ class User extends Authenticatable
     }
 
     /**
+     * أعداد العمالة القديمة (النوع × الجنسية × العدد) قبل تسجيل العمال أفرادًا.
+     */
+    public function dalalWorkerCounts(): HasMany
+    {
+        return $this->hasMany(DalalWorkerCount::class, 'dalal_id');
+    }
+
+    /**
      * طلبات التعامل: ما أرسله المالك إلى الدلالين، وما وصل الدلال من الملاك.
      */
     public function ownerPartnerships(): HasMany
@@ -228,6 +251,29 @@ class User extends Authenticatable
     public function counterPortIds(): array
     {
         return array_values(array_filter([$this->statisticsOfficer?->port_id]));
+    }
+
+    /**
+     * الحساب الذي لم يُدعَ قط (أُنشئ بكلمة مرور) مفعّل؛ المدعوّ مفعّل حين يختار
+     * كلمة مروره، ودعوته تنتهي بعد INVITATION_HOURS من آخر إرسال.
+     */
+    public function getInvitationStatusAttribute(): string
+    {
+        return match (true) {
+            $this->invited_at === null, $this->activated_at !== null => self::INVITATION_ACTIVATED,
+            $this->invitation_expires_at->isPast() => self::INVITATION_EXPIRED,
+            default => self::INVITATION_INVITED,
+        };
+    }
+
+    public function getInvitationExpiresAtAttribute(): ?Carbon
+    {
+        return $this->invited_at?->copy()->addHours(self::INVITATION_HOURS);
+    }
+
+    public function isPendingInvitation(): bool
+    {
+        return $this->invited_at !== null && $this->activated_at === null;
     }
 
     /**

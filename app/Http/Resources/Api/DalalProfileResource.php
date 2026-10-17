@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\Api;
 
+use App\Services\Dalal\DalalProfileService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -29,13 +30,31 @@ class DalalProfileResource extends JsonResource
             'address' => $this->address,
             'website' => $this->website,
             'logo_url' => $this->logo_url,
-            'workers' => $this->whenLoaded('user', fn () => $this->user->dalalWorkers->map(fn ($worker) => [
-                'id' => $worker->id,
-                'type' => $ref($worker->type),
-                'nationality' => $worker->nationality,
-                'count' => (int) $worker->count,
-                'notes' => $worker->notes,
-            ])->values()),
+            ...$this->workforce($ref),
+        ];
+    }
+
+    /**
+     * أعداد العمالة حسب النوع والجنسية: `records` محسوبة من العمال النشطين
+     * (/dalal/workers)، و`counts` سطور الأعداد القديمة قبل تسجيلهم أفرادًا.
+     */
+    private function workforce(callable $ref): array
+    {
+        if (! $this->relationLoaded('user')) {
+            return [];
+        }
+
+        $workforce = app(DalalProfileService::class)->workforce($this->user);
+
+        return [
+            'workers_source' => $workforce['source'],
+            'workers' => $workforce['rows']->map(fn (array $row) => [
+                'id' => $row['id'],
+                'type' => $ref($row['type']),
+                'nationality' => $row['nationality'],
+                'count' => $row['count'],
+                'notes' => $row['notes'],
+            ])->values(),
         ];
     }
 }

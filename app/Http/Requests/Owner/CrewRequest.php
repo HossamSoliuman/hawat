@@ -18,10 +18,16 @@ class CrewRequest extends OwnerRequest
             'fisher_role_id' => ['nullable', $this->lookup('fisher_roles')],
             'boat_id' => ['nullable', $this->owned('boats')],
             'port_id' => ['required_without:boat_id', 'nullable', Rule::exists('ports', 'id')],
-            'license_number' => ['nullable', 'string', 'max:100'],
-            'license_expiry' => ['nullable', 'date'],
+            ...$this->fisherDocumentRules(),
             'experience_years' => ['nullable', 'integer', 'min:0'],
             'status' => ['nullable', Rule::in(['نشط', 'غير نشط'])],
+        ];
+    }
+
+    public function messages(): array
+    {
+        return parent::messages() + [
+            'national_id.unique' => 'رقم الهوية مسجّل لصياد آخر في حوات.',
         ];
     }
 

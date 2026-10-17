@@ -31,6 +31,7 @@ class BoatResource extends JsonResource
             'serial_number' => $this->serial_number,
             'capacity' => $this->capacity,
             'crew_count' => (int) $this->crew_count,
+            'setup' => $this->when($this->relationLoaded('captainUser'), fn () => $this->setup()),
             'crew_capacity' => (int) $this->crew_capacity,
             'license' => [
                 'type' => $this->license_type,
@@ -44,7 +45,9 @@ class BoatResource extends JsonResource
             'next_inspection_date' => $this->next_inspection_date?->toDateString(),
             'trips_count' => (int) $this->trips_count,
             'total_catch_kg' => (float) $this->total_catch_kg,
+            'version' => (int) $this->version,
             'created_at' => $this->created_at?->toIso8601String(),
+            'updated_at' => $this->updated_at?->toIso8601String(),
         ];
     }
 }

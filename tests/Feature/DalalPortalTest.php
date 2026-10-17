@@ -266,7 +266,8 @@ class DalalPortalTest extends TestCase
         $this->asDalal()->put(route('panel.dalal.customers.update', $theirCustomer), ['name' => 'x'])->assertNotFound();
         $this->asDalal()->delete(route('panel.dalal.customers.destroy', $theirCustomer))->assertNotFound();
         $this->asDalal()->post(route('panel.dalal.requests.accept', $theirRequest))->assertNotFound();
-        $this->asDalal()->delete(route('panel.dalal.settings.workers.destroy', $theirWorker))->assertNotFound();
+        $this->asDalal()->put(route('panel.dalal.settings.workers.update', $theirWorker), ['name' => 'x', 'dalal_worker_type_id' => $theirWorker->dalal_worker_type_id])->assertNotFound();
+        $this->asDalal()->post(route('panel.dalal.settings.workers.toggle', $theirWorker))->assertNotFound();
         $this->asDalal()->post(route('panel.dalal.owners.payout', $this->owner), ['amount' => 1])->assertNotFound();
 
         // عميل دلال آخر لا يُختار في البيع.
@@ -392,11 +393,28 @@ class DalalPortalTest extends TestCase
         Storage::disk('public')->assertExists($profile->fresh()->logo_path);
 
         $type = DalalWorkerType::where('name', 'حمّال')->sole();
-        $this->asDalal()->post('/admin/dalal/settings/workers', ['dalal_worker_type_id' => $type->id, 'nationality' => 'هندي', 'count' => 4])->assertRedirect();
-        $this->asDalal()->get('/admin/dalal/settings?tab=workers')->assertOk()->assertSee('حمّال')->assertSee('هندي');
+        $this->asDalal()->post('/admin/dalal/settings/workers', [
+            'name' => 'رحيم الدين',
+            'dalal_worker_type_id' => $type->id,
+            'nationality' => 'هندي',
+            'phone' => '0551230000',
+            'id_number' => '2412345678',
+            'avatar' => UploadedFile::fake()->image('worker.jpg', 300, 300),
+        ])->assertRedirect()->assertSessionHasNoErrors();
+        $this->asDalal()->get('/admin/dalal/settings?tab=workers')->assertOk()->assertSee('رحيم الدين')->assertSee('حمّال')->assertSee('هندي');
 
-        $this->asDalal()->delete(route('panel.dalal.settings.workers.destroy', DalalWorker::sole()))->assertRedirect();
-        $this->assertSame(0, DalalWorker::count());
+        $worker = DalalWorker::sole();
+        Storage::disk('public')->assertExists($worker->avatar_path);
+
+        // رقم الهوية لا يتكرر في الدكة نفسها، والصورة غير الصورة مرفوضة قبل الحفظ.
+        $this->asDalal()->post('/admin/dalal/settings/workers', ['name' => 'آخر', 'dalal_worker_type_id' => $type->id, 'id_number' => '2412345678'])->assertSessionHasErrors('id_number');
+        $this->asDalal()->post('/admin/dalal/settings/workers', ['name' => 'آخر', 'dalal_worker_type_id' => $type->id, 'avatar' => UploadedFile::fake()->create('iqama.pdf', 100, 'application/pdf')])->assertSessionHasErrors('avatar');
+        $this->assertSame(1, DalalWorker::count());
+
+        // التعطيل بدل الحذف: يبقى السجل ويخرج من الأعداد.
+        $this->asDalal()->post(route('panel.dalal.settings.workers.toggle', $worker))->assertRedirect();
+        $this->assertSame('غير نشط', $worker->fresh()->status);
+        $this->assertSame(1, DalalWorker::count());
 
         $this->asDalal()->get('/admin/profile')->assertOk();
         $this->assertSame(Role::DALAL, $this->dalal->fresh()->app_role_key);

@@ -25,7 +25,7 @@
             <tbody>
                 @forelse ($crew as $row)
                     <tr>
-                        <td style="font-weight:600">{{ $row->name }}</td>
+                        <td><div class="person-cell">@include('partials.person-avatar', ['url' => $row->avatar_url, 'name' => $row->name])<span style="font-weight:600">{{ $row->name }}</span></div></td>
                         <td>{{ $row->fisherRole?->name ?? $row->role }}</td>
                         <td>{{ $row->nationality ?? '—' }}</td>
                         <td class="num">{{ $row->national_id }}<div style="font-size:.7rem;color:hsl(var(--muted-foreground))">{{ $row->idType?->name }}</div></td>
@@ -35,7 +35,7 @@
                         <td><span class="badge {{ $row->status === 'نشط' ? 'badge-ok' : 'badge-danger' }}">{{ $row->status }}</span></td>
                         <td>
                             <div style="display:flex;gap:.25rem;justify-content:flex-end">
-                                <button type="button" class="icon-action" title="تعديل" onclick='openDrawerForm(recordForm, {!! json_encode($row->only(['id', 'name', 'phone', 'email', 'national_id', 'id_type_id', 'nationality', 'fisher_role_id', 'boat_id', 'port_id', 'license_number', 'license_expiry', 'experience_years', 'status']), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!})'>@include('partials.icon', ['name' => 'pencil'])</button>
+                                <button type="button" class="icon-action" title="تعديل" onclick='openDrawerForm(recordForm, {!! json_encode($row->only(['id', 'name', 'phone', 'email', 'national_id', 'id_type_id', 'iqama_issue_date', 'iqama_expiry_date', 'nationality', 'fisher_role_id', 'boat_id', 'port_id', 'license_number', 'license_date', 'license_expiry', 'experience_years', 'status', 'version']), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!})'>@include('partials.icon', ['name' => 'pencil'])</button>
                                 <form method="POST" action="{{ route('panel.owner.crew.destroy', $row) }}" onsubmit="return confirm('حذف {{ $row->name }}؟')">
                                     @csrf @method('DELETE')
                                     <button type="submit" class="icon-action danger" title="حذف">@include('partials.icon', ['name' => 'trash'])</button>
@@ -57,10 +57,11 @@
             <h3 id="recordFormTitle">عضو طاقم</h3>
             <button type="button" class="icon-action" onclick="toggleDrawer('recordDrawer', false)">@include('partials.icon', ['name' => 'x'])</button>
         </div>
-        <form method="POST" id="recordFormEl" action="{{ route('panel.owner.crew.store') }}" class="drawer-body" autocomplete="off">
+        <form method="POST" id="recordFormEl" action="{{ route('panel.owner.crew.store') }}" class="drawer-body" autocomplete="off" enctype="multipart/form-data">
             @csrf
             <input type="hidden" name="_method" value="POST">
             <input type="hidden" name="id" value="">
+            <input type="hidden" name="version" value="" data-fill>
             <div class="form-grid cols-2">
                 <label class="field"><span>الاسم *</span><input class="input" name="name" required></label>
                 <label class="field"><span>الدور على القارب</span>
@@ -78,6 +79,8 @@
                         @foreach ($idTypes as $o)<option value="{{ $o->id }}">{{ $o->name }}</option>@endforeach
                     </select>
                 </label>
+                <label class="field"><span>بداية الإقامة</span><input class="input" name="iqama_issue_date" type="date" dir="ltr"></label>
+                <label class="field"><span>انتهاء الإقامة</span><input class="input" name="iqama_expiry_date" type="date" dir="ltr"></label>
                 <label class="field"><span>الجنسية</span><input class="input" name="nationality"></label>
                 <label class="field"><span>القارب</span>
                     <select class="select" name="boat_id">
@@ -92,10 +95,16 @@
                     </select>
                 </label>
                 <label class="field"><span>الحالة</span><select class="select" name="status"><option value="نشط">نشط</option><option value="غير نشط">غير نشط</option></select></label>
-                <label class="field"><span>رقم الرخصة</span><input class="input" name="license_number" dir="ltr"></label>
+                <label class="field"><span>رقم رخصة الصيد</span><input class="input" name="license_number" dir="ltr"></label>
+                <label class="field"><span>بداية الرخصة</span><input class="input" name="license_date" type="date" dir="ltr"></label>
                 <label class="field"><span>انتهاء الرخصة</span><input class="input" name="license_expiry" type="date" dir="ltr"></label>
                 <label class="field"><span>سنوات الخبرة</span><input class="input" name="experience_years" type="number" min="0" dir="ltr"></label>
+                <label class="field"><span>الصورة الشخصية (JPG/PNG/WebP حتى 2MB)</span><input class="input" name="avatar" type="file" accept="image/jpeg,image/png,image/webp"></label>
             </div>
+            <label style="display:flex;align-items:center;gap:.5rem;font-size:.78rem;cursor:pointer" id="removeAvatarRow">
+                <input type="checkbox" name="remove_avatar" value="1">
+                حذف الصورة الحالية
+            </label>
             <div style="display:flex;justify-content:flex-end;gap:.5rem;padding-top:.5rem">
                 <button type="button" class="btn btn-outline" onclick="toggleDrawer('recordDrawer', false)">إلغاء</button>
                 <button type="submit" class="btn btn-primary">حفظ</button>
@@ -107,7 +116,7 @@
 @push('scripts')
 @include('panel.partials.drawer-form')
 <script>
-    const recordForm = { drawer: 'recordDrawer', form: 'recordFormEl', title: 'recordFormTitle', storeUrl: @json(route('panel.owner.crew.store')), createTitle: 'عضو طاقم', editTitle: 'تعديل عضو الطاقم' };
+    const recordForm = { drawer: 'recordDrawer', form: 'recordFormEl', title: 'recordFormTitle', storeUrl: @json(route('panel.owner.crew.store')), createTitle: 'عضو طاقم', editTitle: 'تعديل عضو الطاقم', after: (record) => { document.getElementById('removeAvatarRow').hidden = !record; } };
     @if ($errors->any() && old('name') !== null)
         openDrawerForm(recordForm, {!! json_encode(['id' => old('id') ?: null] + old(), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!});
     @endif

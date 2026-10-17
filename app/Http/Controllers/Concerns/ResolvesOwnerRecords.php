@@ -36,6 +36,28 @@ trait ResolvesOwnerRecords
         return Boat::forOwner($owner)->findOrFail($id);
     }
 
+    /**
+     * القارب مقفولًا للتعديل — يُستدعى داخل المعاملة التي تتحقق من نسخته
+     * وتكتب، فلا يكتب جهازان بين القراءة والكتابة.
+     */
+    protected function lockedBoat(User $owner, int|string $id): Boat
+    {
+        return Boat::forOwner($owner)->lockForUpdate()->findOrFail($id);
+    }
+
+    protected function lockedCrew(User $owner, int|string $id): Fisher
+    {
+        return Fisher::forOwner($owner)->crew()->lockForUpdate()->findOrFail($id);
+    }
+
+    /**
+     * سجلّ صياد الكابتن مقفولًا — نسخته نسخة الكابتن.
+     */
+    protected function lockedCaptainFisher(User $captain): ?Fisher
+    {
+        return Fisher::where('user_id', $captain->id)->lockForUpdate()->first();
+    }
+
     protected function ownedMaintenance(User $owner, int|string $id): BoatMaintenance
     {
         return BoatMaintenance::whereHas('boat', fn ($q) => $q->where('owner_id', $owner->id))->findOrFail($id);

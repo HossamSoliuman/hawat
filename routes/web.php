@@ -395,6 +395,7 @@ $adminPanel = function () use ($operationsConsole): void {
             Route::post('/captains', [OwnerCaptainController::class, 'store'])->name('captains.store');
             Route::put('/captains/{captain}', [OwnerCaptainController::class, 'update'])->name('captains.update');
             Route::post('/captains/{captain}/toggle', [OwnerCaptainController::class, 'toggle'])->name('captains.toggle');
+            Route::post('/captains/{captain}/invitation', [OwnerCaptainController::class, 'invitation'])->middleware('throttle:3,1,captain-invitation')->name('captains.invitation');
 
             Route::get('/crew', [OwnerCrewController::class, 'index'])->name('crew');
             Route::post('/crew', [OwnerCrewController::class, 'store'])->name('crew.store');
@@ -601,8 +602,12 @@ $adminPanel = function () use ($operationsConsole): void {
             Route::put('/settings', [DalalSettingsController::class, 'update'])->name('settings.update');
             Route::post('/settings/logo', [DalalSettingsController::class, 'logo'])->name('settings.logo');
             Route::delete('/settings/logo', [DalalSettingsController::class, 'removeLogo'])->name('settings.logo.remove');
+            // عمال الدكة أفرادًا (تبويب العمالة في الإعدادات) — التعطيل بدل الحذف.
             Route::post('/settings/workers', [DalalSettingsController::class, 'storeWorker'])->name('settings.workers.store');
-            Route::delete('/settings/workers/{worker}', [DalalSettingsController::class, 'destroyWorker'])->name('settings.workers.destroy');
+            Route::put('/settings/workers/{worker}', [DalalSettingsController::class, 'updateWorker'])->name('settings.workers.update');
+            Route::post('/settings/workers/{worker}/toggle', [DalalSettingsController::class, 'toggleWorker'])->name('settings.workers.toggle');
+            // أعداد العمالة القديمة: تُحذف بعد تسجيل العمال أفرادًا.
+            Route::delete('/settings/worker-counts/{count}', [DalalSettingsController::class, 'destroyWorkerCount'])->name('settings.worker-counts.destroy');
         });
     });
 };

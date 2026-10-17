@@ -19,8 +19,11 @@ class DalalWorkerFactory extends Factory
         return [
             'dalal_id' => User::factory()->dalal(),
             'dalal_worker_type_id' => DalalWorkerType::factory(),
+            'name' => fake()->name(),
+            'phone' => '05'.fake()->unique()->numerify('########'),
             'nationality' => fake()->randomElement(['سعودي', 'هندي', 'بنغلاديشي']),
-            'count' => fake()->numberBetween(1, 6),
+            'id_number' => fake()->unique()->numerify('2#########'),
+            'status' => 'نشط',
         ];
     }
 }

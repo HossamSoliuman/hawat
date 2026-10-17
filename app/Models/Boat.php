@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasVersion;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -15,11 +16,15 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
  */
 class Boat extends BaseModel
 {
-    use HasFactory;
+    use HasFactory, HasVersion;
 
     public const STATUSES = ['نشط', 'غير نشط', 'صيانة', 'في البحر'];
 
+    /** تضبطه الرحلات وحدها: يبدأ الكابتن الرحلة فيصير القارب في البحر. */
+    public const AT_SEA = 'في البحر';
+
     protected $casts = [
+        'capacity' => 'float',
         'license_expiry' => 'date',
         'license_date' => 'date',
         'next_inspection_date' => 'date',
@@ -98,5 +103,66 @@ class Boat extends BaseModel
     public function scopeForOwner(Builder $query, User $owner): Builder
     {
         return $query->where('owner_id', $owner->id);
+    }
+
+    /**
+     * عدد طاقم قارب المالك = أفراد الطاقم النشطون المسجّلون عليه (بلا الكابتن).
+     * قوارب الوزارة بلا مالك تبقى أرقامها المستوردة.
+     */
+    public function refreshCrewCount(): void
+    {
+        if ($this->owner_id === null) {
+            return;
+        }
+
+        $count = $this->fishers()->whereNull('user_id')->where('status', 'نشط')->count();
+
+        if ((int) $this->crew_count !== $count) {
+            $this->update(['crew_count' => $count]);
+        }
+    }
+
+    public static function refreshCrewCountFor(int|string|null ...$ids): void
+    {
+        static::query()->whereKey(array_unique(array_filter($ids)))->get()->each->refreshCrewCount();
+    }
+
+    /**
+     * اكتمال إعداد القارب للرحلات. "ناقص" يمنع الاكتمال: قارب معطّل أو في
+     * الصيانة، أو بلا كابتن، أو كابتنه معطّل، أو بلا فرد طاقم نشط. "تنبيه" لا
+     * يمنعه: كابتن لم يفعّل حسابه بعد (المالك يبدأ الرحلة عنه)، أو رخصة
+     * منتهية، أو طاقم أكثر من سعة القارب. يقرأ captainUser — حمّله مع القائمة.
+     *
+     * @return array{ready: bool, missing: list<array{key: string, label: string}>, warnings: list<array{key: string, label: string}>}
+     */
+    public function setup(): array
+    {
+        $missing = [];
+        $warnings = [];
+        $captain = $this->captainUser;
+
+        if (in_array($this->status, ['غير نشط', 'صيانة'], true)) {
+            $missing[] = ['key' => 'status', 'label' => $this->status === 'صيانة' ? 'القارب في الصيانة' : 'القارب غير نشط'];
+        }
+
+        if (! $captain) {
+            $missing[] = ['key' => 'captain', 'label' => 'لم يُسند إليه كابتن'];
+        } elseif (! $captain->active) {
+            $missing[] = ['key' => 'captain_inactive', 'label' => 'حساب الكابتن معطّل'];
+        } elseif ($captain->invitation_status !== User::INVITATION_ACTIVATED) {
+            $warnings[] = ['key' => 'captain_not_activated', 'label' => 'الكابتن لم يفعّل حسابه بعد'];
+        }
+
+        if ((int) $this->crew_count < 1) {
+            $missing[] = ['key' => 'crew', 'label' => 'لا فرد طاقم نشط على القارب'];
+        } elseif ((int) $this->crew_capacity > 0 && (int) $this->crew_count > (int) $this->crew_capacity) {
+            $warnings[] = ['key' => 'crew_over_capacity', 'label' => 'الطاقم أكثر من سعة القارب'];
+        }
+
+        if ($this->license_expiry && $this->license_expiry->lt(today())) {
+            $warnings[] = ['key' => 'license_expired', 'label' => 'رخصة القارب منتهية'];
+        }
+
+        return ['ready' => $missing === [], 'missing' => $missing, 'warnings' => $warnings];
     }
 }

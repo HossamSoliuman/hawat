@@ -168,6 +168,47 @@ class OwnerPortalTest extends TestCase
         $this->asOwner()->get('/admin/owner/captains')->assertOk()->assertSee('0559998877');
     }
 
+    public function test_the_web_invites_a_captain_without_a_password_and_resends_the_invitation(): void
+    {
+        $sms = new \App\Services\Sms\ArraySmsSender;
+        $this->app->instance(\App\Services\Sms\SmsSender::class, $sms);
+
+        $this->asOwner()->post('/admin/owner/captains', [
+            'name' => 'كابتن مدعو',
+            'phone' => '0559990000',
+            'national_id' => '1055440000',
+            'port_id' => $this->port->id,
+            'iqama_issue_date' => '2025-01-01',
+            'iqama_expiry_date' => '2026-01-01',
+            'avatar' => \Illuminate\Http\UploadedFile::fake()->image('c.jpg', 300, 300),
+            'active' => 1,
+        ])->assertRedirect(route('panel.owner.captains'))->assertSessionHasNoErrors();
+
+        $captain = User::where('phone', '0559990000')->firstOrFail();
+        $this->assertTrue($captain->isPendingInvitation());
+        $this->assertNotNull($captain->avatar_path);
+        $this->assertSame('2026-01-01', $captain->fisher->iqama_expiry_date->toDateString());
+        $this->assertNotNull($sms->lastTo('0559990000'));
+
+        $this->asOwner()->get('/admin/owner/captains')->assertOk()->assertSee('مدعو');
+
+        $this->asOwner()->post(route('panel.owner.captains.invitation', $captain))->assertRedirect()->assertSessionHas('status');
+        $this->assertCount(2, $sms->sent);
+    }
+
+    public function test_the_web_boat_form_guards_stale_edits_and_shows_setup(): void
+    {
+        $boat = Boat::factory()->ownedBy($this->owner)->create(['port_id' => $this->port->id, 'boat_number' => 'B-8100', 'crew_count' => 0]);
+        $form = ['name' => 'بعد التعديل', 'boat_number' => 'B-8100', 'port_id' => $this->port->id];
+
+        $this->asOwner()->get('/admin/owner/boats')->assertOk()->assertSee('ناقص')->assertSee('لم يُسند إليه كابتن');
+
+        $this->asOwner()->put("/admin/owner/boats/{$boat->id}", $form + ['version' => 1])->assertSessionHasNoErrors();
+        $this->asOwner()->from('/admin/owner/boats')->put("/admin/owner/boats/{$boat->id}", ['name' => 'متأخر'] + $form + ['version' => 1])
+            ->assertRedirect('/admin/owner/boats')->assertSessionHasErrors('version');
+        $this->assertSame('بعد التعديل', $boat->fresh()->name);
+    }
+
     public function test_the_owner_runs_a_trip_from_its_page_and_sells_the_counted_catch(): void
     {
         $captain = User::factory()->role(Role::CAPTAIN)->ownedBy($this->owner)->create();

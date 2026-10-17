@@ -58,7 +58,7 @@ class PurgeDemoData extends Command
     /** جداول تُفرَّغ كاملًا. */
     public const PURGE = [
         // الجلسات والرموز
-        'password_reset_tokens', 'sessions', 'personal_access_tokens', 'otp_codes',
+        'password_reset_tokens', 'sessions', 'personal_access_tokens', 'otp_codes', 'idempotency_keys',
         // الأسطول والمواسم
         'boats', 'fishers', 'statistics_officers', 'fishing_seasons', 'season_licenses',
         // العمليات
@@ -70,7 +70,7 @@ class PurgeDemoData extends Command
         'registration_requests', 'app_notifications',
         // بوابة المالك والدلال
         'boat_maintenances', 'owner_employees', 'customers', 'vendors', 'sales', 'sale_items',
-        'consignments', 'consignment_items', 'stock_movements', 'dalal_profiles', 'dalal_workers',
+        'consignments', 'consignment_items', 'stock_movements', 'dalal_profiles', 'dalal_workers', 'dalal_worker_counts',
         'dalal_partnerships', 'dalal_payouts', 'dalal_invoice_reviews', 'expenses',
         'fishing_equipment', 'fishing_equipment_season', 'assets', 'boat_inspections',
         'fleet_documents', 'payrolls', 'payroll_lines', 'crew_advances', 'month_closings',

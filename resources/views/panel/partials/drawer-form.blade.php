@@ -7,9 +7,10 @@
     function fillDrawerForm(form, record) {
         for (const el of form.elements) {
             if (!el.name || el.name.startsWith('_')) continue;
-            if (el.type === 'password') { el.value = ''; continue; }
+            if (el.type === 'password' || el.type === 'file') { el.value = ''; continue; }
             if (el.type === 'checkbox') { el.checked = record ? Boolean(Number(record[el.name])) : el.defaultChecked; continue; }
-            if (el.type === 'hidden' && el.name !== 'id') continue;
+            // المخفي يبقى كما هو (قيمة 0 لمربع اختيار) إلا المعرّف وما وُسم data-fill (نسخة السجل).
+            if (el.type === 'hidden' && el.name !== 'id' && !('fill' in el.dataset)) continue;
             let value = record && record[el.name] != null ? String(record[el.name]) : '';
             // تواريخ Eloquent تصل بصيغة ISO كاملة، وحقول التاريخ تقبل الجزء الأول منها.
             if (el.type === 'date') value = value.slice(0, 10);

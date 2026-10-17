@@ -44,14 +44,14 @@ class SettingsController extends Controller
 
     public function workers(WorkersRequest $request): DalalProfileResource
     {
-        $this->profiles->syncWorkers($request->user(), $request->validated('workers'));
+        $this->profiles->syncWorkerCounts($request->user(), $request->validated('workers'));
 
         return $this->resource($request->user());
     }
 
     private function resource(User $dalal): DalalProfileResource
     {
-        $profile = DalalProfile::forUser($dalal)->load(['region', 'governorate', 'port', 'user.dalalWorkers.type']);
+        $profile = DalalProfile::forUser($dalal)->load(['region', 'governorate', 'port', 'user']);
         // الملف يُنشأ عند أول قراءة، والردّ يبقى 200 لا 201 — ليس إنشاءً طلبه التطبيق.
         $profile->wasRecentlyCreated = false;
 

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Panel\Owner;
 
+use App\Http\Controllers\Concerns\HandlesFormAvatar;
 use App\Http\Controllers\Concerns\ResolvesOwnerRecords;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Owner\CrewRequest;
@@ -13,11 +14,12 @@ use App\Models\Port;
 use App\Services\Owner\StaffService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class CrewController extends Controller
 {
-    use ResolvesOwnerRecords;
+    use HandlesFormAvatar, ResolvesOwnerRecords;
 
     public function __construct(private readonly StaffService $staff) {}
 
@@ -42,16 +44,36 @@ class CrewController extends Controller
 
     public function store(CrewRequest $request): RedirectResponse
     {
-        $this->staff->createCrew($request->user(), $request->validated());
+        $this->validateFormAvatar($request);
+
+        $fisher = $this->staff->createCrew($request->user(), $request->validated());
+        $this->syncAvatar($request, $fisher);
 
         return redirect()->route('panel.owner.crew')->with('status', 'تمت إضافة عضو الطاقم.');
     }
 
     public function update(CrewRequest $request, int $crew): RedirectResponse
     {
-        $this->staff->updateCrew($this->ownedCrew($request->user(), $crew), $request->validated());
+        $this->validateFormAvatar($request);
+
+        $fisher = DB::transaction(function () use ($request, $crew) {
+            $fisher = $this->lockedCrew($request->user(), $crew);
+            $fisher->assertVersion($request);
+
+            return $this->staff->updateCrew($fisher, $request->validated());
+        });
+        $this->syncAvatar($request, $fisher);
 
         return redirect()->route('panel.owner.crew')->with('status', 'تم تحديث عضو الطاقم.');
+    }
+
+    private function syncAvatar(Request $request, Fisher $fisher): void
+    {
+        $this->syncFormAvatar(
+            $request,
+            fn ($file) => $this->staff->storeCrewAvatar($fisher, $file),
+            fn () => $this->staff->removeCrewAvatar($fisher),
+        );
     }
 
     public function destroy(Request $request, int $crew): RedirectResponse

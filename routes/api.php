@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\V1\Auth\ActivationController;
 use App\Http\Controllers\Api\V1\Auth\LoginController;
 use App\Http\Controllers\Api\V1\Auth\MeController;
 use App\Http\Controllers\Api\V1\Auth\PasswordResetController;
@@ -17,6 +18,7 @@ use App\Http\Controllers\Api\V1\Dalal\ReportController as DalalReportController;
 use App\Http\Controllers\Api\V1\Dalal\SaleController as DalalSaleController;
 use App\Http\Controllers\Api\V1\Dalal\SettingsController as DalalSettingsController;
 use App\Http\Controllers\Api\V1\Dalal\StockController as DalalStockController;
+use App\Http\Controllers\Api\V1\Dalal\WorkerController as DalalWorkerController;
 use App\Http\Controllers\Api\V1\LookupController;
 use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\Owner\BoatController as OwnerBoatController;
@@ -56,6 +58,9 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         Route::post('verify-otp', [PasswordResetController::class, 'verifyCode'])->middleware('throttle:10,1')->name('verify-otp');
         Route::post('reset-password', [PasswordResetController::class, 'reset'])->middleware('throttle:10,1')->name('reset-password');
 
+        // تفعيل حساب أنشأه المالك بدعوة: الجوال ورمز الدعوة وكلمة مرور يختارها صاحبه.
+        Route::post('activate', [ActivationController::class, 'store'])->middleware('throttle:10,1,activate')->name('activate');
+
         Route::middleware(['auth:sanctum', 'api.active'])->group(function (): void {
             Route::post('logout', [LoginController::class, 'destroy'])->name('logout');
             Route::get('me', [MeController::class, 'show'])->name('me');
@@ -80,7 +85,11 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         Route::post('{token}/withdraw', [CounterApplicationController::class, 'withdraw'])->middleware('throttle:10,1')->name('withdraw');
     });
 
-    Route::middleware(['auth:sanctum', 'api.active'])->group(function (): void {
+    /*
+     * طلبات POST هنا تقبل ترويسة Idempotency-Key: تكرار الطلب بالمفتاح نفسه
+     * بعد ضياع ردّه يعيد الردّ الأول ولا يُنشئ سجلًّا ثانيًا (Idempotent).
+     */
+    Route::middleware(['auth:sanctum', 'api.active', 'idempotent'])->group(function (): void {
         // القوائم المرجعية لكل الأدوار في ردّ واحد.
         Route::get('lookups', [LookupController::class, 'index'])->name('lookups');
 
@@ -100,7 +109,12 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
             Route::apiResource('boats', OwnerBoatController::class);
             Route::apiResource('maintenance', OwnerMaintenanceController::class)->except('show');
             Route::apiResource('captains', OwnerCaptainController::class)->except('destroy');
-            Route::apiResource('crew', OwnerCrewController::class)->except('show');
+            Route::post('captains/{captain}/invitation', [OwnerCaptainController::class, 'invitation'])->middleware('throttle:3,1,captain-invitation')->name('captains.invitation');
+            Route::post('captains/{captain}/avatar', [OwnerCaptainController::class, 'updateAvatar'])->name('captains.avatar');
+            Route::delete('captains/{captain}/avatar', [OwnerCaptainController::class, 'removeAvatar'])->name('captains.avatar.remove');
+            Route::apiResource('crew', OwnerCrewController::class);
+            Route::post('crew/{crew}/avatar', [OwnerCrewController::class, 'updateAvatar'])->name('crew.avatar');
+            Route::delete('crew/{crew}/avatar', [OwnerCrewController::class, 'removeAvatar'])->name('crew.avatar.remove');
             Route::apiResource('employees', OwnerEmployeeController::class)->parameters(['employees' => 'id']);
             Route::apiResource('customers', OwnerCustomerController::class)->parameters(['customers' => 'id']);
             Route::apiResource('vendors', OwnerVendorController::class)->parameters(['vendors' => 'id']);
@@ -177,7 +191,13 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
             Route::put('settings', [DalalSettingsController::class, 'update'])->name('settings.update');
             Route::post('settings/logo', [DalalSettingsController::class, 'logo'])->name('settings.logo');
             Route::delete('settings/logo', [DalalSettingsController::class, 'removeLogo'])->name('settings.logo.remove');
+            // مهجور: أعداد العمالة القديمة — بعد تسجيل العمال أفرادًا تُحسب الأعداد منهم.
             Route::put('settings/workers', [DalalSettingsController::class, 'workers'])->name('settings.workers');
+
+            // عمال الدكة أفرادًا — التعطيل بالحالة في PUT، لا حذف.
+            Route::apiResource('workers', DalalWorkerController::class)->except('destroy');
+            Route::post('workers/{worker}/avatar', [DalalWorkerController::class, 'updateAvatar'])->name('workers.avatar');
+            Route::delete('workers/{worker}/avatar', [DalalWorkerController::class, 'removeAvatar'])->name('workers.avatar.remove');
         });
     });
 });

@@ -6,6 +6,7 @@ use App\Models\Customer;
 use App\Models\DalalInvoiceReview;
 use App\Models\DalalPartnership;
 use App\Models\DalalWorker;
+use App\Models\DalalWorkerCount;
 use App\Models\Sale;
 use App\Models\User;
 
@@ -41,5 +42,10 @@ trait ResolvesDalalRecords
     protected function dalalWorker(User $dalal, int|string $id): DalalWorker
     {
         return DalalWorker::forDalal($dalal)->findOrFail($id);
+    }
+
+    protected function dalalWorkerCount(User $dalal, int|string $id): DalalWorkerCount
+    {
+        return DalalWorkerCount::forDalal($dalal)->findOrFail($id);
     }
 }

@@ -12,6 +12,7 @@ use App\Models\Port;
 use App\Models\Role;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 /**
@@ -51,14 +52,18 @@ class BoatController extends Controller
 
     public function store(BoatRequest $request): RedirectResponse
     {
-        Boat::create($request->validated() + ['owner_id' => $request->user()->id, 'status' => $request->input('status', 'نشط')]);
+        Boat::create($request->validated() + ['status' => 'نشط', 'owner_id' => $request->user()->id]);
 
         return redirect()->route('panel.owner.boats')->with('status', 'تمت إضافة القارب.');
     }
 
     public function update(BoatRequest $request, int $boat): RedirectResponse
     {
-        $this->ownedBoat($request->user(), $boat)->update($request->validated());
+        DB::transaction(function () use ($request, $boat) {
+            $model = $this->lockedBoat($request->user(), $boat);
+            $model->assertVersion($request);
+            $model->update($request->validated());
+        });
 
         return redirect()->route('panel.owner.boats')->with('status', 'تم تحديث القارب.');
     }

@@ -2,11 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasVersion;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * الصياد سجلّ الوزارة (الهوية والرخصة والميناء). الكابتن له فوقه حساب دخول
@@ -15,12 +17,15 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
  */
 class Fisher extends BaseModel
 {
-    use HasFactory;
+    use HasFactory, HasVersion;
 
     public const CAPTAIN_ROLE = 'قبطان';
 
     protected $casts = [
+        'license_date' => 'date',
         'license_expiry' => 'date',
+        'iqama_issue_date' => 'date',
+        'iqama_expiry_date' => 'date',
         'fixed_salary' => 'float',
         'profit_shares' => 'float',
         'custom_share_percent' => 'float',
@@ -33,6 +38,16 @@ class Fisher extends BaseModel
                 $fisher->role = FisherRole::find($fisher->fisher_role_id)?->name ?? $fisher->role;
             }
         });
+
+        // عدد طاقم القارب مشتق من سجلات أفراده: يُعاد حسابه للقارب الذي دخله
+        // الفرد والقارب الذي تركه.
+        static::saved(function (Fisher $fisher) {
+            if ($fisher->wasRecentlyCreated || $fisher->wasChanged(['boat_id', 'status', 'user_id'])) {
+                Boat::refreshCrewCountFor($fisher->boat_id, $fisher->getOriginal('boat_id'));
+            }
+        });
+
+        static::deleted(fn (Fisher $fisher) => Boat::refreshCrewCountFor($fisher->boat_id));
     }
 
     public function port(): BelongsTo
@@ -88,6 +103,16 @@ class Fisher extends BaseModel
     public function getIsCaptainAttribute(): bool
     {
         return $this->user_id !== null;
+    }
+
+    /**
+     * صورة الفرد: صورة الطاقم في سجلّه، وصورة الكابتن في حسابه.
+     */
+    public function getAvatarUrlAttribute(): ?string
+    {
+        $path = $this->avatar_path ?? ($this->user_id ? $this->user?->avatar_path : null);
+
+        return $path ? Storage::disk('public')->url($path) : null;
     }
 
     public function scopeForOwner(Builder $query, User $owner): Builder

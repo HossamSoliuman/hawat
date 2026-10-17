@@ -37,6 +37,21 @@ abstract class OwnerRequest extends FormRequest
         return Rule::exists($table, 'id')->where('active', true);
     }
 
+    /**
+     * تواريخ وثائق الصياد (كابتن أو طاقم): الإقامة والرخصة، كلها اختيارية،
+     * والانتهاء لا يسبق البداية حين تُرسل البداية.
+     */
+    protected function fisherDocumentRules(): array
+    {
+        return [
+            'iqama_issue_date' => ['nullable', 'date'],
+            'iqama_expiry_date' => ['nullable', 'date', Rule::when($this->filled('iqama_issue_date'), 'after_or_equal:iqama_issue_date')],
+            'license_number' => ['nullable', 'string', 'max:100'],
+            'license_date' => ['nullable', 'date'],
+            'license_expiry' => ['nullable', 'date', Rule::when($this->filled('license_date'), 'after_or_equal:license_date')],
+        ];
+    }
+
     protected function prepareForValidation(): void
     {
         if ($this->has('phone')) {
@@ -48,6 +63,8 @@ abstract class OwnerRequest extends FormRequest
     {
         return [
             'phone.regex' => 'رقم الجوال يجب أن يكون بصيغة 05XXXXXXXX.',
+            'iqama_expiry_date.after_or_equal' => 'تاريخ انتهاء الإقامة يجب أن يكون في تاريخ بدايتها أو بعده.',
+            'license_expiry.after_or_equal' => 'تاريخ انتهاء الرخصة يجب أن يكون في تاريخ بدايتها أو بعده.',
             'items.required' => 'أضف صنفًا واحدًا على الأقل.',
             'items.*.species_id.required' => 'اختر نوع السمك.',
             'items.*.weight_kg.min' => 'الوزن يجب أن يكون أكبر من صفر.',

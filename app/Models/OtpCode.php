@@ -20,6 +20,9 @@ class OtpCode extends BaseModel
     /** توثيق جوال المتقدّم لوظيفة عدّاد قبل أن يصل طلبه الشركة. */
     public const PURPOSE_COUNTER_APPLICATION = 'counter_application';
 
+    /** رمز تفعيل حساب أنشأه المالك بدعوة (كابتن بلا كلمة مرور) — صالح أيامًا. */
+    public const PURPOSE_ACCOUNT_INVITATION = 'account_invitation';
+
     public const MAX_ATTEMPTS = 5;
 
     public const TTL_MINUTES = 10;
@@ -36,7 +39,7 @@ class OtpCode extends BaseModel
      *
      * @return array{0: self, 1: string}
      */
-    public static function issue(string $phone, string $purpose = self::PURPOSE_PASSWORD_RESET): array
+    public static function issue(string $phone, string $purpose = self::PURPOSE_PASSWORD_RESET, ?int $ttlMinutes = null): array
     {
         static::where('phone', $phone)->where('purpose', $purpose)->whereNull('used_at')->delete();
 
@@ -46,7 +49,7 @@ class OtpCode extends BaseModel
             'phone' => $phone,
             'code_hash' => Hash::make($code),
             'purpose' => $purpose,
-            'expires_at' => now()->addMinutes(self::TTL_MINUTES),
+            'expires_at' => now()->addMinutes($ttlMinutes ?? self::TTL_MINUTES),
         ]);
 
         return [$otp, $code];

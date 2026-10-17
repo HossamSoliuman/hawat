@@ -10,6 +10,7 @@ use App\Models\Boat;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\DB;
 
 class BoatController extends Controller
 {
@@ -32,22 +33,30 @@ class BoatController extends Controller
 
     public function store(BoatRequest $request): JsonResponse
     {
-        $boat = Boat::create($request->validated() + ['owner_id' => $request->user()->id, 'status' => $request->input('status', 'نشط')]);
+        $boat = Boat::create($request->validated() + ['status' => 'نشط', 'owner_id' => $request->user()->id]);
 
-        return (new BoatResource($boat->load(self::WITH)))->response()->setStatusCode(201);
+        return $this->respond($boat, 201);
     }
 
-    public function show(Request $request, int $boat): BoatResource
+    public function show(Request $request, int $boat): JsonResponse
     {
-        return new BoatResource($this->ownedBoat($request->user(), $boat)->load(self::WITH));
+        return $this->respond($this->ownedBoat($request->user(), $boat));
     }
 
-    public function update(BoatRequest $request, int $boat): BoatResource
+    /**
+     * If-Match (أو حقل version) بنسخة قديمة → 409 ولا يُكتب شيء.
+     */
+    public function update(BoatRequest $request, int $boat): JsonResponse
     {
-        $model = $this->ownedBoat($request->user(), $boat);
-        $model->update($request->validated());
+        $model = DB::transaction(function () use ($request, $boat) {
+            $model = $this->lockedBoat($request->user(), $boat);
+            $model->assertVersion($request);
+            $model->update($request->validated());
 
-        return new BoatResource($model->load(self::WITH));
+            return $model;
+        });
+
+        return $this->respond($model);
     }
 
     public function destroy(Request $request, int $boat): JsonResponse
@@ -61,5 +70,10 @@ class BoatController extends Controller
         $model->delete();
 
         return response()->json(['message' => 'تم حذف القارب.']);
+    }
+
+    private function respond(Boat $boat, int $status = 200): JsonResponse
+    {
+        return (new BoatResource($boat->load(self::WITH)))->response()->setStatusCode($status)->header('ETag', $boat->etag());
     }
 }

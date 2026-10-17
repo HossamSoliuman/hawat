@@ -256,4 +256,68 @@ class DalalApiTest extends TestCase
             ->assertValidRequest()->assertValidResponse(200)
             ->assertJsonPath('data.dalal_worker_types.0.name', 'بائع');
     }
+
+    public function test_workers_are_individual_records_disabled_not_deleted_and_counts_follow_them(): void
+    {
+        Storage::fake('public');
+        $seller = DalalWorkerType::where('name', 'بائع')->sole();
+        $porter = DalalWorkerType::where('name', 'حمّال')->sole();
+
+        // الأعداد القديمة تبقى ظاهرة حتى يُسجَّل أول عامل.
+        $this->as($this->dalal)->putJson('/api/v1/dalal/settings/workers', ['workers' => [['dalal_worker_type_id' => $porter->id, 'nationality' => 'هندي', 'count' => 5]]])
+            ->assertValidResponse(200)
+            ->assertJsonPath('data.workers_source', 'counts')
+            ->assertJsonPath('data.workers.0.count', 5);
+
+        $created = $this->as($this->dalal)->postJson('/api/v1/dalal/workers', [
+            'name' => 'محمد الحربي',
+            'phone' => '+966 55 000 1111',
+            'nationality' => 'سعودي',
+            'id_number' => '1012345678',
+            'dalal_worker_type_id' => $seller->id,
+        ], ['Idempotency-Key' => 'worker-1'])->assertValidRequest()->assertValidResponse(201)
+            ->assertJsonPath('data.phone', '0550001111')
+            ->assertJsonPath('data.status', 'نشط')
+            ->assertJsonPath('data.type.name', 'بائع');
+        $id = $created->json('data.id');
+
+        $this->as($this->dalal)->postJson('/api/v1/dalal/workers', ['name' => 'سالم', 'nationality' => 'سعودي', 'dalal_worker_type_id' => $seller->id])->assertValidResponse(201);
+        $this->as($this->dalal)->postJson('/api/v1/dalal/workers', ['name' => 'مكرر', 'id_number' => '1012345678', 'dalal_worker_type_id' => $seller->id])
+            ->assertValidResponse(422)->assertJsonValidationErrors('id_number');
+
+        $this->as($this->dalal)->getJson('/api/v1/dalal/workers?search=الحربي')
+            ->assertValidRequest()->assertValidResponse(200)
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('meta.total', 1);
+
+        // الأعداد محسوبة من العمال النشطين، والمسار القديم مرفوض الآن.
+        $this->as($this->dalal)->getJson('/api/v1/dalal/settings')
+            ->assertValidResponse(200)
+            ->assertJsonPath('data.workers_source', 'records')
+            ->assertJsonPath('data.workers.0.count', 2)
+            ->assertJsonPath('data.workers.0.id', null);
+        $this->as($this->dalal)->putJson('/api/v1/dalal/settings/workers', ['workers' => []])->assertValidResponse(422);
+
+        // التعطيل بالحالة؛ لا حذف.
+        $this->as($this->dalal)->putJson("/api/v1/dalal/workers/{$id}", ['name' => 'محمد الحربي', 'dalal_worker_type_id' => $seller->id, 'status' => 'غير نشط'])
+            ->assertValidRequest()->assertValidResponse(200)
+            ->assertJsonPath('data.status', 'غير نشط');
+        $this->as($this->dalal)->deleteJson("/api/v1/dalal/workers/{$id}")->assertStatus(405);
+        $this->as($this->dalal)->getJson('/api/v1/dalal/workers?status=غير نشط')->assertJsonCount(1, 'data');
+        $this->as($this->dalal)->getJson('/api/v1/dalal/settings')->assertJsonPath('data.workers.0.count', 1);
+
+        // تعديل بلا حالة يُبقيها.
+        $this->as($this->dalal)->putJson("/api/v1/dalal/workers/{$id}", ['name' => 'محمد', 'dalal_worker_type_id' => $seller->id])->assertJsonPath('data.status', 'غير نشط');
+
+        $this->as($this->dalal)->post("/api/v1/dalal/workers/{$id}/avatar", ['avatar' => UploadedFile::fake()->image('w.jpg', 512, 512)], ['Accept' => 'application/json', 'Content-Type' => 'multipart/form-data'])
+            ->assertValidRequest()->assertValidResponse(200)
+            ->assertJsonPath('data.avatar_url', fn ($url) => str_contains($url, '/storage/avatars/dalal-workers/'));
+        $this->as($this->dalal)->deleteJson("/api/v1/dalal/workers/{$id}/avatar")->assertValidResponse(200)->assertJsonPath('data.avatar_url', null);
+
+        // عامل دلال آخر 404.
+        $other = User::factory()->dalal()->create();
+        $this->as($other)->getJson("/api/v1/dalal/workers/{$id}")->assertValidResponse(404);
+        $this->as($other)->putJson("/api/v1/dalal/workers/{$id}", ['name' => 'x', 'dalal_worker_type_id' => $seller->id])->assertValidResponse(404);
+        $this->as($other)->getJson('/api/v1/dalal/workers')->assertJsonCount(0, 'data');
+    }
 }

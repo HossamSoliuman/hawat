@@ -4,6 +4,7 @@ use App\Http\Middleware\EnsureApiAccountActive;
 use App\Http\Middleware\EnsureApiRole;
 use App\Http\Middleware\EnsurePanelAccess;
 use App\Http\Middleware\ForceJsonResponse;
+use App\Http\Middleware\Idempotent;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -22,6 +23,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'panel' => EnsurePanelAccess::class,
             'api.active' => EnsureApiAccountActive::class,
             'api.role' => EnsureApiRole::class,
+            'idempotent' => Idempotent::class,
         ]);
 
         // واجهة التطبيق تردّ JSON دائمًا، طلب العميل ذلك أم لم يطلبه.

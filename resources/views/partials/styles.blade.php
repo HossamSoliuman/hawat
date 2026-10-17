@@ -492,6 +492,9 @@ html.dark .note-box svg { color: hsl(160 60% 62%); }
 .topbar-bell .count { position: absolute; top: -.2rem; inset-inline-end: -.2rem; min-width: 1.05rem; height: 1.05rem; padding: 0 .25rem; display: flex; align-items: center; justify-content: center; background: #d61f47; color: #fff; font-family: 'Chakra Petch', sans-serif; font-size: .62rem; font-weight: 700; }
 .avatar-lg { width: 5rem; height: 5rem; display: flex; align-items: center; justify-content: center; border: 1px solid var(--hair); background: hsl(var(--primary) / .1); color: hsl(var(--primary)); font-size: 1.8rem; font-weight: 700; overflow: hidden; flex-shrink: 0; }
 .avatar-lg img { width: 100%; height: 100%; object-fit: cover; }
+.avatar-sm { width: 2rem; height: 2rem; display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--hair); background: hsl(var(--primary) / .1); color: hsl(var(--primary)); font-size: .8rem; font-weight: 700; overflow: hidden; flex-shrink: 0; vertical-align: middle; }
+.avatar-sm img { width: 100%; height: 100%; object-fit: cover; }
+.person-cell { display: flex; align-items: center; gap: .55rem; }
 .lines-table td { vertical-align: middle; }
 .lines-table .input, .lines-table .select { width: 100%; min-width: 6rem; }
 .lines-table .num { font-family: 'Chakra Petch', sans-serif; font-weight: 600; white-space: nowrap; }
