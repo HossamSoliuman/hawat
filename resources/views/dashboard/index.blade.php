@@ -14,7 +14,7 @@
 
     <div class="kpi-grid">
         @foreach ($kpis as $kpi)
-            <div class="kpi-card">
+            <div class="kpi-card" data-tone="{{ $kpi['tone'] }}">
                 <div class="top">
                     <p class="label">{{ $kpi['label'] }}</p>
                     <div class="kpi-icon {{ $kpi['tone'] }}">@include('partials.icon', ['name' => $kpi['icon']])</div>

@@ -145,7 +145,7 @@
 
         {{-- البطاقات على قاعدة اللوحة: .card تحمل الأقواس والخطّ الشعري، وهنا الحشوة والمرور فقط. --}}
         .ld-card { padding: clamp(18px, 2vw, 26px); gap: .9rem; transition: border-color .15s ease, background .15s ease; }
-        .ld-card:hover { border-color: hsl(var(--primary) / .6); background: hsl(var(--primary) / .05); }
+        .ld-card:hover { border-color: hsl(var(--primary) / .6); background: linear-gradient(hsl(var(--primary) / .05) 0 0), var(--panel); }
         .ld-card h3 { font-size: .95rem; font-weight: 700; line-height: 1.4; }
         .ld-card p { font-size: .84rem; line-height: 1.75; color: hsl(var(--muted-foreground)); }
         .ico-box { display: flex; align-items: center; justify-content: center; height: 2.5rem; width: 2.5rem; flex-shrink: 0; background: hsl(var(--primary) / .1); border: 1px solid hsl(var(--primary) / .5); color: hsl(var(--primary)); }
@@ -247,7 +247,7 @@
         /* ---------- التغطية: قائمة وخريطة ---------- */
         .ld-cov { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: clamp(16px, 2vw, 28px); align-items: center; }
         .ld-cov-list { display: grid; gap: 10px; align-content: start; }
-        .ld-cov-list .row { display: flex; align-items: center; gap: .8rem; min-height: 48px; padding: .6rem .9rem; border: 1px solid var(--hair); background: var(--surface); font-size: .92rem; font-weight: 700; }
+        .ld-cov-list .row { display: flex; align-items: center; gap: .8rem; min-height: 48px; padding: .6rem .9rem; border: 1px solid var(--hair); background: var(--panel); font-size: .92rem; font-weight: 700; }
         @media (min-width: 900px) { .ld-cov { grid-template-columns: minmax(260px, 1fr) minmax(0, 1.6fr); } }
         .ld-map { padding: .5rem; }
         .ksa-map { width: 100%; height: auto; display: block; }

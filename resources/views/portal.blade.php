@@ -67,17 +67,16 @@
             .portal-group { max-width: 66rem; }
             .portal-grid { grid-template-columns: repeat(3, 1fr); }
         }
-        {{-- بوّابات الواجهة على قاعدة اللوحة نفسها التي في الداخل: سطحٌ شفّاف
-             تمرّ خلفه صورة الصفحة، يحدّه خطٌّ شعري وأربعة أقواس زوايا — لا
-             لونُ بطاقةٍ مصمت يقتطعها من الخلفية. والمرور يزيدها لمسةَ لونٍ
-             خافتة لا رفعًا ولا ظلًّا. --}}
+        {{-- بوّابات الواجهة على قاعدة اللوحة نفسها التي في الداخل: سطح البطاقة
+             الهادئ (`--panel`) يحدّه خطٌّ شعري وأربعة أقواس زوايا، فتُقرأ فوق صورة
+             الصفحة. والمرور يزيدها لمسةَ لونٍ خافتة لا رفعًا ولا ظلًّا. --}}
         .portal-card {
             display: flex; flex-direction: column; gap: .75rem; padding: 1.25rem;
             border: 1px solid var(--hair); border-radius: 0;
-            background: var(--surface);
+            background: var(--panel);
             transition: border-color .15s ease, background .15s ease;
         }
-        .portal-card:hover { border-color: hsl(var(--primary) / .6); background: hsl(var(--primary) / .05); }
+        .portal-card:hover { border-color: hsl(var(--primary) / .6); background: linear-gradient(hsl(var(--primary) / .05) 0 0), var(--panel); }
         {{-- رأس البطاقة سطر واحد: مربّع الأيقونة، ثم علامة البوابة المحميّة إن كانت. --}}
         .portal-card .card-top { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
         .portal-card .icon-wrap {
