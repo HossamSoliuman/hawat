@@ -12,6 +12,7 @@ use App\Models\Species;
 use App\Models\StockMovement;
 use App\Models\Trip;
 use App\Models\User;
+use App\Services\Stock\StockLedger;
 use Database\Seeders\LookupSeeder;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -406,6 +407,20 @@ class OwnerApiTest extends TestCase
             ->assertValidRequest()->assertValidResponse(200)
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.id', $counted->id);
+    }
+
+    public function test_available_stock_lists_each_species_once(): void
+    {
+        $trip = Trip::factory()->onBoat($this->boat())->readyForSale()->create();
+        foreach ([60, 40] as $kg) {
+            $record = $trip->catchRecords()->create(['species_id' => $this->hamour->id, 'quantity_kg' => $kg, 'counted_kg' => $kg, 'recorded_at' => now()->toDateString()]);
+            app(StockLedger::class)->record($this->owner, $this->hamour->id, StockLedger::INTAKE, $kg, $trip, $record);
+        }
+
+        $this->asOwner()->getJson("/api/v1/owner/trips/{$trip->id}")
+            ->assertValidRequest()->assertValidResponse(200)
+            ->assertJsonCount(1, 'data.available_stock')
+            ->assertJsonPath('data.available_stock.0.available_kg', 100);
     }
 
     public function test_trip_stages_split_the_list_without_overlap(): void

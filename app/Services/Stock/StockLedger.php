@@ -102,7 +102,9 @@ class StockLedger
     {
         $available = $this->availableByTrip($holder, $trip);
 
+        // سطر لكل صنف: الصنف المسجّل في سطرين (عدٌّ قديم) لا يُعرض مرتين ولا يُجمع مرتين.
         return $trip->catchRecords()->with('species:id,name_ar')->get()
+            ->unique('species_id')
             ->map(fn ($record) => [
                 'species_id' => $record->species_id,
                 'species' => $record->species?->name_ar,
