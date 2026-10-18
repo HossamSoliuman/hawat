@@ -10,7 +10,7 @@
 - `GET /owner/dashboard?period=today|week|month|year|all`: الفترة تحصر `revenue` و`sales_count` و`catch_kg` (بتاريخ العد). الأسبوع يبدأ الأحد. بلا فترة = كل ما مضى كما كان. القوارب والرحلات في طورها و`unpaid` قائمة الآن بلا فترة. الردّ يعيد `period`.
 - `Dashboard.action_items`: `trips_to_start` (مجدولة لم تبدأ)، `trips_to_sell` (قيد البيع)، `unpaid_sales` و`unpaid_total` (فواتير بقي فيها مبلغ) — ما ينتظر المالك في نداء واحد.
 - `GET /owner/sales?unpaid=1`: الفواتير التي بقي فيها مبلغ لم يُحصَّل.
-- `GET /owner/trips?stage=scheduled|in_progress|for_sale|sold|cancelled`: مراحل لا تتداخل كتبويبات التطبيق (`in_progress` = في البحر أو عند العدّاد، بخلاف `active=1` الذي يضم قيد البيع). مرحلة غير معروفة → 422.
+- `GET /owner/trips?stage=scheduled|in_progress|for_sale|done|cancelled`: مراحل لا تتداخل كتبويبات التطبيق (`in_progress` = في البحر أو عند العدّاد، بخلاف `active=1` الذي يضم قيد البيع؛ `done` = بيع مصيدها كله أو عُدّت بلا مصيد يُباع). مرحلة غير معروفة → 422.
 
 ## 1.7.0 — 2026-10-17 — الكابتن سجلّ عند المالك بلا حساب
 

@@ -416,6 +416,8 @@ class OwnerApiTest extends TestCase
         $counting = Trip::factory()->onBoat($boat)->create(['status' => Trip::COUNTING]);
         $forSale = Trip::factory()->onBoat($boat)->readyForSale()->create();
         $sold = Trip::factory()->onBoat($boat)->readyForSale()->create(['sale_status' => Trip::SALE_DONE]);
+        // عُدّت ولا مصيد يُباع منها: مكتملة لا ضائعة بين التبويبات.
+        $countedEmpty = Trip::factory()->onBoat($boat)->readyForSale()->create(['sale_status' => Trip::SALE_NOT_STARTED]);
         $cancelled = Trip::factory()->onBoat($boat)->create(['status' => Trip::CANCELLED]);
 
         $ids = fn (string $stage) => collect($this->asOwner()->getJson("/api/v1/owner/trips?stage={$stage}")
@@ -424,7 +426,7 @@ class OwnerApiTest extends TestCase
         $this->assertSame([$scheduled->id], $ids('scheduled'));
         $this->assertSame([$atSea->id, $counting->id], $ids('in_progress'));
         $this->assertSame([$forSale->id], $ids('for_sale'));
-        $this->assertSame([$sold->id], $ids('sold'));
+        $this->assertSame([$sold->id, $countedEmpty->id], $ids('done'));
         $this->assertSame([$cancelled->id], $ids('cancelled'));
 
         $this->asOwner()->getJson('/api/v1/owner/trips?stage=everything')

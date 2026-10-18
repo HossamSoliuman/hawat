@@ -191,9 +191,10 @@ class Trip extends BaseModel
 
     /**
      * مراحل رحلات المالك كما تبويبات التطبيق — لا تتداخل، فالرحلة في واحدة منها:
-     * مجدولة، ثم جارية (في البحر وعند العدّاد)، ثم للبيع، ثم مباعة، أو ملغاة.
+     * مجدولة، ثم جارية (في البحر وعند العدّاد)، ثم للبيع، ثم مكتملة (بيع
+     * مصيدها كله، أو عُدّت بلا مصيد يُباع)، أو ملغاة.
      */
-    public const STAGES = ['scheduled', 'in_progress', 'for_sale', 'sold', 'cancelled'];
+    public const STAGES = ['scheduled', 'in_progress', 'for_sale', 'done', 'cancelled'];
 
     public function scopeStage(Builder $query, string $stage): Builder
     {
@@ -201,7 +202,9 @@ class Trip extends BaseModel
             'scheduled' => $query->where('status', self::SCHEDULED),
             'in_progress' => $query->whereIn('status', [self::AT_SEA, self::RETURNED, self::AWAITING_COUNT, self::COUNTING]),
             'for_sale' => $query->where('sale_status', self::SALE_OPEN),
-            'sold' => $query->where('sale_status', self::SALE_DONE),
+            'done' => $query->where(fn (Builder $q) => $q
+                ->where('sale_status', self::SALE_DONE)
+                ->orWhere(fn (Builder $w) => $w->whereIn('status', [self::AWAITING_APPROVAL, self::APPROVED])->where('sale_status', self::SALE_NOT_STARTED))),
             'cancelled' => $query->where('status', self::CANCELLED),
             default => $query,
         };

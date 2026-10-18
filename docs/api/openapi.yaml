@@ -2055,14 +2055,14 @@ paths:
           default: 25
       - name: stage
         in: query
-        description: 'مرحلة الرحلة كتبويبات التطبيق، لا تتداخل: `scheduled` مجدولة، `in_progress` في البحر أو عند العدّاد، `for_sale` قيد البيع، `sold` مباعة، `cancelled` ملغاة'
+        description: 'مرحلة الرحلة كتبويبات التطبيق، لا تتداخل: `scheduled` مجدولة، `in_progress` في البحر أو عند العدّاد، `for_sale` قيد البيع، `done` مكتملة (بيع مصيدها كله أو عُدّت بلا مصيد يُباع)، `cancelled` ملغاة'
         schema:
           type: string
           enum:
           - scheduled
           - in_progress
           - for_sale
-          - sold
+          - done
           - cancelled
       - name: active
         in: query
