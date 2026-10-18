@@ -43,6 +43,30 @@ return [
     ],
     'fixed_otp' => env('HAWAT_FIXED_OTP'),
 
+    /*
+     * إعداد تطبيق الجوال (GET /api/v1/app/config) — يقرؤه التطبيق قبل الدخول:
+     *
+     *   min_version / latest_version — أقدم نسخة تعمل وأحدث نسخة منشورة؛ ما دون
+     *                    الأولى يُطلب تحديثه قبل أي شيء.
+     *   sms_enabled    — رسائل نصية حقيقية (استعادة كلمة المرور برمز). يبقى false
+     *                    حتى يُعتمد مزوّد؛ إلى ذلك الحين "نسيت كلمة المرور" يحوّل
+     *                    إلى الدعم الفني، والإدارة تضبط كلمة جديدة من الحسابات.
+     *   support_*      — هاتف الدعم وواتساب، الافتراضي رقم التواصل في صفحة الهبوط.
+     *   join_url       — "طلب حساب": نموذج الانضمام في صفحة الهبوط.
+     *   privacy_url / terms_url — فارغة حتى تُنشر صفحتاهما؛ التطبيق يخفي الرابط الفارغ.
+     */
+    'mobile_app' => [
+        'min_version' => env('HAWAT_APP_MIN_VERSION', '1.0.0'),
+        'latest_version' => env('HAWAT_APP_LATEST_VERSION', '1.0.0'),
+        'store_url' => env('HAWAT_APP_STORE_URL', 'https://play.google.com/store/apps/details?id=sa.hawat.app'),
+        'sms_enabled' => (bool) env('HAWAT_APP_SMS_ENABLED', false),
+        'support_phone' => env('HAWAT_SUPPORT_PHONE', '0595233393'),
+        'support_whatsapp' => env('HAWAT_SUPPORT_WHATSAPP', '966595233393'),
+        'join_url' => env('HAWAT_APP_JOIN_URL'),
+        'privacy_url' => env('HAWAT_PRIVACY_URL'),
+        'terms_url' => env('HAWAT_TERMS_URL'),
+    ],
+
     'name' => 'حوات',
     'tagline' => 'لوحة وزارة البيئة والمياه والزراعة',
     'ministry' => 'وزارة البيئة والمياه والزراعة',

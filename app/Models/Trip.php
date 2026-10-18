@@ -189,6 +189,24 @@ class Trip extends BaseModel
             ->orWhere('sale_status', self::SALE_OPEN));
     }
 
+    /**
+     * مراحل رحلات المالك كما تبويبات التطبيق — لا تتداخل، فالرحلة في واحدة منها:
+     * مجدولة، ثم جارية (في البحر وعند العدّاد)، ثم للبيع، ثم مباعة، أو ملغاة.
+     */
+    public const STAGES = ['scheduled', 'in_progress', 'for_sale', 'sold', 'cancelled'];
+
+    public function scopeStage(Builder $query, string $stage): Builder
+    {
+        return match ($stage) {
+            'scheduled' => $query->where('status', self::SCHEDULED),
+            'in_progress' => $query->whereIn('status', [self::AT_SEA, self::RETURNED, self::AWAITING_COUNT, self::COUNTING]),
+            'for_sale' => $query->where('sale_status', self::SALE_OPEN),
+            'sold' => $query->where('sale_status', self::SALE_DONE),
+            'cancelled' => $query->where('status', self::CANCELLED),
+            default => $query,
+        };
+    }
+
     public function isCancelled(): bool
     {
         return $this->status === self::CANCELLED;

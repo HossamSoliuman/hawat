@@ -14,6 +14,7 @@ use App\Services\Trips\TripService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Validation\Rule;
 
 /**
  * رحلات المالك بدورتها كلها: الإنشاء والإسناد لكابتن، ثم البدء والإلغاء
@@ -32,7 +33,10 @@ class TripController extends Controller
 
     public function index(Request $request): AnonymousResourceCollection
     {
+        $request->validate(['stage' => ['nullable', Rule::in(Trip::STAGES)]], [], ['stage' => 'المرحلة']);
+
         $trips = Trip::forOwner($request->user())->with(self::WITH)
+            ->when($request->filled('stage'), fn ($q) => $q->stage($request->query('stage')))
             ->when($request->boolean('active'), fn ($q) => $q->activeForOwner())
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->query('status')))
             ->when($request->filled('sale_status'), fn ($q) => $q->where('sale_status', $request->query('sale_status')))

@@ -3,6 +3,15 @@
 المواصفة الكاملة: `docs/api/openapi.yaml` (تُعرض على `/api/docs`، وتُستورد في Postman من `/api/openapi.yaml`).
 كل ردّ في الاختبارات يُطابَق مع المواصفة (Spectator)، فما هنا هو ما يعمل فعلًا.
 
+## 1.8.0 — 2026-10-18 — رئيسة تطبيق المالك وإعداد التطبيق
+
+### جديد
+- `GET /app/config` بلا رمز (`AppConfig`): `min_version` و`latest_version` و`store_url` للتحديث الإجباري، و`sms_enabled` (false حتى يُعتمد مزوّد رسائل، فيحوّل "نسيت كلمة المرور" إلى الدعم الفني)، و`support_phone` و`support_whatsapp`، و`join_url` (نموذج الانضمام في صفحة الهبوط)، و`privacy_url` و`terms_url` (فارغة حتى تُنشر صفحتاهما).
+- `GET /owner/dashboard?period=today|week|month|year|all`: الفترة تحصر `revenue` و`sales_count` و`catch_kg` (بتاريخ العد). الأسبوع يبدأ الأحد. بلا فترة = كل ما مضى كما كان. القوارب والرحلات في طورها و`unpaid` قائمة الآن بلا فترة. الردّ يعيد `period`.
+- `Dashboard.action_items`: `trips_to_start` (مجدولة لم تبدأ)، `trips_to_sell` (قيد البيع)، `unpaid_sales` و`unpaid_total` (فواتير بقي فيها مبلغ) — ما ينتظر المالك في نداء واحد.
+- `GET /owner/sales?unpaid=1`: الفواتير التي بقي فيها مبلغ لم يُحصَّل.
+- `GET /owner/trips?stage=scheduled|in_progress|for_sale|sold|cancelled`: مراحل لا تتداخل كتبويبات التطبيق (`in_progress` = في البحر أو عند العدّاد، بخلاف `active=1` الذي يضم قيد البيع). مرحلة غير معروفة → 422.
+
 ## 1.7.0 — 2026-10-17 — الكابتن سجلّ عند المالك بلا حساب
 
 الكابتن لا يدخل حوات ولا يفعل شيئًا بنفسه: صار سجلّ صياد عند المالك كفرد الطاقم (`Fisher` بـ`is_captain: true`)، يُسند إلى القارب والرحلات، والمالك يدير الرحلة كلها من مسارات `/owner/*`. **تغيير كاسر** لما يخصّ الكابتن.

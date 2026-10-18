@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\V1\AppConfigController;
 use App\Http\Controllers\Api\V1\Auth\LoginController;
 use App\Http\Controllers\Api\V1\Auth\MeController;
 use App\Http\Controllers\Api\V1\Auth\PasswordResetController;
@@ -48,6 +49,9 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::prefix('v1')->name('api.v1.')->group(function (): void {
+    // إعداد التطبيق قبل الدخول: التحديث الإجباري، وأرقام الدعم، والرسائل النصية.
+    Route::get('app/config', [AppConfigController::class, 'show'])->middleware('throttle:60,1')->name('app.config');
+
     Route::prefix('auth')->name('auth.')->group(function (): void {
         Route::post('login', [LoginController::class, 'store'])->middleware('throttle:6,1')->name('login');
 

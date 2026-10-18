@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Hawat Mobile API
-  version: 1.7.0
+  version: 1.8.0
   description: |
     Hawat mobile app API (com.os.hawat). All responses are JSON.
 
@@ -22,10 +22,13 @@ info:
     - Retries: every authenticated `POST` accepts an `Idempotency-Key` header. Repeating a request with the same key after a lost response returns the first response (`Idempotency-Replayed: true`) without creating a second record.
     - Concurrent edits: `Boat` and `Fisher` (captains and crew) carry `version` (also sent as the `ETag` header). Send it back in `If-Match` (or a `version` body field) on `PUT`; a stale version gets `409` and nothing is written.
     - Uniqueness: `boat_number`, fisher `national_id` and account `phone` are unique system-wide, including inactive records; a duplicate is `422` on the same field. Deleted captains and crew free their `national_id`. A captain's or crew member's `phone` is not an account and is not unique.
+    - App config: `GET /app/config` (no token) gives the minimum app version for a forced update, the store link, whether SMS password reset is available, and the support numbers. Read it on every launch.
     - Changelog: docs/api/CHANGELOG.md.
 servers:
 - url: /api/v1
 tags:
+- name: app
+  description: إعداد التطبيق قبل الدخول
 - name: auth
   description: الدخول والحساب واستعادة كلمة المرور
 - name: lookups
@@ -53,6 +56,23 @@ tags:
 - name: counter-applications
   description: التقديم لوظيفة عدّاد لدى شركات التشغيل — بلا حساب
 paths:
+  /app/config:
+    get:
+      tags:
+      - app
+      summary: إعداد التطبيق — التحديث الإجباري وأرقام الدعم والرسائل النصية
+      description: بلا رمز. يقرؤه التطبيق عند كل فتح، فيطلب التحديث إن كانت نسخته دون `min_version`، ويختار في "نسيت كلمة المرور" بين رمز الرسائل (`sms_enabled`) والتواصل مع الدعم.
+      security: []
+      responses:
+        '200':
+          description: الإعداد
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/AppConfig'
   /auth/login:
     post:
       tags:
@@ -702,7 +722,19 @@ paths:
     get:
       tags:
       - owner
-      summary: رئيسة المالك — المؤشرات والمخزون والرحلات النشطة وآخر المبيعات
+      summary: رئيسة المالك — ما ينتظر المالك والمؤشرات والمخزون والرحلات النشطة وآخر المبيعات
+      parameters:
+      - name: period
+        in: query
+        description: فترة الإيرادات وعدد الفواتير والمصيد المعدود. الأسبوع يبدأ الأحد. بلا فترة (أو `all`) كل ما مضى. القوارب والرحلات في طورها وغير المحصّل قائمة الآن فلا فترة لها.
+        schema:
+          type: string
+          enum:
+          - today
+          - week
+          - month
+          - year
+          - all
       responses:
         '200':
           description: الرئيسة
@@ -717,6 +749,8 @@ paths:
           $ref: '#/components/responses/Unauthenticated'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/ValidationError'
   /owner/stock:
     get:
       tags:
@@ -2019,6 +2053,17 @@ paths:
         schema:
           type: integer
           default: 25
+      - name: stage
+        in: query
+        description: 'مرحلة الرحلة كتبويبات التطبيق، لا تتداخل: `scheduled` مجدولة، `in_progress` في البحر أو عند العدّاد، `for_sale` قيد البيع، `sold` مباعة، `cancelled` ملغاة'
+        schema:
+          type: string
+          enum:
+          - scheduled
+          - in_progress
+          - for_sale
+          - sold
+          - cancelled
       - name: active
         in: query
         description: 1 = الرحلات النشطة (من الانطلاق حتى البيع)
@@ -2062,6 +2107,8 @@ paths:
           $ref: '#/components/responses/Unauthenticated'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/ValidationError'
     post:
       tags:
       - owner-trips
@@ -2354,6 +2401,11 @@ paths:
         description: زبون
         schema:
           type: integer
+      - name: unpaid
+        in: query
+        description: 1 = الفواتير التي بقي فيها مبلغ لم يُحصَّل
+        schema:
+          type: boolean
       - name: from
         in: query
         description: من تاريخ
@@ -3987,6 +4039,40 @@ components:
           type: string
           format: date-time
           nullable: true
+    AppConfig:
+      type: object
+      properties:
+        min_version:
+          type: string
+          example: 1.0.0
+          description: أقدم نسخة تعمل — ما دونها يُطلب تحديثه قبل أي شيء
+        latest_version:
+          type: string
+          example: 1.0.0
+        store_url:
+          type: string
+          nullable: true
+        sms_enabled:
+          type: boolean
+          description: استعادة كلمة المرور برمز رسالة نصية متاحة. false = "نسيت كلمة المرور" يحوّل إلى الدعم الفني
+        support_phone:
+          type: string
+          nullable: true
+          example: '0595233393'
+        support_whatsapp:
+          type: string
+          nullable: true
+          example: '966595233393'
+          description: بالصيغة الدولية بلا + لرابط wa.me
+        join_url:
+          type: string
+          description: نموذج طلب الانضمام في صفحة الهبوط
+        privacy_url:
+          type: string
+          nullable: true
+        terms_url:
+          type: string
+          nullable: true
     Role:
       type: object
       properties:
@@ -5496,13 +5582,40 @@ components:
     Dashboard:
       type: object
       properties:
+        period:
+          type: string
+          enum:
+          - today
+          - week
+          - month
+          - year
+          - all
+          description: الفترة التي حُسبت عليها `revenue` و`sales_count` و`catch_kg`
+        action_items:
+          type: object
+          description: ما ينتظر المالك الآن — كلها قائمة بلا فترة
+          properties:
+            trips_to_start:
+              type: integer
+              description: رحلات مجدولة لم يبدأها (`GET /owner/trips?status=مجدولة`)
+            trips_to_sell:
+              type: integer
+              description: رحلات اكتمل عدّها ومصيدها لم يُبع كله (`?sale_status=قيد البيع`)
+            unpaid_sales:
+              type: integer
+              description: فواتير بقي فيها مبلغ (`GET /owner/sales?unpaid=1`)
+            unpaid_total:
+              type: number
+              description: مجموع المتبقي في تلك الفواتير بالريال
         kpis:
           type: object
           properties:
             revenue:
               type: number
+              description: إيرادات الفترة
             catch_kg:
               type: number
+              description: المصيد المعدود في الفترة (بتاريخ العد)
             active_boats:
               type: number
             boats:
@@ -5518,8 +5631,10 @@ components:
               type: number
             sales_count:
               type: number
+              description: فواتير الفترة
             unpaid:
               type: number
+              description: غير المحصّل من كل الفواتير — قائم الآن بلا فترة
             customers:
               type: number
         revenue_by_month:

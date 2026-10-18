@@ -7,6 +7,7 @@ use App\Models\Customer;
 use App\Models\Fisher;
 use App\Models\Port;
 use App\Models\Role;
+use App\Models\Sale;
 use App\Models\Species;
 use App\Models\StockMovement;
 use App\Models\Trip;
@@ -344,6 +345,45 @@ class OwnerApiTest extends TestCase
             ->assertJsonPath('data.kpis.sales_count', 1);
     }
 
+    public function test_dashboard_sums_the_chosen_period_and_lists_what_waits_for_the_owner(): void
+    {
+        $boat = $this->boat();
+        Trip::factory()->onBoat($boat)->count(2)->create();
+        Trip::factory()->onBoat($boat)->readyForSale()->create(['actual_weight_kg' => 80]);
+        Trip::factory()->onBoat($boat)->readyForSale()->create(['actual_weight_kg' => 50, 'counted_at' => now()->subYears(2)]);
+
+        $sale = fn (array $attributes) => Sale::factory()->create(['seller_id' => $this->owner->id] + $attributes);
+        $sale(['total' => 1000, 'paid_amount' => 1000, 'sold_at' => now()]);
+        $sale(['total' => 600, 'paid_amount' => 200, 'sold_at' => now()]);
+        $sale(['total' => 900, 'paid_amount' => 0, 'sold_at' => now()->subYears(2)]);
+
+        $this->asOwner()->getJson('/api/v1/owner/dashboard?period=month')
+            ->assertValidRequest()->assertValidResponse(200)
+            ->assertJsonPath('data.period', 'month')
+            ->assertJsonPath('data.kpis.revenue', 1600)
+            ->assertJsonPath('data.kpis.sales_count', 2)
+            ->assertJsonPath('data.kpis.catch_kg', 80)
+            // غير المحصّل دين قائم: فاتورة قبل سنتين ما زالت مستحقة هذا الشهر.
+            ->assertJsonPath('data.kpis.unpaid', 1300)
+            ->assertJsonPath('data.action_items.trips_to_start', 2)
+            ->assertJsonPath('data.action_items.trips_to_sell', 2)
+            ->assertJsonPath('data.action_items.unpaid_sales', 2)
+            ->assertJsonPath('data.action_items.unpaid_total', 1300);
+
+        $this->asOwner()->getJson('/api/v1/owner/dashboard')
+            ->assertValidRequest()->assertValidResponse(200)
+            ->assertJsonPath('data.period', 'all')
+            ->assertJsonPath('data.kpis.revenue', 2500)
+            ->assertJsonPath('data.kpis.catch_kg', 130);
+
+        $this->asOwner()->getJson('/api/v1/owner/dashboard?period=decade')
+            ->assertInvalidRequest()->assertValidResponse(422);
+
+        $this->asOwner()->getJson('/api/v1/owner/sales?unpaid=1')
+            ->assertValidRequest()->assertValidResponse(200)
+            ->assertJsonCount(2, 'data');
+    }
+
     public function test_a_trip_is_cancelled_with_a_reason_only_before_its_catch_is_submitted(): void
     {
         $boat = $this->boat();
@@ -366,5 +406,28 @@ class OwnerApiTest extends TestCase
             ->assertValidRequest()->assertValidResponse(200)
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.id', $counted->id);
+    }
+
+    public function test_trip_stages_split_the_list_without_overlap(): void
+    {
+        $boat = $this->boat();
+        $scheduled = Trip::factory()->onBoat($boat)->create();
+        $atSea = Trip::factory()->onBoat($boat)->atSea()->create();
+        $counting = Trip::factory()->onBoat($boat)->create(['status' => Trip::COUNTING]);
+        $forSale = Trip::factory()->onBoat($boat)->readyForSale()->create();
+        $sold = Trip::factory()->onBoat($boat)->readyForSale()->create(['sale_status' => Trip::SALE_DONE]);
+        $cancelled = Trip::factory()->onBoat($boat)->create(['status' => Trip::CANCELLED]);
+
+        $ids = fn (string $stage) => collect($this->asOwner()->getJson("/api/v1/owner/trips?stage={$stage}")
+            ->assertValidRequest()->assertValidResponse(200)->json('data'))->pluck('id')->sort()->values()->all();
+
+        $this->assertSame([$scheduled->id], $ids('scheduled'));
+        $this->assertSame([$atSea->id, $counting->id], $ids('in_progress'));
+        $this->assertSame([$forSale->id], $ids('for_sale'));
+        $this->assertSame([$sold->id], $ids('sold'));
+        $this->assertSame([$cancelled->id], $ids('cancelled'));
+
+        $this->asOwner()->getJson('/api/v1/owner/trips?stage=everything')
+            ->assertInvalidRequest()->assertValidResponse(422);
     }
 }

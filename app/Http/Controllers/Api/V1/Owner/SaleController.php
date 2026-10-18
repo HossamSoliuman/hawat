@@ -25,6 +25,8 @@ class SaleController extends Controller
         $sales = Sale::forSeller($request->user())->with(self::WITH)->withCount('items')->withSum('items', 'weight_kg')
             ->when($request->filled('trip_id'), fn ($q) => $q->where('trip_id', $request->query('trip_id')))
             ->when($request->filled('customer_id'), fn ($q) => $q->where('customer_id', $request->query('customer_id')))
+            // غير المحصّلة كاملة: ما بقي فيها مبلغ — مدخل "فواتير غير محصّلة" في الرئيسة.
+            ->when($request->boolean('unpaid'), fn ($q) => $q->whereColumn('paid_amount', '<', 'total'))
             ->when($request->filled('from'), fn ($q) => $q->whereDate('sold_at', '>=', $request->query('from')))
             ->when($request->filled('to'), fn ($q) => $q->whereDate('sold_at', '<=', $request->query('to')))
             ->when($request->filled('search'), fn ($q) => $q->where(fn ($w) => $w
