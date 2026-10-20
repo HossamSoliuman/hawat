@@ -55,9 +55,10 @@ class SaleService
 
         return DB::transaction(function () use ($seller, $trip, $data, $items) {
             $subtotal = round(array_sum(array_column($items, 'total')), 2);
-            $discount = round((float) ($data['discount'] ?? 0), 2);
-            $total = round(max($subtotal - $discount, 0), 2);
-            $paid = array_key_exists('paid_amount', $data) && $data['paid_amount'] !== null ? round((float) $data['paid_amount'], 2) : $total;
+            // الخصم لا يتجاوز المجموع والمدفوع لا يتجاوز الإجمالي، فلا يصير المتبقي سالبًا.
+            $discount = min(round((float) ($data['discount'] ?? 0), 2), $subtotal);
+            $total = round($subtotal - $discount, 2);
+            $paid = array_key_exists('paid_amount', $data) && $data['paid_amount'] !== null ? min(round((float) $data['paid_amount'], 2), $total) : $total;
 
             $sale = Sale::create([
                 'invoice_number' => Sale::nextInvoiceNumber(),
@@ -225,26 +226,32 @@ class SaleService
 
     /**
      * يسجّل دفعة على فاتورة لم تُسدَّد كاملة، فتكتمل حين يُسدَّد المتبقي.
+     * فاتورة المالك تبقى "مكتمل" وإن بقي فيها مبلغ؛ حالة الدفع تحمل التحصيل.
      */
     public function recordPayment(User $by, Sale $sale, float $amount): Sale
     {
         $amount = round($amount, 2);
 
-        if ($amount <= 0 || $amount > $sale->remaining) {
-            throw ValidationException::withMessages(['amount' => 'المبلغ يجب أن يكون أكبر من صفر ولا يتجاوز المتبقي ('.number_format($sale->remaining, 2).' ر.س).']);
-        }
+        return DB::transaction(function () use ($by, $sale, $amount) {
+            // دفعتان من جهازين معًا لا تتجاوزان المتبقي.
+            $sale = Sale::whereKey($sale->id)->lockForUpdate()->firstOrFail();
 
-        $paid = round((float) $sale->paid_amount + $amount, 2);
+            if ($amount <= 0 || $amount > $sale->remaining) {
+                throw ValidationException::withMessages(['amount' => 'المبلغ يجب أن يكون أكبر من صفر ولا يتجاوز المتبقي ('.number_format($sale->remaining, 2).' ر.س).']);
+            }
 
-        $sale->update([
-            'paid_amount' => $paid,
-            'payment_status_id' => $this->paymentStatusFor($paid, (float) $sale->total)->id,
-            'status' => $paid >= (float) $sale->total ? Sale::COMPLETED : Sale::IN_PROGRESS,
-        ]);
+            $paid = round((float) $sale->paid_amount + $amount, 2);
 
-        $this->log('تحصيل دفعة', $by, $sale->invoice_number, "تحصيل {$amount} — المدفوع {$paid} من {$sale->total}");
+            $sale->update([
+                'paid_amount' => $paid,
+                'payment_status_id' => $this->paymentStatusFor($paid, (float) $sale->total)->id,
+                'status' => $paid >= (float) $sale->total ? Sale::COMPLETED : $sale->status,
+            ]);
 
-        return $sale;
+            $this->log('تحصيل دفعة', $by, $sale->invoice_number, "تحصيل {$amount} — المدفوع {$paid} من {$sale->total}");
+
+            return $sale;
+        });
     }
 
     /**

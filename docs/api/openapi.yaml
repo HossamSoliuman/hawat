@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Hawat Mobile API
-  version: 1.8.0
+  version: 1.9.0
   description: |
     Hawat mobile app API (com.os.hawat). All responses are JSON.
 
@@ -2436,6 +2436,21 @@ paths:
                       type: array
                       items:
                         $ref: '#/components/schemas/Sale'
+                    totals:
+                      type: object
+                      description: مجاميع كل الفواتير المطابقة للتصفية (لا الصفحة وحدها)
+                      properties:
+                        count:
+                          type: integer
+                        total:
+                          type: number
+                        remaining:
+                          type: number
+                          description: ما لم يُحصَّل بعد
+                      required:
+                      - count
+                      - total
+                      - remaining
                 - $ref: '#/components/schemas/Pagination'
         '401':
           $ref: '#/components/responses/Unauthenticated'
@@ -2496,6 +2511,49 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+  /owner/sales/{sale}/payments:
+    parameters:
+    - name: sale
+      in: path
+      required: true
+      description: معرّف الفاتورة
+      schema:
+        type: integer
+    post:
+      tags:
+      - owner-sales
+      summary: تحصيل دفعة على فاتورة — لا تتجاوز المتبقي
+      description: يزيد `paid_amount` ويحدّث `payment_status` (مدفوع جزئيًا ثم مدفوع). حالة الفاتورة تبقى `مكتمل`. مبلغ فوق المتبقي → `422` على `amount`. يقبل `Idempotency-Key`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                amount:
+                  type: number
+                  minimum: 0.01
+              required:
+              - amount
+      responses:
+        '200':
+          description: الفاتورة بعد الدفعة
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Sale'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
   /owner/consignments:
     get:
       tags:

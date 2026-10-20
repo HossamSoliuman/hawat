@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Panel\Owner;
 
 use App\Http\Controllers\Concerns\ResolvesOwnerRecords;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Owner\SalePaymentRequest;
 use App\Http\Requests\Owner\SaleRequest;
 use App\Models\Customer;
 use App\Models\PaymentMethod;
@@ -75,5 +76,12 @@ class SaleController extends Controller
         return view('panel.owner.sales.show', [
             'sale' => $this->ownedSale($request->user(), $sale)->load(['trip.boat', 'customer', 'paymentMethod', 'paymentStatus', 'items.species']),
         ]);
+    }
+
+    public function payment(SalePaymentRequest $request, int $sale): RedirectResponse
+    {
+        $model = $this->sales->recordPayment($request->user(), $this->ownedSale($request->user(), $sale), (float) $request->validated('amount'));
+
+        return redirect()->route('panel.owner.sales.show', $model)->with('status', 'سُجّلت الدفعة.');
     }
 }

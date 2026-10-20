@@ -421,6 +421,7 @@ $adminPanel = function () use ($operationsConsole): void {
             Route::get('/sales/create', [OwnerSaleController::class, 'create'])->name('sales.create');
             Route::post('/sales', [OwnerSaleController::class, 'store'])->name('sales.store');
             Route::get('/sales/{sale}', [OwnerSaleController::class, 'show'])->name('sales.show');
+            Route::post('/sales/{sale}/payment', [OwnerSaleController::class, 'payment'])->name('sales.payment');
 
             Route::get('/consignments', [OwnerConsignmentController::class, 'index'])->name('consignments');
             Route::get('/consignments/create', [OwnerConsignmentController::class, 'create'])->name('consignments.create');

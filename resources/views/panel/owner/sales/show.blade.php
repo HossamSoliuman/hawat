@@ -17,6 +17,7 @@
     </div>
 
     @if (session('status'))<div class="flash">{{ session('status') }}</div>@endif
+    @if ($errors->any())<div class="flash-error">{{ $errors->first() }}</div>@endif
 
     <div class="grid-2" style="margin-bottom:1.25rem">
         <div class="card">
@@ -40,6 +41,13 @@
                 <dt>المتبقي</dt><dd class="num" style="{{ $sale->remaining > 0 ? 'color:var(--st-critical)' : '' }}">{{ number_format($sale->remaining, 2) }} ر.س</dd>
                 <dt>إجمالي الوزن</dt><dd class="num">{{ number_format($sale->items->sum('weight_kg'), 1) }} كجم</dd>
             </dl>
+            @if ($sale->remaining > 0)
+                <form method="POST" action="{{ route('panel.owner.sales.payment', $sale) }}" class="filter-bar" style="margin-top:1rem">
+                    @csrf
+                    <label class="field"><span>تحصيل دفعة (ر.س)</span><input class="input num" type="number" step="0.01" min="0.01" max="{{ $sale->remaining }}" name="amount" value="{{ $sale->remaining }}" dir="ltr" required></label>
+                    <button class="btn btn-primary">تسجيل الدفعة</button>
+                </form>
+            @endif
         </div>
     </div>
 

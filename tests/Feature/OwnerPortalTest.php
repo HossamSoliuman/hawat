@@ -265,12 +265,23 @@ class OwnerPortalTest extends TestCase
         $this->asOwner()->post('/admin/owner/sales', [
             'trip_id' => $trip->id,
             'customer_id' => $customer->id,
+            'paid_amount' => 500,
             'items' => [['species_id' => $species->id, 'weight_kg' => 50, 'price_per_kg' => 40]],
         ])->assertRedirect();
         $sale = Sale::forSeller($this->owner)->firstOrFail();
         $this->assertEqualsWithDelta(2000, (float) $sale->total, 0.001);
 
-        $this->asOwner()->get(route('panel.owner.sales.show', $sale))->assertOk()->assertSee($sale->invoice_number)->assertSee('الكنعد (اختبار)');
+        $this->asOwner()->get(route('panel.owner.sales.show', $sale))->assertOk()->assertSee($sale->invoice_number)->assertSee('الكنعد (اختبار)')
+            ->assertSee(route('panel.owner.sales.payment', $sale), false);
+
+        // تحصيل الباقي من صفحة الفاتورة: فوق المتبقي يُرفض، ثم يُحصَّل كاملًا.
+        $this->asOwner()->from(route('panel.owner.sales.show', $sale))->post(route('panel.owner.sales.payment', $sale), ['amount' => 1500.01])
+            ->assertSessionHasErrors('amount');
+        $this->asOwner()->post(route('panel.owner.sales.payment', $sale), ['amount' => 1500])
+            ->assertRedirect(route('panel.owner.sales.show', $sale));
+        $this->assertEqualsWithDelta(0, $sale->fresh()->remaining, 0.001);
+        $this->assertSame(Sale::COMPLETED, $sale->fresh()->status);
+        $this->asOwner()->get(route('panel.owner.sales.show', $sale))->assertOk()->assertDontSee(route('panel.owner.sales.payment', $sale), false);
 
         // بيع فوق المتاح يُعاد بخطأ تحقق.
         $this->asOwner()->from(route('panel.owner.sales.create', ['trip' => $trip->id]))->post('/admin/owner/sales', [

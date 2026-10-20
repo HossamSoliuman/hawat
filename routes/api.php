@@ -126,6 +126,7 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
             Route::get('catch-log/summary', [OwnerCatchLogController::class, 'summary'])->name('catch-log.summary');
 
             Route::apiResource('sales', OwnerSaleController::class)->only(['index', 'store', 'show']);
+            Route::post('sales/{sale}/payments', [OwnerSaleController::class, 'payment'])->name('sales.payments');
             Route::apiResource('consignments', OwnerConsignmentController::class)->only(['index', 'store', 'show']);
 
             Route::get('dalals', [OwnerDalalController::class, 'index'])->name('dalals');

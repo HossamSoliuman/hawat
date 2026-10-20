@@ -423,6 +423,68 @@ class OwnerApiTest extends TestCase
             ->assertJsonPath('data.available_stock.0.available_kg', 100);
     }
 
+    public function test_owner_collects_the_rest_of_an_unpaid_sale(): void
+    {
+        $trip = Trip::factory()->onBoat($this->boat())->readyForSale()->create();
+        $record = $trip->catchRecords()->create(['species_id' => $this->hamour->id, 'quantity_kg' => 100, 'counted_kg' => 100, 'recorded_at' => now()->toDateString()]);
+        app(StockLedger::class)->record($this->owner, $this->hamour->id, StockLedger::INTAKE, 100, $trip, $record);
+
+        // المدفوع فوق الإجمالي يُقصّ إليه، والخصم فوق المجموع كذلك.
+        $this->asOwner()->postJson('/api/v1/owner/sales', [
+            'trip_id' => $trip->id, 'paid_amount' => 9999,
+            'items' => [['species_id' => $this->hamour->id, 'weight_kg' => 10, 'price_per_kg' => 50]],
+        ])->assertValidRequest()->assertValidResponse(201)
+            ->assertJsonPath('data.total', 500)
+            ->assertJsonPath('data.paid_amount', 500)
+            ->assertJsonPath('data.remaining', 0);
+
+        $sale = $this->asOwner()->postJson('/api/v1/owner/sales', [
+            'trip_id' => $trip->id, 'paid_amount' => 1000,
+            'items' => [['species_id' => $this->hamour->id, 'weight_kg' => 50, 'price_per_kg' => 100]],
+        ])->assertValidRequest()->assertValidResponse(201)
+            ->assertJsonPath('data.remaining', 4000)
+            ->assertJsonPath('data.payment_status.name', 'مدفوع جزئيًا')
+            ->json('data');
+
+        $this->asOwner()->getJson('/api/v1/owner/sales')
+            ->assertValidRequest()->assertValidResponse(200)
+            ->assertJsonPath('totals.count', 2)
+            ->assertJsonPath('totals.total', 5500)
+            ->assertJsonPath('totals.remaining', 4000);
+        $this->asOwner()->getJson('/api/v1/owner/sales?unpaid=1&per_page=1')
+            ->assertValidRequest()->assertValidResponse(200)
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('totals.count', 1)
+            ->assertJsonPath('totals.remaining', 4000);
+
+        $pay = fn (float $amount, ?User $as = null) => $this->asOwner($as)->postJson("/api/v1/owner/sales/{$sale['id']}/payments", ['amount' => $amount]);
+
+        $pay(4000.01)->assertValidRequest()->assertValidResponse(422)->assertJsonValidationErrors('amount');
+        $pay(0)->assertInvalidRequest()->assertValidResponse(422);
+
+        $pay(1500)->assertValidRequest()->assertValidResponse(200)
+            ->assertJsonPath('data.paid_amount', 2500)
+            ->assertJsonPath('data.remaining', 2500)
+            ->assertJsonPath('data.payment_status.name', 'مدفوع جزئيًا')
+            ->assertJsonPath('data.status', Sale::COMPLETED)
+            ->assertJsonCount(1, 'data.items');
+
+        $pay(2500)->assertValidRequest()->assertValidResponse(200)
+            ->assertJsonPath('data.remaining', 0)
+            ->assertJsonPath('data.payment_status.name', 'مدفوع')
+            ->assertJsonPath('data.status', Sale::COMPLETED);
+
+        $pay(1)->assertValidRequest()->assertValidResponse(422);
+        $this->asOwner()->getJson('/api/v1/owner/sales?unpaid=1')
+            ->assertValidRequest()->assertValidResponse(200)
+            ->assertJsonCount(0, 'data')
+            ->assertJsonPath('totals.remaining', 0);
+
+        // فاتورة مالك آخر 404، وغير المالك 403.
+        $pay(1, User::factory()->owner()->create())->assertValidRequest()->assertValidResponse(404);
+        $pay(1, User::factory()->role(Role::DALAL)->create())->assertValidRequest()->assertValidResponse(403);
+    }
+
     public function test_trip_stages_split_the_list_without_overlap(): void
     {
         $boat = $this->boat();
