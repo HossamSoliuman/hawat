@@ -13,6 +13,7 @@ use App\Models\StockMovement;
 use App\Models\Trip;
 use App\Models\User;
 use App\Services\Stock\StockLedger;
+use Carbon\CarbonImmutable;
 use Database\Seeders\LookupSeeder;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -362,6 +363,8 @@ class OwnerApiTest extends TestCase
             ->assertValidRequest()->assertValidResponse(200)
             ->assertJsonPath('data.period', 'month')
             ->assertJsonPath('data.kpis.revenue', 1600)
+            ->assertJsonPath('data.kpis.collected', 1200)
+            ->assertJsonPath('data.kpis.uncollected', 400)
             ->assertJsonPath('data.kpis.sales_count', 2)
             ->assertJsonPath('data.kpis.catch_kg', 80)
             // غير المحصّل دين قائم: فاتورة قبل سنتين ما زالت مستحقة هذا الشهر.
@@ -375,6 +378,8 @@ class OwnerApiTest extends TestCase
             ->assertValidRequest()->assertValidResponse(200)
             ->assertJsonPath('data.period', 'all')
             ->assertJsonPath('data.kpis.revenue', 2500)
+            ->assertJsonPath('data.kpis.previous_revenue', null)
+            ->assertJsonPath('data.kpis.uncollected', 1300)
             ->assertJsonPath('data.kpis.catch_kg', 130);
 
         $this->asOwner()->getJson('/api/v1/owner/dashboard?period=decade')
@@ -383,6 +388,78 @@ class OwnerApiTest extends TestCase
         $this->asOwner()->getJson('/api/v1/owner/sales?unpaid=1')
             ->assertValidRequest()->assertValidResponse(200)
             ->assertJsonCount(2, 'data');
+    }
+
+    public function test_dashboard_compares_the_period_with_the_same_span_of_the_one_before(): void
+    {
+        $this->travelTo(CarbonImmutable::parse('2026-10-22 12:00'));
+
+        $sale = fn (float $total, string $soldAt) => Sale::factory()->create(['seller_id' => $this->owner->id, 'total' => $total, 'paid_amount' => $total, 'sold_at' => $soldAt]);
+        $sale(700, '2026-10-05 09:00');
+        $sale(150, '2026-10-21 08:00');
+        $sale(200, '2026-10-21 18:00');
+        $sale(300, '2026-09-10 09:00');
+        // بعد مثل اليوم من الشهر الماضي: لا يُقارن به شهر لم يكتمل.
+        $sale(5000, '2026-09-25 09:00');
+
+        $this->asOwner()->getJson('/api/v1/owner/dashboard?period=month')
+            ->assertValidRequest()->assertValidResponse(200)
+            ->assertJsonPath('data.kpis.revenue', 1050)
+            ->assertJsonPath('data.kpis.previous_revenue', 300);
+
+        // أمس حتى الساعة نفسها فقط.
+        $this->asOwner()->getJson('/api/v1/owner/dashboard?period=today')
+            ->assertValidRequest()->assertValidResponse(200)
+            ->assertJsonPath('data.kpis.revenue', 0)
+            ->assertJsonPath('data.kpis.previous_revenue', 150);
+
+        $this->asOwner()->getJson('/api/v1/owner/dashboard?period=year')
+            ->assertValidRequest()->assertValidResponse(200)
+            ->assertJsonPath('data.kpis.revenue', 6350)
+            ->assertJsonPath('data.kpis.previous_revenue', 0);
+    }
+
+    public function test_dashboard_lists_each_boat_with_its_trip_then_the_catch_and_the_debts_that_wait(): void
+    {
+        $atSea = $this->boat(['name' => 'أ في البحر']);
+        $voyage = Trip::factory()->onBoat($atSea)->atSea()->create();
+        // رحلته التالية تنتظر خلف التي في البحر.
+        Trip::factory()->onBoat($atSea)->create();
+
+        $waiting = $this->boat(['name' => 'ب مجدول']);
+        $soon = Trip::factory()->onBoat($waiting)->create(['departure_time' => now()->addHours(2)]);
+        Trip::factory()->onBoat($waiting)->create(['departure_time' => now()->addDays(3)]);
+
+        // مصيده على البر والقارب نفسه في الميناء بلا رحلة.
+        $idle = $this->boat(['name' => 'ج في الميناء']);
+        $fresh = Trip::factory()->onBoat($idle)->readyForSale()->create();
+        $older = Trip::factory()->onBoat($idle)->readyForSale()->create(['counted_at' => now()->subDays(3)]);
+        $record = $older->catchRecords()->create(['species_id' => $this->hamour->id, 'quantity_kg' => 120, 'counted_kg' => 120, 'recorded_at' => now()->toDateString()]);
+        app(StockLedger::class)->record($this->owner, $this->hamour->id, StockLedger::INTAKE, 120, $older, $record);
+
+        $this->boat(['name' => 'د متوقف', 'status' => 'غير نشط']);
+
+        $sale = fn (array $attributes) => Sale::factory()->create(['seller_id' => $this->owner->id] + $attributes);
+        $sale(['total' => 600, 'paid_amount' => 200, 'sold_at' => now()->subDay()]);
+        $oldest = $sale(['total' => 900, 'paid_amount' => 0, 'sold_at' => now()->subDays(10)]);
+        $sale(['total' => 300, 'paid_amount' => 300, 'sold_at' => now()]);
+
+        $this->asOwner()->getJson('/api/v1/owner/dashboard?period=month')
+            ->assertValidRequest()->assertValidResponse(200)
+            ->assertJsonCount(3, 'data.fleet')
+            ->assertJsonPath('data.fleet.0.id', $atSea->id)
+            ->assertJsonPath('data.fleet.0.trip.id', $voyage->id)
+            ->assertJsonPath('data.fleet.0.trip.status', Trip::AT_SEA)
+            ->assertJsonPath('data.fleet.1.trip.id', $soon->id)
+            ->assertJsonPath('data.fleet.2.id', $idle->id)
+            ->assertJsonPath('data.fleet.2.trip', null)
+            ->assertJsonCount(2, 'data.trips_to_sell')
+            ->assertJsonPath('data.trips_to_sell.0.id', $older->id)
+            ->assertJsonPath('data.trips_to_sell.0.available_stock.0.available_kg', 120)
+            ->assertJsonPath('data.trips_to_sell.1.id', $fresh->id)
+            ->assertJsonCount(2, 'data.unpaid_sales')
+            ->assertJsonPath('data.unpaid_sales.0.id', $oldest->id)
+            ->assertJsonPath('data.unpaid_sales.0.remaining', 900);
     }
 
     public function test_a_trip_is_cancelled_with_a_reason_only_before_its_catch_is_submitted(): void

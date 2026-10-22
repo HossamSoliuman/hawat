@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Hawat Mobile API
-  version: 1.9.0
+  version: 1.10.0
   description: |
     Hawat mobile app API (com.os.hawat). All responses are JSON.
 
@@ -5267,7 +5267,7 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/AvailableLine'
-          description: في التفاصيل فقط — المتاح للبيع من كل صنف
+          description: في التفاصيل وفي `trips_to_sell` من الرئيسة — المتاح للبيع من كل صنف
         created_at:
           type: string
           nullable: true
@@ -5671,6 +5671,16 @@ components:
             revenue:
               type: number
               description: إيرادات الفترة
+            previous_revenue:
+              type: number
+              nullable: true
+              description: إيرادات الفترة السابقة من أولها إلى اللحظة المقابلة لليوم (أمس حتى الساعة نفسها، الشهر الماضي حتى اليوم نفسه…) — null لـ`all`
+            collected:
+              type: number
+              description: ما حُصّل من فواتير الفترة (`revenue` − `uncollected`)
+            uncollected:
+              type: number
+              description: ما بقي في فواتير الفترة دون تحصيل
             catch_kg:
               type: number
               description: المصيد المعدود في الفترة (بتاريخ العد)
@@ -5722,6 +5732,40 @@ components:
             $ref: '#/components/schemas/Trip'
         recent_sales:
           type: array
+          items:
+            $ref: '#/components/schemas/Sale'
+        fleet:
+          type: array
+          description: كل قارب ورحلته القائمة — في البحر، وإلا المجدولة التالية، وإلا رحلة عند العدّاد، وإلا null (في الميناء). القارب غير النشط لا يظهر إلا وله رحلة قائمة
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+              name:
+                type: string
+              boat_number:
+                type: string
+                nullable: true
+              status:
+                type: string
+                enum:
+                - نشط
+                - غير نشط
+                - صيانة
+                - في البحر
+              trip:
+                nullable: true
+                anyOf:
+                - $ref: '#/components/schemas/Trip'
+        trips_to_sell:
+          type: array
+          description: رحلات قيد البيع، الأقدم عدًّا أولًا (حتى 10)، ومع كل رحلة `available_stock`
+          items:
+            $ref: '#/components/schemas/Trip'
+        unpaid_sales:
+          type: array
+          description: فواتير بقي فيها مبلغ، الأقدم أولًا (حتى 5)
           items:
             $ref: '#/components/schemas/Sale'
     Notification:
